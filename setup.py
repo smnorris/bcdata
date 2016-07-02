@@ -7,27 +7,30 @@ with codecs_open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 
-setup(name='pyskel',
+setup(name='bcdata',
       version='0.0.1',
-      description=u"Skeleton of a Python package",
+      description=u"Data BC Distribution Service, automated",
       long_description=long_description,
       classifiers=[],
       keywords='',
-      author=u"Sean Gillies",
-      author_email='sean@mapbox.com',
-      url='https://github.com/mapbox/pyskel',
+      author=u"Simon Norris",
+      author_email='snorris@hillcrestgeo.ca',
+      url='https://github.com/smnorris/bcdata',
       license='MIT',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          'click'
+          'click',
+          'requests',
+          'selenium',
+          'polling'
       ],
       extras_require={
-          'test': ['pytest'],
+          'test': ['pytest', 'fiona'],
       },
       entry_points="""
       [console_scripts]
-      pyskel=pyskel.scripts.cli:cli
+      bcdata=bcdata.scripts.cli:cli
       """
       )

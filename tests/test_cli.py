@@ -1,10 +1,12 @@
 from click.testing import CliRunner
 
-from pyskel.scripts.cli import cli
+from bcdata.scripts.cli import cli
+
+GEOMARK = "gm-3D54AEE61F1847BA881E8BF7DE23BA21"
+DATASET = 'bc-airports'
 
 
-def test_cli_count():
+def test_cli_download():
     runner = CliRunner()
-    result = runner.invoke(cli, ['3'])
+    result = runner.invoke(cli, ['--email', '--geomark', GEOMARK, DATASET])
     assert result.exit_code == 0
-    assert result.output == "False\nFalse\nFalse\n"
