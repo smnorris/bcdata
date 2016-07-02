@@ -10,22 +10,22 @@ but access to much of it is available only via a 'Custom Download' through the
 direct download urls are not available. Data analysis tasks requiring many
 inputs can be tedious to set up or replicate.
 
-This module uses the web browser automation tool
-`Selenium <http://www.seleniumhq.org>`__ to enable quick, scriptable downloads
-of BC geographic data.
+This Python module uses the web browser automation tool
+`Selenium <http://www.seleniumhq.org>`__ to enable relatively quick, scriptable
+downloads of BC geographic data.
 
 
 **Note**
 
-- this project is for convenience only, it is in no way endorsed by the
-  Province of Britsh Columbia or DataBC
+- this tool is for my convenience, it is in no way endorsed by the Province of Britsh Columbia or DataBC
 - use with care, please don't overload the service
+- data are generally licensed as `OGL-BC <http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc>`__, but it is up to the user to check the licensing for any data downloaded
 
 
 Installation
 -------------------------
 bcdata has been tested only on macOS but a general installation should work fine
-on linux and Windows:
+on other OS. Install with pip:
 
 .. code-block:: console
 
@@ -53,26 +53,40 @@ https://catalogue.data.gov.bc.ca/dataset/bc-airports, use :code:`bc-airports`:
 
 **CLI**
 
-The syntax is a mash of
+The CLI syntax is a mash of
 `fio <https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst>`__ and
 `rio <https://github.com/mapbox/rasterio/blob/master/docs/cli.rst>`__, with a
 sprinkling of `ogr2ogr <http://www.gdal.org/ogr2ogr.html>`__.
-The cli will use the $BCDATA_EMAIL environment variable if it is set, otherwise
+The cli will use the $BCDATA_EMAIL environment variable if set, otherwise
 an email must be provided as an option.
 
 .. code-block:: console
 
     $ BCDATA_EMAIL=pilot@scenicflights.ca
-    $ bcdata bc-airports                   # use default output name
+    $ bcdata bc-airports                   # use service's default output name
     $ bcdata -o airports.gdb bc-airports   # download to airports.gdb
 
 Download times will vary based on server load and size of dataset. Expect about
-a minute for the smallest requests.
+a minute for the smallest requests. CLI capabilities are very basic, additional
+options are under development.
 
-Development and testing
+Development and testing on UNIX-like systems
 -------------------------
-Tests require `Fiona <https://github.com/Toblerity/Fiona>`__.
+Note that tests require `Fiona <https://github.com/Toblerity/Fiona>`__ (and thus
+`GDAL <http://www.gdal.org>`__). Using a virtualenv is probably a good idea.
 
+.. code-block:: console
+
+    $ mkdir bcdata_env
+    $ virtualenv bcdata_env
+    $ source bcdata_env/bin/activate
+    (bcdata_env)$ git clone git@github.com:smnorris/bcdata.git
+    (bcdata_env)$ cd bcdata
+    (bcdata_env)$ pip install -e .[test]
+    (bcdata_env)$ py.test
+
+Development setup on Windows should be quite similar but installing Fiona on
+Windows can be `more challenging <https://github.com/Toblerity/Fiona#windows>`__.
 
 Credits
 -------------------------
