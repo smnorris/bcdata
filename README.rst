@@ -57,20 +57,14 @@ The syntax is a mash of
 `fio <https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst>`__ and
 `rio <https://github.com/mapbox/rasterio/blob/master/docs/cli.rst>`__, with a
 sprinkling of `ogr2ogr <http://www.gdal.org/ogr2ogr.html>`__.
-The cli will use the $DATABC_EMAIL environment variable if it is set, otherwise
-the user will be promted for an email address.
+The cli will use the $BCDATA_EMAIL environment variable if it is set, otherwise
+an email must be provided as an option.
 
 .. code-block:: console
 
     $ BCDATA_EMAIL=pilot@scenicflights.ca
-    $ bcdata bc-airports landings.gdb
-
-Several options are available, see documentation for a full list.
-
-.. code-block:: console
-
-    $ bcdata --driver "Shapefile" --crs EPSG:4326 bc-climate-stations climate_stns
-    $ bcdata --crs EPSG:26910 --bounds <> bc-airports airports_z10
+    $ bcdata bc-airports                   # use default output name
+    $ bcdata -o airports.gdb bc-airports   # download to airports.gdb
 
 Download times will vary based on server load and size of dataset. Expect about
 a minute for the smallest requests.
