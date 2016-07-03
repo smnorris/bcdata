@@ -8,7 +8,7 @@ EMAIL = os.environ["BCDATA_EMAIL"]
 NAD83 = {'init': 'epsg:4269'}
 
 
-def test_all_options():
+def test_simple_success():
     order_id = bcdata.create_order('bc-airports',
                                    EMAIL,
                                    file_format="ESRI Shapefile",
@@ -26,10 +26,8 @@ def test_all_options():
 
 
 def test_bad_url():
-    order_id = bcdata.create_order('pscis-design-proposal',
-                                   EMAIL,
-                                   file_format="ESRI Shapefile",
-                                   geomark=GEOMARK)
+    order_id = bcdata.create_order('data-does-not-exist',
+                                   EMAIL)
     assert order_id is None
 
 
@@ -37,8 +35,6 @@ def test_empty_download():
     order_id = bcdata.create_order('pscis-design-proposal',
                                    EMAIL,
                                    file_format="ESRI Shapefile",
-                                   geomark=GEOMARK)
+                                   geomark='gm-C8E70532E717470CA1EC06EE1F2C67B7')
     out_folder = bcdata.download_order(order_id)
     assert out_folder is None
-
-
