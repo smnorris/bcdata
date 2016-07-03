@@ -78,7 +78,6 @@ an email must be provided as an option.
     $ export BCDATA_EMAIL=pilot@scenicflights.ca         # set a default email
     $ bcdata bc-airports                                 # use default email
     $ bcdata -o my_spots.gdb bc-airports                 # download to specified output location
-    $ bcdata --help
 
 Download times will vary based on server load and size of dataset. Expect about
 a minute for the smallest requests.
