@@ -75,7 +75,7 @@ an email must be provided as an option.
       --geomark TEXT     BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21
       --help             Show this message and exit.
 
-Common usage would be something like this:
+Common uses might look something like this:
 
 .. code-block:: bash
 
@@ -83,8 +83,9 @@ Common usage would be something like this:
     $ export BCDATA_EMAIL=pilot@scenicflights.ca         # set a default email
     $ bcdata bc-airports                                 # use default email
     $ bcdata -o my_spots.gdb bc-airports                 # download to specified output location
-    $ bcdata bc-airports \                               # download airports within geomark to shapefile
+    $ bcdata bc-airports \                               # get airports within geomark as NAD83 shapefile
         -f shp \
+        --crs EPSG:4269 \
         -o crd_airports \
         --geomark gm-3D54AEE61F1847BA881E8BF7DE23BA21
 
