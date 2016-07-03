@@ -6,9 +6,18 @@ from setuptools import setup, find_packages
 with codecs_open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
+# Parse the version
+with open('bcdata/__init__.py', 'r') as f:
+    for line in f:
+        if line.find("__version__") >= 0:
+            version = line.split("=")[1].strip()
+            version = version.strip('"')
+            version = version.strip("'")
+            break
 
 setup(name='bcdata',
-      version='0.0.1',
+      version=version,
+      requires_python='>=2.6',
       description=u"Data BC Distribution Service, automated",
       long_description=long_description,
       classifiers=[],

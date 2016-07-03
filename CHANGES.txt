@@ -1,0 +1,6 @@
+Changes
+=======
+
+0.0.1 (2016-07-03)
+------------------
+Initial release. Allows automation of simple downloads from British Columbia's data distribution service.

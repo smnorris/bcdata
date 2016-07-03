@@ -15,6 +15,9 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 import polling
 
+# tag version
+__version__ = "0.0.1"
+
 # Data BC URLs
 CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
 DOWNLOAD_URL = "https://apps.gov.bc.ca/pub/dwds/initiateDownload.do?"
