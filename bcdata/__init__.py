@@ -46,7 +46,7 @@ CRS = {"EPSG:3005": "0",
        "EPSG:4269": "6"   # note spherical available as NAD83 rather than WGS84
        }
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+#logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 
 def create_order(url, email_address, file_format="FileGDB", crs="EPSG:3005",
@@ -58,43 +58,43 @@ def create_order(url, email_address, file_format="FileGDB", crs="EPSG:3005",
     # check that url exists
     if requests.get(url).status_code != 200:
         raise ValueError('DataBC Catalog URL does not exist')
-    try:
-        driver = webdriver.Firefox()
-        driver.get(url)
-        # within the catalog page, find the link to the custom download
-        for element in driver.find_elements_by_tag_name('a'):
-            if element.get_attribute("title").endswith("- Custom Download"):
-                custom_download_link = element
-        custom_download_link.click()
-        # fill out the distribution service form
-        crs_selector = Select(driver.find_element_by_name("crs"))
-        crs_selector.select_by_value(CRS[crs])
-        fileformat_selector = Select(driver.find_element_by_name("fileFormat"))
-        fileformat_selector.select_by_value(FORMATS[file_format])
-        email = driver.find_element_by_name('userEmail')
-        email.send_keys(email_address)
-        terms = driver.find_element_by_name('termsCheckbox')
-        terms.click()
-        # If geomark is applied first the terms element becomes stale
-        # rather than figure out how to wait for page load
-        # http://www.obeythetestinggoat.com/how-to-get-selenium-to-wait-for-page-load-after-a-click.html
-        # just be sure to specify the geomark last
-        if geomark:
-            aoi = Select(driver.find_element_by_name("aoiOption"))
-            aoi.select_by_value("4")
-            geomark_form = driver.find_element_by_name("geomark")
-            geomark_form.send_keys(geomark)
-            geomark_recalc = driver.find_element_by_name("geomark_recalc")
-            geomark_recalc.click()
-        # submit order
-        submit = driver.find_element_by_id('submitImg')
-        submit.click()
-        # get order id
-        order_id = urlparse(driver.current_url).query.split('=')[1]
-        driver.close()
-        return order_id
-    except:
-        raise RuntimeError("Error during order processing")
+    #try:
+    driver = webdriver.Firefox()
+    driver.get(url)
+    # within the catalog page, find the link to the custom download
+    for element in driver.find_elements_by_tag_name('a'):
+        if element.get_attribute("title").endswith("- Custom Download"):
+            custom_download_link = element
+    custom_download_link.click()
+    # fill out the distribution service form
+    crs_selector = Select(driver.find_element_by_name("crs"))
+    crs_selector.select_by_value(CRS[crs])
+    fileformat_selector = Select(driver.find_element_by_name("fileFormat"))
+    fileformat_selector.select_by_value(FORMATS[file_format])
+    email = driver.find_element_by_name('userEmail')
+    email.send_keys(email_address)
+    terms = driver.find_element_by_name('termsCheckbox')
+    terms.click()
+    # If geomark is applied first the terms element becomes stale
+    # rather than figure out how to wait for page load
+    # http://www.obeythetestinggoat.com/how-to-get-selenium-to-wait-for-page-load-after-a-click.html
+    # just be sure to specify the geomark last
+    if geomark:
+        aoi = Select(driver.find_element_by_name("aoiOption"))
+        aoi.select_by_value("4")
+        geomark_form = driver.find_element_by_name("geomark")
+        geomark_form.send_keys(geomark)
+        geomark_recalc = driver.find_element_by_name("geomark_recalc")
+        geomark_recalc.click()
+    # submit order
+    submit = driver.find_element_by_id('submitImg')
+    submit.click()
+    # get order id
+    order_id = urlparse(driver.current_url).query.split('=')[1]
+    driver.close()
+    return order_id
+    #except:
+    #    raise RuntimeError("Error during order processing")
 
 
 def download_order(order_id, outpath=None, timeout=1800):

@@ -36,11 +36,13 @@ def validate_format(ctx, param, value):
               envvar='BCDATA_EMAIL',
               callback=validate_email)
 @click.option('--output', '-o', help="Destination folder to write.")
-@click.option('--format', '-f', help="Output file format. Default: FileGDB")
-@click.option('--crs', help="Output file CRS. Default: EPSG:3005 (BC Albers)")
+@click.option('--format', '-f', default="FileGDB",
+              help="Output file format. Default: FileGDB")
+@click.option('--crs', default="EPSG:3005",
+              help="Output file CRS. Default: EPSG:3005 (BC Albers)")
 #@click.option('--bounds')
 @click.option('--geomark', help="BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21")
-def cli(dataset, email, output, crs, format, geomark):
+def cli(dataset, email, output, format, crs, geomark):
     """Download a dataset from BC Data Distribution Service"""
     order_id = bcdata.create_order(dataset,
                                    email,
