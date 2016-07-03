@@ -49,14 +49,17 @@ def cli(dataset, email, output, crs, format, geomark):
                                    geomark=geomark)
     # download to temp
     dl_path = bcdata.download_order(order_id)
-    # , file_format=driver, crs=crs, geomark=geomark)
-    # if output not specified, write data as named by dl service to cwd
-    if not output:
-        output = os.path.join(os.getcwd(), os.path.basename(dl_path))
-    # only write if folder doesn't exist
-    # TODO - append to existing folder
-    if os.path.exists(output):
-        click.echo('Specified output exists. Find download in '+dl_path)
+    if dl_path:
+        # , file_format=driver, crs=crs, geomark=geomark)
+        # if output not specified, write data as named by dl service to cwd
+        if not output:
+            output = os.path.join(os.getcwd(), os.path.basename(dl_path))
+        # only write if folder doesn't exist
+        # TODO - append to existing folder
+        if os.path.exists(output):
+            click.echo('Specified output exists. Find download in '+dl_path)
+        else:
+            shutil.move(dl_path, output)
+            click.echo(dataset + " downloaded to " + output)
     else:
-        shutil.move(dl_path, output)
-        click.echo(dataset + " downloaded to " + output)
+        click.echo('No data downloaded, check your email to view issue')

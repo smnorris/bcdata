@@ -3,4 +3,4 @@ Changes
 
 0.0.1 (2016-xx-xx)
 ------------------
-Allow automation of simple downloads from British Columbia's data distribution service.
+Automation of simple downloads from British Columbia's Data Distribution Service.

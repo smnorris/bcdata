@@ -116,9 +116,14 @@ def download_order(order_id, outpath=None):
     zip_ref.close()
     # data is held in the only folder present in extract
     # find folder name: https://stackoverflow.com/questions/973473
-    folder = next(os.walk(unzip_folder))[1][0]
-    datapath = os.path.join(unzip_folder, folder)
-    if outpath:
-        shutil.copytree(datapath, os.path.join(outpath, folder))
-        datapath = os.path.join(outpath, folder)
-    return datapath
+    folders = next(os.walk(unzip_folder))[1]
+    # make sure some data was actually downloaded
+    if folders:
+        folder = folders[0]
+        datapath = os.path.join(unzip_folder, folder)
+        if outpath:
+            shutil.copytree(datapath, os.path.join(outpath, folder))
+            datapath = os.path.join(outpath, folder)
+        return datapath
+    else:
+        return None

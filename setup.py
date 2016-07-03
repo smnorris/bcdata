@@ -17,7 +17,7 @@ with open('bcdata/__init__.py', 'r') as f:
 
 setup(name='bcdata',
       version=version,
-      requires_python='>=2.6',
+      requires_python='>=2.7',
       description=u"Data BC Distribution Service, automated",
       long_description=long_description,
       classifiers=[],
