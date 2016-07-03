@@ -74,10 +74,23 @@ an email must be provided as an option.
       --crs TEXT         Output file CRS. Default: EPSG:3005 (BC Albers)
       --geomark TEXT     BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21
       --help             Show this message and exit.
+
+Common usage would be something like this:
+
+.. code-block:: bash
+
     $ bcdata --email pilot@scenicflights.ca bc-airports  # basic usage
     $ export BCDATA_EMAIL=pilot@scenicflights.ca         # set a default email
     $ bcdata bc-airports                                 # use default email
     $ bcdata -o my_spots.gdb bc-airports                 # download to specified output location
+    $ bcdata bc-airports \                               # download airports within geomark to shapefile
+        -f shp \
+        -o crd_airports \
+        --geomark gm-3D54AEE61F1847BA881E8BF7DE23BA21
+
+Note that data are downloaded to specified folder.  For above example, a
+crd_airports folder would be created in the current working directory and the
+individual shp, prj etc files would be found within.
 
 Download times will vary based on server load and size of dataset. Expect about
 a minute for the smallest requests.

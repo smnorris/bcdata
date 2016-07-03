@@ -56,7 +56,7 @@ def cli(dataset, email, output, crs, format, geomark):
     # only write if folder doesn't exist
     # TODO - append to existing folder
     if os.path.exists(output):
-        click.echo('Output folder exists. Find download in '+dl_path)
+        click.echo('Specified output exists. Find download in '+dl_path)
     else:
         shutil.move(dl_path, output)
         click.echo(dataset + " downloaded to " + output)
