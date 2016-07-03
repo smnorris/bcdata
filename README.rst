@@ -98,7 +98,7 @@ probably a good idea.
     (bcdata_env)$ git clone git@github.com:smnorris/bcdata.git
     (bcdata_env)$ cd bcdata
     (bcdata_env)$ pip install -e .[test]
-    (bcdata_env)$ export BCDATA_EMAIL=mytestemail@testing.ca;
+    (bcdata_env)$ export BCDATA_EMAIL=mytestemail@testing.ca
     (bcdata_env)$ py.test
 
 **Windows**
