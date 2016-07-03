@@ -1,6 +1,6 @@
 Changes
 =======
 
-0.0.1 (2016-xx-xx)
+0.0.1 (2016-07-03)
 ------------------
 Automation of simple downloads from British Columbia's Data Distribution Service.
