@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import bcdata
 import fiona
@@ -25,12 +26,6 @@ def test_simple_success():
             assert len(src) == 13
 
 
-def test_bad_url():
-    order_id = bcdata.create_order('data-does-not-exist',
-                                   EMAIL)
-    assert order_id is None
-
-
 def test_empty_download():
     order_id = bcdata.create_order('pscis-design-proposal',
                                    EMAIL,
@@ -38,3 +33,14 @@ def test_empty_download():
                                    geomark='gm-C8E70532E717470CA1EC06EE1F2C67B7')
     out_folder = bcdata.download_order(order_id)
     assert out_folder is None
+
+
+class URLTest(unittest.TestCase):
+    def test_bad_url(self):
+        self.assertRaises(ValueError, bcdata.create_order,
+                          ('bad-url'), email_address=EMAIL)
+
+    def test_bad_orderid(self):
+        self.assertRaises(RuntimeError,
+                          bcdata.download_order,
+                          ('9999'), timeout=10)

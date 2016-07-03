@@ -47,6 +47,8 @@ def cli(dataset, email, output, crs, format, geomark):
                                    crs=crs,
                                    file_format=format,
                                    geomark=geomark)
+    if not order_id:
+        click.abort("Failed to create order")
     # download to temp
     dl_path = bcdata.download_order(order_id)
     if dl_path:
@@ -62,4 +64,5 @@ def cli(dataset, email, output, crs, format, geomark):
             shutil.move(dl_path, output)
             click.echo(dataset + " downloaded to " + output)
     else:
-        click.echo('No data downloaded, check your email to view issue')
+        click.abort("No data downloaded, check email to view issue")
+
