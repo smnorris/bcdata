@@ -36,10 +36,10 @@ Usage
 The most basic usage requires:
 
 - a valid email address (a required Distribution Service form input, the address is not otherwise used)
-- the final item from the url path for any `DataBC Catalog <https://catalogue.data.gov.bc.ca>`__ record that includes a 'Custom Download' button.
+- url (or identifier portion of url path) for any `DataBC Catalog <https://catalogue.data.gov.bc.ca>`__ record that includes a 'Custom Download' button.
 
-For example, to order and download airport data
-https://catalogue.data.gov.bc.ca/dataset/bc-airports, use :code:`bc-airports`:
+For example, to order and download `airport <https://catalogue.data.gov.bc.ca/dataset/bc-airports>`__ data, use either
+:code:`https://catalogue.data.gov.bc.ca/dataset/bc-airports` or :code:`bc-airports`
 
 **Python module**
 
@@ -53,27 +53,43 @@ https://catalogue.data.gov.bc.ca/dataset/bc-airports, use :code:`bc-airports`:
 
 **CLI**
 
-The CLI syntax is a mash of
-`fio <https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst>`__ and
-`rio <https://github.com/mapbox/rasterio/blob/master/docs/cli.rst>`__, with a
-sprinkling of `ogr2ogr <http://www.gdal.org/ogr2ogr.html>`__.
-The cli will use the $BCDATA_EMAIL environment variable if set, otherwise
+The CLI usage should hopefully be familiar to users of
+`fio <https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst>`__,
+`rio <https://github.com/mapbox/rasterio/blob/master/docs/cli.rst>`__, and
+`ogr2ogr <http://www.gdal.org/ogr2ogr.html>`__.
+The CLI uses the $BCDATA_EMAIL environment variable if available, otherwise
 an email must be provided as an option.
 
 .. code-block:: console
 
-    $ BCDATA_EMAIL=pilot@scenicflights.ca
-    $ bcdata bc-airports                   # use service's default output name
-    $ bcdata -o airports.gdb bc-airports   # download to airports.gdb
+    $ bcdata --help
+    Usage: bcdata [OPTIONS] DATASET
+
+      Download a dataset from BC Data Distribution Service
+
+    Options:
+      --email TEXT       Email address. Default: $BCDATA_EMAIL
+      -o, --output TEXT  Destination folder to write.
+      -f, --format TEXT  Output file format. Default: FileGDB
+      --crs TEXT         Output file CRS. Default: EPSG:3005 (BC Albers)
+      --geomark TEXT     BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21
+      --help             Show this message and exit.
+    $ bcdata --email pilot@scenicflights.ca bc-airports  # basic usage
+    $ export BCDATA_EMAIL=pilot@scenicflights.ca         # set a default email
+    $ bcdata bc-airports                                 # use default email
+    $ bcdata -o my_spots.gdb bc-airports                 # download to specified output location
+    $ bcdata --help
 
 Download times will vary based on server load and size of dataset. Expect about
-a minute for the smallest requests. CLI capabilities are very basic, additional
-options are under development.
+a minute for the smallest requests.
 
-Development and testing on UNIX-like systems
+Development and testing
 -------------------------
 Note that tests require `Fiona <https://github.com/Toblerity/Fiona>`__ (and thus
-`GDAL <http://www.gdal.org>`__). Using a virtualenv is probably a good idea.
+`GDAL <http://www.gdal.org>`__) to verify downloads. Using a virtualenv is
+probably a good idea.
+
+**macOS/Linux/etc**
 
 .. code-block:: console
 
@@ -83,7 +99,10 @@ Note that tests require `Fiona <https://github.com/Toblerity/Fiona>`__ (and thus
     (bcdata_env)$ git clone git@github.com:smnorris/bcdata.git
     (bcdata_env)$ cd bcdata
     (bcdata_env)$ pip install -e .[test]
+    (bcdata_env)$ export BCDATA_EMAIL=mytestemail@testing.ca;
     (bcdata_env)$ py.test
+
+**Windows**
 
 Development setup on Windows should be quite similar but installing Fiona on
 Windows can be `more challenging <https://github.com/Toblerity/Fiona#windows>`__.

@@ -15,32 +15,44 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 import polling
 
-# Data BC URL
+# Data BC URLs
 CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
 DOWNLOAD_URL = "https://apps.gov.bc.ca/pub/dwds/initiateDownload.do?"
 
-# download option lookups
+# supported dwds file formats (and shortcuts)
 FORMATS = {"ESRI Shapefile": "0",
-           # -- unsupported formats
-           # "AVCE00": "1",
-           # "CSV": "2",
-           # "GeoRSS": "4"
-           "FileGDB": "3"}
+           "Shapefile": "0",
+           "shp": "0",
+           "CSV": "2",
+           "FileGDB": "3",
+           "gdb": "3"}
 
+# dwds formats not supported by this module
+UNSUPPORTED = {"AVCE00": "1",
+               "GeoRSS": "4"}
+
+# dwds supported projections
 CRS = {"EPSG:3005": "0",
        "EPSG:26907": "1",
        "EPSG:26908": "2",
        "EPSG:26909": "3",
        "EPSG:26910": "4",
        "EPSG:26911": "5",
-       "EPSG:4326": "6"}
+       "EPSG:4269": "6"   # note spherical available as NAD83 rather than WGS84
+       }
 
 
-def create_order(dataset, email_address,
-                 file_format="FileGDB", crs="EPSG:3005", geomark=None):
+def create_order(url, email_address, file_format="FileGDB", crs="EPSG:3005",
+                 geomark=None):
     """Submit a Data BC Distribution Service order for the specified dataset"""
+    # if just the key is provided, pre-pend the full url
+    if os.path.split(url)[0] == '':
+        url = os.path.join(CATALOG_URL, 'dataset', url)
+    # check that url exists
+    if requests.get(url).status_code != 200:
+        raise ValueError('DataBC Catalog URL does not exist')
     driver = webdriver.Firefox()
-    driver.get(os.path.join(CATALOG_URL, 'dataset', dataset))
+    driver.get(url)
     # within the catalog page, find the link to the custom download
     for element in driver.find_elements_by_tag_name('a'):
         if element.get_attribute("title").endswith("- Custom Download"):
