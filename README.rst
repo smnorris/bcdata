@@ -51,6 +51,10 @@ For example, to order and download `airport <https://catalogue.data.gov.bc.ca/da
     >>> out_data
     /temp/airports.gdb
 
+Download times will vary based on server load and size of dataset. Expect about
+a minute for the smallest requests.
+
+
 **CLI**
 
 The CLI usage should hopefully be familiar to users of
@@ -71,7 +75,7 @@ an email must be provided as an option.
       --email TEXT       Email address. Default: $BCDATA_EMAIL
       -o, --output TEXT  Destination folder to write.
       -f, --format TEXT  Output file format. Default: FileGDB
-      --crs TEXT         Output file CRS. Default: EPSG:3005 (BC Albers)
+      --crs TEXT         Output file CRS. Default: BCAlbers
       --geomark TEXT     BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21
       --help             Show this message and exit.
 
@@ -85,7 +89,7 @@ Common uses might look something like this:
     $ bcdata -o my_spots.gdb bc-airports                 # download to specified output location
     $ bcdata bc-airports \                               # get airports within geomark as NAD83 shapefile
         -f shp \
-        --crs EPSG:4269 \
+        --crs NAD83 \
         -o crd_airports \
         --geomark gm-3D54AEE61F1847BA881E8BF7DE23BA21
 
@@ -93,8 +97,23 @@ Note that data are downloaded to specified folder.  For above example, a
 crd_airports folder would be created in the current working directory and the
 individual shp, prj etc files would be found within.
 
-Download times will vary based on server load and size of dataset. Expect about
-a minute for the smallest requests.
+Projections / CRS
+-------------------------
+Several projections are available on request from the Download Service, and are
+available via bcdata using the following CRS keys:
+
+:code:`['BCAlbers','UTMZ07','UTMZ08','UTMZ09','UTMZ10','UTMZ11','NAD83']`
+
+These keys are used rather than EPSG codes because:
+
+- BC Albers data may not be defined as EPSG:3005 but as a 'custom' projection
+- spherical data is provided as NAD83 (EPSG:4269) rather than the popular
+  WSG84 (EPSG:4326)
+
+An attempt was made to provide the standard EPSG:3005, EPSG:4326 options but
+writing via the FileGDB driver proved to be buggy. Use some other tool to
+reproject your downloads.
+
 
 Development and testing
 -------------------------

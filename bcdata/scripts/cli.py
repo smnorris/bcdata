@@ -15,11 +15,21 @@ def validate_email(ctx, param, value):
 def validate_crs(ctx, param, value):
     if value not in bcdata.CRS.keys():
         raise click.BadParameter('--crs must be one of '+bcdata.CRS.keys())
+    return value
 
 
 def validate_format(ctx, param, value):
-    if value not in bcdata.FORMATS.keys():
-        raise click.BadParameter("--format must be one of "+bcdata.FORMATS.keys())
+    formats = bcdata.FORMATS.keys()
+    # add shortcuts to formats
+    shortcuts = {"shp": "ESRI Shapefile",
+                 "Shapefile": "ESRI Shapefile",
+                 "gdb": "FileGDB"}
+    valid_keys = bcdata.FORMATS.keys()+shortcuts.keys()
+    if value in shortcuts.keys():
+        value = shortcuts[value]
+    if value not in valid_keys:
+        raise click.BadParameter("--format must be one of "+valid_keys)
+    return value
 
 
 #def validate_geomark(ctx, param, value):
@@ -35,36 +45,33 @@ def validate_format(ctx, param, value):
               help="Email address. Default: $BCDATA_EMAIL",
               envvar='BCDATA_EMAIL',
               callback=validate_email)
-@click.option('--output', '-o', help="Destination folder to write.")
-@click.option('--format', '-f', default="FileGDB",
-              help="Output file format. Default: FileGDB")
-@click.option('--crs', default="EPSG:3005",
-              help="Output file CRS. Default: EPSG:3005 (BC Albers)")
+@click.option('--driver', '-d', default="FileGDB",
+              help="Output file format. Default: FileGDB",
+              callback=validate_format)
+@click.option('--output', '-o', help="Output folder/gdb")
+#@click.option('--layer', '-l', help="Output layer/shp")
+@click.option('--crs', default="BCAlbers",
+              callback=validate_crs,
+              help="Downloaded CRS. Default: BCAlbers)")
 #@click.option('--bounds')
 @click.option('--geomark', help="BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21")
-def cli(dataset, email, output, format, crs, geomark):
+def cli(dataset, email, driver, output, layer, crs, geomark):
     """Download a dataset from BC Data Distribution Service"""
+    # create the order
     order_id = bcdata.create_order(dataset,
                                    email,
                                    crs=crs,
-                                   file_format=format,
+                                   driver=driver,
                                    geomark=geomark)
     if not order_id:
         click.abort("Failed to create order")
-    # download to temp
+    # download the order to temp
     dl_path = bcdata.download_order(order_id)
-    if dl_path:
-        # , file_format=driver, crs=crs, geomark=geomark)
-        # if output not specified, write data as named by dl service to cwd
-        if not output:
-            output = os.path.join(os.getcwd(), os.path.basename(dl_path))
-        # only write if folder doesn't exist
-        # TODO - append to existing folder
-        if os.path.exists(output):
-            click.echo('Specified output exists. Find download in '+dl_path)
-        else:
-            shutil.move(dl_path, output)
-            click.echo(dataset + " downloaded to " + output)
-    else:
+    if not dl_path:
         click.abort("No data downloaded, check email to view issue")
-
+    # if output not given, write to current directory using default folder name
+    if not output:
+        output = os.path.join(os.getcwd(), os.path.split(dl_path)[1])
+    # copy data to specified path
+    shutil.copy(dl_path, output)
+    click.echo(dataset + " downloaded to " + output)
