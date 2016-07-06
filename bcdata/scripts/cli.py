@@ -55,7 +55,7 @@ def validate_format(ctx, param, value):
               help="Downloaded CRS. Default: BCAlbers)")
 #@click.option('--bounds')
 @click.option('--geomark', help="BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21")
-def cli(dataset, email, driver, output, layer, crs, geomark):
+def cli(dataset, email, driver, output, crs, geomark):
     """Download a dataset from BC Data Distribution Service"""
     # create the order
     order_id = bcdata.create_order(dataset,
