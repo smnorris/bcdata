@@ -73,5 +73,5 @@ def cli(dataset, email, driver, output, crs, geomark):
     if not output:
         output = os.path.join(os.getcwd(), os.path.split(dl_path)[1])
     # copy data to specified path
-    shutil.copy(dl_path, output)
+    shutil.copytree(dl_path, output)
     click.echo(dataset + " downloaded to " + output)
