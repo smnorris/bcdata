@@ -1,10 +1,15 @@
 Changes
 =======
 
-0.0.2 (2016-07-05)
+0.0.3 (2016-07-08)
+------------------
+- use a better key to find download link on catalog page (#15)
+
+0.0.2 (2016-07-06)
 ------------------
 - close issues related to layers / projections / appending (#2, #9, #10)
 - cleanup
+- fix problems with CLI
 
 0.0.1 (2016-07-03)
 ------------------

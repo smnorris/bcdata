@@ -1,8 +1,11 @@
 try:
     from urllib.parse import urlparse
+    from urllib.parse import urljoin
     from urllib.request import urlretrieve
+
 except ImportError:
     from urlparse import urlparse
+    from urlparse import urljoin
     from urllib import urlretrieve
 
 import os
@@ -19,6 +22,7 @@ __version__ = "0.0.2"
 
 # Data BC URLs
 CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
+DWDS = "https://apps.gov.bc.ca/pub/dwds"
 DOWNLOAD_URL = "https://apps.gov.bc.ca/pub/dwds/initiateDownload.do?"
 
 # supported dwds file formats (and shortcuts)
@@ -54,10 +58,8 @@ def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
     browser = webdriver.Firefox()
     browser.get(url)
     # within the catalog page, find the link to the custom download
-    for element in browser.find_elements_by_tag_name('a'):
-        if element.get_attribute("title").endswith("- Custom Download"):
-            custom_download_link = element
-    custom_download_link.click()
+    download_link = browser.find_element_by_css_selector("a[href*='"+DWDS+"']")
+    download_link.click()
     # fill out the distribution service form
     crs_selector = Select(browser.find_element_by_name("crs"))
     crs_selector.select_by_value(CRS[crs])

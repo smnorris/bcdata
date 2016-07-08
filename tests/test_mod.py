@@ -10,6 +10,12 @@ EMAIL = os.environ["BCDATA_EMAIL"]
 NAD83 = {'init': 'epsg:4269'}
 
 
+def test_national_parks():
+    order_id = bcdata.create_order('national-parks-national-framework-canada-lands-administrative-boundaries-level-1',
+                                   EMAIL)
+    assert order_id is not None
+
+
 def test_shapefile():
     order_id = bcdata.create_order('bc-airports',
                                    EMAIL,
