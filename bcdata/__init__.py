@@ -15,10 +15,17 @@ import zipfile
 import requests
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 import polling
 
+
 # tag version
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 # Data BC URLs
 CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
@@ -44,51 +51,74 @@ CRS = {"BCAlbers": "0",
        "UTMZ11": "5",
        "NAD83": "6"}
 
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) " +
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36")
+
 
 def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
                  geomark=None):
-    """Submit a Data BC Distribution Service order for the specified dataset"""
+    """
+    Submit a Data BC Distribution Service order for the specified dataset
+    """
     # if just the key is provided, pre-pend the full url
     if os.path.split(url)[0] == '':
         url = os.path.join(CATALOG_URL, 'dataset', url)
     # check that url exists
     if requests.get(url).status_code != 200:
         raise ValueError('DataBC Catalog URL does not exist')
-    #try:
-    browser = webdriver.Firefox()
+
+    dcap = dict(DesiredCapabilities.PHANTOMJS)
+    dcap["phantomjs.page.settings.userAgent"] = USER_AGENT
+    browser = webdriver.PhantomJS(desired_capabilities=dcap)
+    browser.set_window_size(2560, 1440)
     browser.get(url)
+
     # within the catalog page, find the link to the custom download
     download_link = browser.find_element_by_css_selector("a[href*='"+DWDS+"']")
     download_link.click()
-    # fill out the distribution service form
-    crs_selector = Select(browser.find_element_by_name("crs"))
-    crs_selector.select_by_value(CRS[crs])
-    fileformat_selector = Select(browser.find_element_by_name("fileFormat"))
-    fileformat_selector.select_by_value(FORMATS[driver])
-    email = browser.find_element_by_name('userEmail')
-    email.send_keys(email_address)
-    terms = browser.find_element_by_name('termsCheckbox')
-    terms.click()
-    # If geomark is applied first the terms element becomes stale
-    # rather than figure out how to wait for page load
-    # http://www.obeythetestinggoat.com/how-to-get-selenium-to-wait-for-page-load-after-a-click.html
-    # just be sure to specify the geomark last
-    if geomark:
-        aoi = Select(browser.find_element_by_name("aoiOption"))
-        aoi.select_by_value("4")
-        geomark_form = browser.find_element_by_name("geomark")
-        geomark_form.send_keys(geomark)
-        geomark_recalc = browser.find_element_by_name("geomark_recalc")
-        geomark_recalc.click()
-    # submit order
-    submit = browser.find_element_by_id('submitImg')
-    submit.click()
-    # get order id
-    order_id = urlparse(browser.current_url).query.split('=')[1]
-    browser.close()
-    return order_id
-    #except:
-    #    raise RuntimeError("Error during order processing")
+    # once loaded, fill out the distribution service form
+    try:
+        crs_element = WebDriverWait(browser, 60).until(
+            EC.presence_of_element_located((By.NAME, "crs"))
+        )
+        crs_selector = Select(crs_element)
+        crs_selector.select_by_value(CRS[crs])
+        fileformat_selector = Select(
+                                browser.find_element_by_name("fileFormat"))
+        fileformat_selector.select_by_value(FORMATS[driver])
+        email = browser.find_element_by_name('userEmail')
+        email.send_keys(email_address)
+        terms = browser.find_element_by_name('termsCheckbox')
+        terms.click()
+        # If geomark is applied first the terms element becomes stale
+        # rather than figure out how to wait for page load
+        # http://www.obeythetestinggoat.com/how-to-get-selenium-to-wait-for-page-load-after-a-click.html
+        # just be sure to specify the geomark last
+        if geomark:
+            aoi_element = polling.poll(
+                lambda: browser.find_element_by_name('aoiOption'),
+                step=0.25,
+                timeout=5)
+            aoi = Select(aoi_element)
+            aoi.select_by_value("4")
+            geomark_form = browser.find_element_by_name("geomark")
+            geomark_form.send_keys(geomark)
+            geomark_recalc = browser.find_element_by_name("geomark_recalc")
+            geomark_recalc.click()
+        # submit order
+        submit = polling.poll(
+            lambda: browser.find_element_by_id('submitImg'),
+            step=.25,
+            timeout=5)
+        submit.click()
+        # get order id
+        order_id = urlparse(browser.current_url).query.split('=')[1]
+        browser.close()
+        return order_id
+    except:
+        browser.quit()
+        raise RuntimeError("Request timed out")
 
 
 def download_order(order_id, timeout=1800):

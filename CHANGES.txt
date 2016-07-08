@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.0.4 (2016-07-08)
+------------------
+- headless downloads! (#1)
+- cli testing now functional (#3)
+
 0.0.3 (2016-07-08)
 ------------------
 - use a better key to find download link on catalog page (#15)

@@ -24,12 +24,21 @@ downloads of BC geographic data.
 
 Installation
 -------------------------
-bcdata has been tested only on macOS but a general installation should work fine
-on other OS. Install with pip:
+bcdata has been tested only on macOS but a should work fine on other OS.
+
+To make headless requests (no browser window), bcdata requires `PhantomJS
+<http://phantomjs.org/download.html>`__ which installs conveniently via homebrew
+on macOS:
 
 .. code-block:: console
 
-    pip install https://github.com/smnorris/bcdata/zipball/master
+    $ brew install phantomjs
+
+Then install bcdata with pip:
+
+.. code-block:: console
+
+    $ pip install https://github.com/smnorris/bcdata/zipball/master
 
 Usage
 -------------------------
@@ -51,8 +60,9 @@ For example, to order and download `airport <https://catalogue.data.gov.bc.ca/da
     >>> out_data
     /temp/airports.gdb
 
-Download times will vary based on server load and size of dataset. Expect about
-a minute for the smallest requests.
+Order creation takes about 30s.  Download times will vary based mainly on the
+size of your requested data. Expect about a minute for the smallest requests to
+complete.
 
 
 **CLI**
