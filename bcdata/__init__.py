@@ -18,7 +18,7 @@ from selenium.webdriver.support.ui import Select
 import polling
 
 # tag version
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 # Data BC URLs
 CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
