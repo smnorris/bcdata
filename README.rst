@@ -58,7 +58,7 @@ For example, to order and download `airport <https://catalogue.data.gov.bc.ca/da
     >>> order_id = bcdata.create_order('bc-airports', 'pilot@scenicflights.ca')
     >>> out_data = bcdata.download_order(order_id)
     >>> out_data
-    /temp/airports.gdb
+    /tmp/unzipped_download_folder/GSR_AIRPORTS_SVW.gdb
 
 Order creation takes about 30s.  Download times will vary based mainly on the
 size of your requested data. Expect about a minute for the smallest requests to
