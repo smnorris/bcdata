@@ -1,5 +1,4 @@
-bcdata
-======
+.. image:: logo.gif
 
 British Columbia's data distribution service, automated.
 
