@@ -13,6 +13,7 @@ import tempfile
 import zipfile
 
 import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -56,28 +57,47 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36")
 
 
-def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
-                 geomark=None):
+def make_sure_path_exists(path):
+    """Make directories in path if they do not exist.
+    Modified from http://stackoverflow.com/a/5032238/1377021
+    :param path: string
     """
-    Submit a Data BC Distribution Service order for the specified dataset
-    """
-    # if just the key is provided, pre-pend the full url
-    if os.path.split(url)[0] == '':
-        url = os.path.join(CATALOG_URL, 'dataset', url)
-    # check that url exists
-    if requests.get(url).status_code != 200:
-        raise ValueError('DataBC Catalog URL does not exist')
+    try:
+        os.makedirs(path)
+    except:
+        pass
 
+
+def get_browser(url):
+    """Open a browser object opened to specified url
+    """
     dcap = dict(DesiredCapabilities.PHANTOMJS)
     dcap["phantomjs.page.settings.userAgent"] = USER_AGENT
     browser = webdriver.PhantomJS(desired_capabilities=dcap)
     browser.set_window_size(2560, 1440)
     browser.get(url)
+    return browser
 
-    # within the catalog page, find the link to the custom download
-    download_link = browser.find_element_by_css_selector("a[href*='"+DWDS+"']")
-    download_link.click()
-    # once loaded, fill out the distribution service form
+
+def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
+                 geomark=None):
+    """Submit a Data BC Distribution Service order for the specified dataset
+    """
+    # if just the key is provided, pre-pend the full url
+    if os.path.split(url)[0] == '':
+        url = os.path.join(CATALOG_URL, 'dataset', url)
+    # request the url
+    r = requests.get(url)
+    # bail if it doesn't exist
+    if r.status_code != 200:
+        raise ValueError('DataBC Catalog URL does not exist')
+
+    # find the download link on the catalog page
+    soup = BeautifulSoup(r.text, "html5lib")
+    dwds_link = soup.select('a[href^='+DWDS+']')[0].get("href")
+
+    # open up DWDS page in a browser, when open fill in the form
+    browser = get_browser(dwds_link)
     try:
         crs_element = WebDriverWait(browser, 60).until(
             EC.presence_of_element_located((By.NAME, "crs"))
@@ -122,8 +142,7 @@ def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
 
 
 def download_order(order_id, timeout=1800):
-    """
-    Download and extract an order
+    """Download and extract an order
     """
     # has the download url been provided?
     try:
@@ -137,9 +156,13 @@ def download_order(order_id, timeout=1800):
     r = requests.get(DOWNLOAD_URL, {'orderId': order_id})
     url = r.text.split('<iframe height="0" width="0" src="')[1]
     url = url.split('"></iframe>')[0]
-    # download to temp
-    download_file = os.path.join(tempfile.gettempdir(), os.path.basename(url))
-    unzip_folder = os.path.join(tempfile.gettempdir(),
+    # download to file
+    if not os.getenv("DOWNLOAD_CACHE"):
+        os.environ["DOWNLOAD_CACHE"] = tempfile.gettempdir()
+    download_path = os.path.join(os.environ["DOWNLOAD_CACHE"], "bcdata")
+    make_sure_path_exists(download_path)
+    download_file = os.path.join(download_path, os.path.basename(url))
+    unzip_folder = os.path.join(download_path,
                                 os.path.splitext(os.path.basename(url))[0])
     if not os.path.exists(unzip_folder):
         os.makedirs(unzip_folder)
