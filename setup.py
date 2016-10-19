@@ -33,7 +33,6 @@ setup(name='bcdata',
           'click',
           'requests',
           'beautifulsoup4',
-          'selenium',
           'polling'
       ],
       extras_require={

@@ -88,8 +88,8 @@ individual shp, prj etc files would be found within.
 Projections / CRS
 -------------------------
 Several projections are available on request from the Download Service, but this
-tool does not support this option, all data are downloaded as the default
-BC Albers (which should generally be EPSG:3005).
+tool does not support this option, all data are downloaded as the default CRS
+(BC Albers, which should generally be EPSG:3005).
 
 Use some other tool to reproject your downloads.
 
