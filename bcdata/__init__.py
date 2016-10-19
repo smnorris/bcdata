@@ -29,8 +29,6 @@ FORMATS = {"ESRI Shapefile": "0",
 UNSUPPORTED = {"AVCE00": "1",
                "GeoRSS": "4"}
 
-logging.basicConfig(level=logging.INFO)
-
 
 def make_sure_path_exists(path):
     """
@@ -67,6 +65,13 @@ def download(url, email_address, driver="FileGDB"):
     # build the POST request
     order_id = r.cookies["DWDS_orderId"]
     payload = {"aoiOption": "0",
+               "clippingMethodMapsheet": "0",
+               "recalc_type": "mapsheet",
+               "clippingMethod": "0",
+               "clippingMethodShape": "0",
+               "prj": "BC Albers",
+               "clippingMethodGeomark": "0",
+               "recalc_type": "geomark",
                "crs": "0",
                "fileFormat": FORMATS[driver],
                "termsCheckbox": "1",
