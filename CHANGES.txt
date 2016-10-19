@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.0.5 (2016-10-18)
+------------------
+- remove selenium and phantomjs dependencies
+- geomark support removed
+- CRS support removed
+
 0.0.4 (2016-07-08)
 ------------------
 - headless downloads! (#1)

@@ -19,7 +19,6 @@ def validate_crs(ctx, param, value):
 
 
 def validate_format(ctx, param, value):
-    formats = bcdata.FORMATS.keys()
     # add shortcuts to formats
     shortcuts = {"shp": "ESRI Shapefile",
                  "Shapefile": "ESRI Shapefile",
@@ -49,24 +48,12 @@ def validate_format(ctx, param, value):
               help="Output file format. Default: FileGDB",
               callback=validate_format)
 @click.option('--output', '-o', help="Output folder/gdb")
-#@click.option('--layer', '-l', help="Output layer/shp")
-@click.option('--crs', default="BCAlbers",
-              callback=validate_crs,
-              help="Downloaded CRS. Default: BCAlbers)")
-#@click.option('--bounds')
-@click.option('--geomark', help="BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21")
-def cli(dataset, email, driver, output, crs, geomark):
+def cli(dataset, email, driver, output):
     """Download a dataset from BC Data Distribution Service"""
-    # create the order
-    order_id = bcdata.create_order(dataset,
-                                   email,
-                                   crs=crs,
-                                   driver=driver,
-                                   geomark=geomark)
-    if not order_id:
-        click.abort("Failed to create order")
-    # download the order to temp
-    dl_path = bcdata.download_order(order_id)
+    # download to temp
+    dl_path = bcdata.download(dataset,
+                              email,
+                              driver=driver)
     if not dl_path:
         click.abort("No data downloaded, check email to view issue")
     # if output not given, write to current directory using default folder name

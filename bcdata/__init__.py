@@ -1,36 +1,23 @@
-try:
-    from urllib.parse import urlparse
-    from urllib.parse import urljoin
-    from urllib.request import urlretrieve
-
-except ImportError:
-    from urlparse import urlparse
-    from urlparse import urljoin
-    from urllib import urlretrieve
-
 import os
+import urllib2
 import tempfile
 import zipfile
+import logging
 
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 import polling
 
 
 # tag version
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 # Data BC URLs
 CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
 DWDS = "https://apps.gov.bc.ca/pub/dwds"
+DWDS_SUBMIT = DWDS+"/viewOrderSubmit.so"
+
 DOWNLOAD_URL = "https://apps.gov.bc.ca/pub/dwds/initiateDownload.do?"
 
 # supported dwds file formats (and shortcuts)
@@ -42,25 +29,13 @@ FORMATS = {"ESRI Shapefile": "0",
 UNSUPPORTED = {"AVCE00": "1",
                "GeoRSS": "4"}
 
-# dwds supported projections
-# note that BC Albers may not be EPSG:3005 and EPSG:4326 is unavailable
-CRS = {"BCAlbers": "0",
-       "UTMZ07": "1",
-       "UTMZ08": "2",
-       "UTMZ09": "3",
-       "UTMZ10": "4",
-       "UTMZ11": "5",
-       "NAD83": "6"}
-
-USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) " +
-    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36")
+logging.basicConfig(level=logging.INFO)
 
 
 def make_sure_path_exists(path):
-    """Make directories in path if they do not exist.
+    """
+    Make directories in path if they do not exist.
     Modified from http://stackoverflow.com/a/5032238/1377021
-    :param path: string
     """
     try:
         os.makedirs(path)
@@ -68,19 +43,7 @@ def make_sure_path_exists(path):
         pass
 
 
-def get_browser(url):
-    """Open a browser object opened to specified url
-    """
-    dcap = dict(DesiredCapabilities.PHANTOMJS)
-    dcap["phantomjs.page.settings.userAgent"] = USER_AGENT
-    browser = webdriver.PhantomJS(desired_capabilities=dcap)
-    browser.set_window_size(2560, 1440)
-    browser.get(url)
-    return browser
-
-
-def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
-                 geomark=None):
+def download(url, email_address, driver="FileGDB"):
     """Submit a Data BC Distribution Service order for the specified dataset
     """
     # if just the key is provided, pre-pend the full url
@@ -96,55 +59,25 @@ def create_order(url, email_address, driver="FileGDB", crs="BCAlbers",
     soup = BeautifulSoup(r.text, "html5lib")
     dwds_link = soup.select('a[href^='+DWDS+']')[0].get("href")
 
-    # open up DWDS page in a browser, when open fill in the form
-    browser = get_browser(dwds_link)
-    try:
-        crs_element = WebDriverWait(browser, 60).until(
-            EC.presence_of_element_located((By.NAME, "crs"))
-        )
-        crs_selector = Select(crs_element)
-        crs_selector.select_by_value(CRS[crs])
-        fileformat_selector = Select(
-                                browser.find_element_by_name("fileFormat"))
-        fileformat_selector.select_by_value(FORMATS[driver])
-        email = browser.find_element_by_name('userEmail')
-        email.send_keys(email_address)
-        terms = browser.find_element_by_name('termsCheckbox')
-        terms.click()
-        # If geomark is applied first the terms element becomes stale
-        # rather than figure out how to wait for page load
-        # http://www.obeythetestinggoat.com/how-to-get-selenium-to-wait-for-page-load-after-a-click.html
-        # just be sure to specify the geomark last
-        if geomark:
-            aoi_element = polling.poll(
-                lambda: browser.find_element_by_name('aoiOption'),
-                step=0.25,
-                timeout=5)
-            aoi = Select(aoi_element)
-            aoi.select_by_value("4")
-            geomark_form = browser.find_element_by_name("geomark")
-            geomark_form.send_keys(geomark)
-            geomark_recalc = browser.find_element_by_name("geomark_recalc")
-            geomark_recalc.click()
-        # submit order
-        submit = polling.poll(
-            lambda: browser.find_element_by_id('submitImg'),
-            step=.25,
-            timeout=5)
-        submit.click()
-        # get order id
-        order_id = urlparse(browser.current_url).query.split('=')[1]
-        browser.close()
-        return order_id
-    except:
-        browser.quit()
-        raise RuntimeError("Request timed out")
+    # open the download link
+    r = requests.get(dwds_link)
+    if r.status_code != 200:
+        raise ValueError('DWDS URL does not exist, something went wrong')
 
+    # build the POST request
+    order_id = r.cookies["DWDS_orderId"]
+    payload = {"aoiOption": "0",
+               "crs": "0",
+               "fileFormat": FORMATS[driver],
+               "termsCheckbox": "1",
+               "clickedSubmit": "true",
+               "userEmail": email_address}
+    r = requests.post(DWDS_SUBMIT,
+                      params={"orderId": order_id},
+                      data=payload)
 
-def download_order(order_id, timeout=1800):
-    """Download and extract an order
-    """
-    # has the download url been provided?
+    # is the download ready?
+    timeout = 1800
     try:
         polling.poll(
             lambda: requests.get(DOWNLOAD_URL,
@@ -153,22 +86,36 @@ def download_order(order_id, timeout=1800):
             timeout=timeout)
     except:
         raise RuntimeError("Download for order_id "+order_id+" timed out")
+
+    # download the zipfile to tmp
     r = requests.get(DOWNLOAD_URL, {'orderId': order_id})
-    url = r.text.split('<iframe height="0" width="0" src="')[1]
-    url = url.split('"></iframe>')[0]
-    # download to file
-    if not os.getenv("DOWNLOAD_CACHE"):
-        os.environ["DOWNLOAD_CACHE"] = tempfile.gettempdir()
-    download_path = os.path.join(os.environ["DOWNLOAD_CACHE"], "bcdata")
+    soup = BeautifulSoup(r.text, "html5lib")
+    url = soup.select('a.body')[0].get('href')
+    download_path = os.path.join(tempfile.gettempdir(), "bcdata")
     make_sure_path_exists(download_path)
-    download_file = os.path.join(download_path, os.path.basename(url))
+
+    # using a simple urlretrieve works, but complains and fails tests with:
+    # >>>  IOError: [Errno ftp error] 200 Type set to I.
+    # use urllib2 instead as per
+    # https://github.com/OpenBounds/Processing/blob/master/utils.py
+    fp = tempfile.NamedTemporaryFile('wb', dir=download_path, suffix="zip",
+                                     delete=False)
+    download = urllib2.urlopen(url)
+    file_size_dl = 0
+    block_sz = 8192
+    while True:
+        buffer = download.read(block_sz)
+        if not buffer:
+            break
+        file_size_dl += len(buffer)
+        fp.write(buffer)
+    fp.close()
+
+    # extract zipfile
     unzip_folder = os.path.join(download_path,
                                 os.path.splitext(os.path.basename(url))[0])
-    if not os.path.exists(unzip_folder):
-        os.makedirs(unzip_folder)
-    urlretrieve(url, download_file)
-    # extract file
-    zip_ref = zipfile.ZipFile(download_file, 'r')
+    make_sure_path_exists(unzip_folder)
+    zip_ref = zipfile.ZipFile(fp.name, 'r')
     zip_ref.extractall(unzip_folder)
     zip_ref.close()
     # data is held in the only folder present in extract

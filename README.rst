@@ -9,31 +9,20 @@ but access to much of it is available only via a 'Custom Download' through the
 direct download urls are not available. Data analysis tasks requiring many
 inputs can be tedious to set up or replicate.
 
-This Python module uses the web browser automation tool
-`Selenium <http://www.seleniumhq.org>`__ to enable relatively quick, scriptable
-downloads of BC geographic data.
+This Python module and CLI script enables relatively quick, scriptable downloads of BC geographic data.
 
 
 **Note**
 
 - this tool is for my convenience, it is in no way endorsed by the Province of Britsh Columbia or DataBC
 - use with care, please don't overload the service
+- the download service seems to be ok with many download requests but failures may be unpredictable
 - data are generally licensed as `OGL-BC <http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc>`__, but it is up to the user to check the licensing for any data downloaded
 
 
 Installation
 -------------------------
 bcdata has been tested only on macOS but a should work fine on other OS.
-
-To make headless requests (no browser window), bcdata requires `PhantomJS
-<http://phantomjs.org/download.html>`__ which installs conveniently via homebrew
-on macOS:
-
-.. code-block:: console
-
-    $ brew install phantomjs
-
-Then install bcdata with pip:
 
 .. code-block:: console
 
@@ -54,24 +43,18 @@ For example, to order and download `airport <https://catalogue.data.gov.bc.ca/da
 .. code-block::
 
     >>> import bcdata
-    >>> order_id = bcdata.create_order('bc-airports', 'pilot@scenicflights.ca')
-    >>> out_data = bcdata.download_order(order_id)
-    >>> out_data
-    /tmp/unzipped_download_folder/GSR_AIRPORTS_SVW.gdb
+    >>> dl = bcdata.download('bc-airports', 'pilot@scenicflights.ca')
+    >>> dl
+    /tmp/bcdata/unzipped_download_folder/GSR_AIRPORTS_SVW.gdb
 
-Order creation takes about 30s.  Download times will vary based mainly on the
-size of your requested data. Expect about a minute for the smallest requests to
-complete.
+Download times will vary based mainly on the size of your requested data. Expect
+about a minute for the smallest requests to complete.
 
 
 **CLI**
 
-The CLI usage should hopefully be familiar to users of
-`fio <https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst>`__,
-`rio <https://github.com/mapbox/rasterio/blob/master/docs/cli.rst>`__, and
-`ogr2ogr <http://www.gdal.org/ogr2ogr.html>`__.
 The CLI uses the $BCDATA_EMAIL environment variable if available, otherwise
-an email must be provided as an option.
+an email address must be provided as an option.
 
 .. code-block:: console
 
@@ -84,8 +67,6 @@ an email must be provided as an option.
       --email TEXT       Email address. Default: $BCDATA_EMAIL
       -o, --output TEXT  Destination folder to write.
       -f, --format TEXT  Output file format. Default: FileGDB
-      --crs TEXT         Output file CRS. Default: BCAlbers
-      --geomark TEXT     BC Geomark ID. Eg: gm-3D54AEE61F1847BA881E8BF7DE23BA21
       --help             Show this message and exit.
 
 Common uses might look something like this:
@@ -96,32 +77,21 @@ Common uses might look something like this:
     $ export BCDATA_EMAIL=pilot@scenicflights.ca         # set a default email
     $ bcdata bc-airports                                 # use default email
     $ bcdata -o my_spots.gdb bc-airports                 # download to specified output location
-    $ bcdata bc-airports \                               # get airports within geomark as NAD83 shapefile
+    $ bcdata bc-airports \                               # get airports as shapefile
         -f shp \
-        --crs NAD83 \
-        -o crd_airports \
-        --geomark gm-3D54AEE61F1847BA881E8BF7DE23BA21
+        -o bc_airports
 
 Note that data are downloaded to specified folder.  For above example, a
-crd_airports folder would be created in the current working directory and the
+bc_airports folder would be created in the current working directory and the
 individual shp, prj etc files would be found within.
 
 Projections / CRS
 -------------------------
-Several projections are available on request from the Download Service, and are
-available via bcdata using the following CRS keys:
+Several projections are available on request from the Download Service, but this
+tool does not support this option, all data are downloaded as the default
+BC Albers (which should generally be EPSG:3005).
 
-:code:`['BCAlbers','UTMZ07','UTMZ08','UTMZ09','UTMZ10','UTMZ11','NAD83']`
-
-These keys are used rather than EPSG codes because:
-
-- BC Albers data may not be defined as EPSG:3005 but as a 'custom' projection
-- spherical data is provided as NAD83 (EPSG:4269) rather than the popular
-  WSG84 (EPSG:4326)
-
-An attempt was made to provide the standard EPSG:3005, EPSG:4326 options but
-writing via the FileGDB driver proved to be buggy. Use some other tool to
-reproject your downloads.
+Use some other tool to reproject your downloads.
 
 
 Development and testing
@@ -150,5 +120,5 @@ Windows can be `more challenging <https://github.com/Toblerity/Fiona#windows>`__
 
 Credits
 -------------------------
-- `Selenium <http://www.seleniumhq.org>`__
 - `pyskel <https://github.com/mapbox/pyskel>`__
+- @ateucher for the correct POST url and syntax
