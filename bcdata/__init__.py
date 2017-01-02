@@ -86,14 +86,14 @@ def download(url, email_address, driver="FileGDB"):
     try:
         polling.poll(
             lambda: requests.get(DOWNLOAD_URL,
-                                 {'orderId': order_id}).status_code < 400,
+                                 params = {'orderId': order_id}).status_code < 400,
             step=20,
             timeout=timeout)
     except:
         raise RuntimeError("Download for order_id "+order_id+" timed out")
 
     # download the zipfile to tmp
-    r = requests.get(DOWNLOAD_URL, {'orderId': order_id})
+    r = requests.get(DOWNLOAD_URL, params = {'orderId': order_id})
     soup = BeautifulSoup(r.text, "html5lib")
     url = soup.select('a.body')[0].get('href')
     download_path = os.path.join(tempfile.gettempdir(), "bcdata")
