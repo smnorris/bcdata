@@ -123,6 +123,8 @@ def download(url, email_address, driver="FileGDB"):
     zip_ref = zipfile.ZipFile(fp.name, 'r')
     zip_ref.extractall(unzip_folder)
     zip_ref.close()
+    ## delete the temporary zipfile
+    os.unlink(fp.name)
     # data is held in the only folder present in extract
     # find folder name: https://stackoverflow.com/questions/973473
     folders = next(os.walk(unzip_folder))[1]
