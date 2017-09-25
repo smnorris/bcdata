@@ -82,7 +82,7 @@ def download(url, email_address, driver="FileGDB"):
                       data=payload)
 
     # is the download ready?
-    timeout = 1800
+    timeout = 3600
     try:
         polling.poll(
             lambda: requests.get(DOWNLOAD_URL,
