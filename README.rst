@@ -29,6 +29,7 @@ This Python module and CLI script enables relatively quick, scriptable downloads
 Installation
 -------------------------
 Install via pip:
+
 .. code-block:: console
 
     $ pip install bcdata
