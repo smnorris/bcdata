@@ -73,8 +73,9 @@ an email address must be provided as an option.
 
     Options:
       --email TEXT       Email address. Default: $BCDATA_EMAIL
-      -o, --output TEXT  Destination folder to write.
-      -f, --format TEXT  Output file format. Default: FileGDB
+      -d, --driver TEXT  Output file format. Default: FileGDB
+      -o, --output TEXT  Output folder/gdb
+      -i, --info         Display info about dataset
       --help             Show this message and exit.
 
 Common uses might look something like this:
@@ -88,6 +89,8 @@ Common uses might look something like this:
     $ bcdata bc-airports \                               # get airports as shapefile
         -f shp \
         -o bc_airports
+    $ bcdata -i bc-airports                              # what are the source schema and table names?
+    {"name": "gsr_airports_svw", "schema": "whse_imagery_and_base_maps"}
 
 Note that data are downloaded to specified folder.  For above example, a
 bc_airports folder would be created in the current working directory and the
