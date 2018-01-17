@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.1.0 (2018-01-16)
+0.1.0 (2018-?)
 ------------------
 - upload release to PyPI
 - simplify file structure
