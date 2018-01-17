@@ -88,11 +88,10 @@ individual shp, prj etc files would be found within.
 Projections / CRS
 -------------------------
 Several projections are available on request from the Download Service, but this
-tool does not support this option, all data are downloaded as the default CRS
-(BC Albers, which should generally be EPSG:3005).
+tool does not support this option. All data are downloaded as the default CRS
+(BC Albers, which should be EPSG:3005).
 
 Use some other tool to reproject your downloads.
-
 
 Development and testing
 -------------------------
@@ -120,5 +119,5 @@ Windows can be `more challenging <https://github.com/Toblerity/Fiona#windows>`__
 
 Credits
 -------------------------
-- `pyskel <https://github.com/mapbox/pyskel>`__
-- @ateucher for the correct POST url and syntax
+- `@ateucher <https://github.com/ateucher>`__ for the correct POST url and syntax
+- `pyskel <https://github.com/mapbox/pyskel>`__ for the python packaging template
