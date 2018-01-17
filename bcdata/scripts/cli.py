@@ -31,13 +31,6 @@ def validate_format(ctx, param, value):
     return value
 
 
-#def validate_geomark(ctx, param, value):
-#    raise click.BadParameter("--geomark does not exist")
-
-
-#def validate_geomark(ctx, param, value):
-#    raise click.BadParameter("--bounds are invalid or outside of BC")
-
 @click.command('bcdata')
 @click.argument('dataset')
 @click.option('--email',
