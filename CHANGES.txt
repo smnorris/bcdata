@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.1.0 (2018-01-16)
+------------------
+- upload release to PyPI
+- simplify file structure
+- Python 3 compatible, test with tox (#23)
+- set default timeout 2hrs (#27, #26)
+- require html5lib (#29)
+- fix test (#21)
+
 0.0.5 (2016-10-18)
 ------------------
 - remove selenium and phantomjs dependencies

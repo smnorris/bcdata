@@ -1,11 +1,11 @@
 language: python
 python:
   - "2.7"
-  - "3.4"
+  - "3.6"
 install:
   - "pip install coveralls"
   - "pip install -e .[test]"
-script: 
+script:
   - py.test
   - coverage run --source=bcdata -m py.test
 after_success:

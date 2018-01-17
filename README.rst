@@ -48,7 +48,9 @@ For example, to order and download `airport <https://catalogue.data.gov.bc.ca/da
     /tmp/bcdata/unzipped_download_folder/GSR_AIRPORTS_SVW.gdb
 
 Download times will vary based mainly on the size of your requested data. Expect
-about a minute for the smallest requests to complete.
+about a minute for the smallest requests to complete. Individual downloads will
+time out after 2hours - this is long enough for datasets larger than the max
+size permitted on the web form.
 
 
 **CLI**

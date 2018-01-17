@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import shutil
 
@@ -12,19 +13,13 @@ def validate_email(ctx, param, value):
         return value
 
 
-def validate_crs(ctx, param, value):
-    if value not in bcdata.CRS.keys():
-        raise click.BadParameter('--crs must be one of '+bcdata.CRS.keys())
-    return value
-
-
 def validate_format(ctx, param, value):
     # add shortcuts to formats
     shortcuts = {"shp": "ESRI Shapefile",
                  "Shapefile": "ESRI Shapefile",
                  "gdb": "FileGDB"}
-    valid_keys = bcdata.FORMATS.keys()+shortcuts.keys()
-    if value in shortcuts.keys():
+    valid_keys = list(bcdata.formats.keys())+list(shortcuts.keys())
+    if value in list(shortcuts.keys()):
         value = shortcuts[value]
     if value not in valid_keys:
         raise click.BadParameter("--format must be one of "+valid_keys)
