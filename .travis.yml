@@ -5,6 +5,8 @@ python:
 install:
   - "pip install coveralls"
   - "pip install -e .[test]"
+env:
+  - BCDATA_EMAIL=bcdatatesting@gmail.com
 script:
   - py.test
   - coverage run --source=bcdata -m py.test

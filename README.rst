@@ -2,6 +2,12 @@
 
 British Columbia's data distribution service, automated.
 
+.. image:: https://travis-ci.org/smnorris/bcdata.png?branch=master
+   :target: https://travis-ci.org/smnorris/bcdata
+
+.. image:: https://coveralls.io/repos/github/smnorris/bcdata/badge.svg?branch=master
+   :target: https://coveralls.io/github/smnorris/bcdata?branch=master
+
 There is a `wealth of British Columbia geographic information available as open
 data <https://catalogue.data.gov.bc.ca/dataset?download_audience=Public>`__,
 but access to much of it is available only via a 'Custom Download' through the
