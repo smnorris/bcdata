@@ -60,7 +60,8 @@ def info(url):
     return info
 
 
-def download(url, email_address, driver="FileGDB", timeout=7200):
+def download(url, email_address, driver="FileGDB", download_path=None,
+             timeout=7200):
     """Submit a Data BC Distribution Service order for the specified dataset
     """
 
@@ -106,7 +107,11 @@ def download(url, email_address, driver="FileGDB", timeout=7200):
     r = requests.get(DOWNLOAD_URL, params={'orderId': order_id})
     soup = BeautifulSoup(r.text, "html5lib")
     url = soup.select('a.body')[0].get('href')
-    download_path = os.path.join(tempfile.gettempdir(), "bcdata")
+
+    # download to /bcdata in temp if no path supplied
+    if not download_path:
+        download_path = os.path.join(tempfile.gettempdir(), "bcdata")
+
     make_sure_path_exists(download_path)
 
     # using a simple urlretrieve works, but complains and fails tests with:

@@ -6,6 +6,7 @@ from click.testing import CliRunner
 from bcdata.cli import cli
 
 DATASET = 'bc-airports'
+EMAIL = os.environ["BCDATA_EMAIL"]
 
 
 def setup():
@@ -27,7 +28,9 @@ def test_cli_basic():
     runner = CliRunner()
     result = runner.invoke(
         cli,
-        ['--output', 'tests/data/airports.gdb', DATASET])
+        ['--output', 'tests/data/airports.gdb',
+         '--email', EMAIL,
+         DATASET])
     assert result.exit_code == 0
     assert os.path.exists("tests/data/airports.gdb") == 1
 

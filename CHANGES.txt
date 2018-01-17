@@ -1,12 +1,14 @@
 Changes
 =======
 
-0.1.0 (2018-?)
+0.1.0 (2018-01-17)
 ------------------
 - upload release to PyPI
+- add continuous integration testing
 - simplify file structure
 - add info function/option (#30)
 - require html5lib (#29)
+- add path option to download function (#28)
 - set default timeout 2hrs (#27, #26)
 - Python 3 compatible, test with tox (#23)
 - fix test (#21)

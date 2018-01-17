@@ -28,11 +28,10 @@ This Python module and CLI script enables relatively quick, scriptable downloads
 
 Installation
 -------------------------
-bcdata has been tested only on macOS but a should work fine on other OS.
-
+Install via pip:
 .. code-block:: console
 
-    $ pip install https://github.com/smnorris/bcdata/zipball/master
+    $ pip install bcdata
 
 Usage
 -------------------------
