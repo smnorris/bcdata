@@ -8,6 +8,12 @@ import fiona
 EMAIL = os.environ["BCDATA_EMAIL"]
 
 
+def test_info():
+    info = bcdata.info('bc-airports')
+    assert info == {'name': u'gsr_airports_svw',
+                    'schema': u'whse_imagery_and_base_maps'}
+
+
 def test_shapefile():
     out_wksp = bcdata.download('bc-airports',
                                EMAIL,

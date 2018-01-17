@@ -7,9 +7,9 @@ except ImportError:
 import tempfile
 import zipfile
 
+import re
 import requests
 from bs4 import BeautifulSoup
-
 import polling
 
 import bcdata
@@ -32,8 +32,8 @@ def make_sure_path_exists(path):
         pass
 
 
-def download(url, email_address, driver="FileGDB", timeout=7200):
-    """Submit a Data BC Distribution Service order for the specified dataset
+def scrape(url):
+    """Open the catalog page
     """
     # if just the key is provided, pre-pend the full url
     if os.path.split(url)[0] == '':
@@ -44,8 +44,27 @@ def download(url, email_address, driver="FileGDB", timeout=7200):
     if r.status_code != 200:
         raise ValueError('DataBC Catalog URL does not exist')
 
-    # find the download link on the catalog page
-    soup = BeautifulSoup(r.text, "html5lib")
+    # return the page contents
+    return BeautifulSoup(r.text, "html5lib")
+
+
+def info(url):
+    """Return basic info about a DataBC Catalogue BCGW dataset
+    """
+    info = {}
+    soup = scrape(url)
+    description = soup.find(id="object-description")
+    object_name = description.find(
+        string=re.compile("Object Name:")).split(': ')[1]
+    info['schema'], info['name'] = object_name.lower().split('.')
+    return info
+
+
+def download(url, email_address, driver="FileGDB", timeout=7200):
+    """Submit a Data BC Distribution Service order for the specified dataset
+    """
+
+    soup = scrape(url)
     dwds_link = soup.select('a[href^='+DWDS+']')[0].get("href")
 
     # open the download link

@@ -13,6 +13,16 @@ def setup():
         os.mkdir('tests/data')
 
 
+def test_cli_info():
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ['--info', DATASET])
+    assert result.exit_code == 0
+    assert '"name": "gsr_airports_svw' in result.output
+    assert '"schema": "whse_imagery_and_base_maps' in result.output
+
+
 def test_cli_basic():
     runner = CliRunner()
     result = runner.invoke(
