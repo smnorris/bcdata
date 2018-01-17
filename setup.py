@@ -32,6 +32,7 @@ setup(name='bcdata',
       install_requires=[
           'click',
           'requests',
+          'html5lib',
           'beautifulsoup4',
           'polling'
       ],
