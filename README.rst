@@ -90,7 +90,7 @@ Common uses might look something like this:
         -f shp \
         -o bc_airports
     $ bcdata -i bc-airports                              # what are the source schema and table names?
-    {"name": "gsr_airports_svw", "schema": "whse_imagery_and_base_maps"}
+    {"table": "gsr_airports_svw", "schema": "whse_imagery_and_base_maps"}
 
 Note that data are downloaded to specified folder.  For above example, a
 bc_airports folder would be created in the current working directory and the
