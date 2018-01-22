@@ -39,10 +39,9 @@ Usage
 The most basic usage requires:
 
 - a valid email address (a required Distribution Service form input, the address is not otherwise used)
-- url (or identifier portion of url path) for any `DataBC Catalog <https://catalogue.data.gov.bc.ca>`__ record that includes a 'Custom Download' button.
+- name of any `DataBC Catalog <https://catalogue.data.gov.bc.ca>`__ package/dataset that is available via the Download Service
 
-For example, to order and download `airport <https://catalogue.data.gov.bc.ca/dataset/bc-airports>`__ data, use either
-:code:`https://catalogue.data.gov.bc.ca/dataset/bc-airports` or :code:`bc-airports`
+For example, to order and download `airport <https://catalogue.data.gov.bc.ca/dataset/bc-airports>`__ data, use :code:`bc-airports` - the final segment of the url string is the package/dataset name. For `Grizzly Bear Population Units <https://catalogue.data.gov.bc.ca/dataset/grizzly-bear-population-units>`__ use :code:`grizzly-bear-population-units`.
 
 **Python module**
 
@@ -55,7 +54,7 @@ For example, to order and download `airport <https://catalogue.data.gov.bc.ca/da
 
 Download times will vary based mainly on the size of your requested data. Expect
 about a minute for the smallest requests to complete. Individual downloads will
-time out after 2hours - this is long enough for datasets larger than the max
+time out after 2 hours - this is long enough for datasets larger than the max
 size permitted on the web form.
 
 
