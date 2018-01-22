@@ -42,7 +42,12 @@ def cli(dataset, email, driver, output, info):
     """Download a dataset from BC Data Distribution Service
     """
     if info:
-        click.echo(json.dumps(bcdata.info(dataset)))
+        package_info = bcdata.package_show(dataset)
+        object_name = package_info['object_name'].lower()
+        r = {'schema': object_name.split('.')[0],
+             'table': object_name.split('.')[1]}
+        click.echo(json.dumps(r))
+
     else:
         # download to temp
         dl_path = bcdata.download(dataset,

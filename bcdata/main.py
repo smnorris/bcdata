@@ -7,7 +7,6 @@ except ImportError:
 import tempfile
 import zipfile
 
-import re
 import requests
 from bs4 import BeautifulSoup
 import polling
@@ -15,7 +14,7 @@ import polling
 import bcdata
 
 # Data BC URLs
-CATALOG_URL = 'https://catalogue.data.gov.bc.ca'
+BCDC_API_URL = 'https://catalogue.data.gov.bc.ca/api/3/action/'
 DWDS = "https://apps.gov.bc.ca/pub/dwds"
 DWDS_SUBMIT = DWDS+"/viewOrderSubmit.so"
 DOWNLOAD_URL = "https://apps.gov.bc.ca/pub/dwds/initiateDownload.do?"
@@ -32,41 +31,30 @@ def make_sure_path_exists(path):
         pass
 
 
-def scrape(url):
-    """Open the catalog page
+def package_show(package):
+    """Return basic info about a DataBC Catalogue dataset
     """
-    # if just the key is provided, pre-pend the full url
-    if os.path.split(url)[0] == '':
-        url = os.path.join(CATALOG_URL, 'dataset', url)
-    # request the url
-    r = requests.get(url)
-    # bail if it doesn't exist
+    params = {'id': package}
+    r = requests.get(BCDC_API_URL+'package_show', params=params)
     if r.status_code != 200:
-        raise ValueError('DataBC Catalog URL does not exist')
-
-    # return the page contents
-    return BeautifulSoup(r.text, "html5lib")
-
-
-def info(url):
-    """Return basic info about a DataBC Catalogue BCGW dataset
-    """
-    info = {}
-    soup = scrape(url)
-    description = soup.find(id="object-description")
-    object_name = description.find(
-        string=re.compile("Object Name:")).split(': ')[1]
-    info['schema'], info['name'] = object_name.lower().split('.')
-    return info
+        raise ValueError('{d} is not present in DataBC API list'
+                         .format(d=package))
+    return r.json()['result']
 
 
-def download(url, email_address, driver="FileGDB", download_path=None,
+def download(package, email_address, driver="FileGDB", download_path=None,
              timeout=7200):
     """Submit a Data BC Distribution Service order for the specified dataset
     """
+    package_info = package_show(package)
+    dwds_resources = [resource['url'] for resource in package_info['resources']
+                      if 'dwds' in resource['url']]
 
-    soup = scrape(url)
-    dwds_link = soup.select('a[href^='+DWDS+']')[0].get("href")
+    # assume that the first resource is the one resource
+    if len(dwds_resources) > 0:
+        dwds_link = dwds_resources[0]
+    else:
+        raise ValueError('Specified package is not available via DWDS')
 
     # open the download link
     r = requests.get(dwds_link)

@@ -20,7 +20,7 @@ def test_cli_info():
         cli,
         ['--info', DATASET])
     assert result.exit_code == 0
-    assert '"name": "gsr_airports_svw' in result.output
+    assert '"table": "gsr_airports_svw' in result.output
     assert '"schema": "whse_imagery_and_base_maps' in result.output
 
 
