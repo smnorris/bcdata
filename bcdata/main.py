@@ -65,7 +65,6 @@ def download(package, email_address, driver="FileGDB", download_path=None,
     order_id = r.cookies["DWDS_orderId"]
     payload = {"aoiOption": "0",
                "clippingMethodMapsheet": "0",
-               "recalc_type": "mapsheet",
                "clippingMethod": "0",
                "clippingMethodShape": "0",
                "prj": "BC Albers",
