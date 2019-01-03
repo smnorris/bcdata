@@ -1,63 +1,73 @@
-from __future__ import absolute_import
 import json
-import os
-import shutil
-
 import click
-import bcdata
+
+from cligj import indent_opt
+
+from bcdata import package_show
+from bcdata import get_data
+from bcdata import list_tables
+from bcdata import get_count
 
 
-def validate_email(ctx, param, value):
-    if not value:
-        raise click.BadParameter('Provide --email or set $BCDATA_EMAIL')
-    else:
-        return value
+@click.group()
+def cli():
+    pass
 
 
-def validate_format(ctx, param, value):
-    # add shortcuts to formats
-    shortcuts = {"shp": "ESRI Shapefile",
-                 "Shapefile": "ESRI Shapefile",
-                 "gdb": "FileGDB"}
-    valid_keys = list(bcdata.formats.keys())+list(shortcuts.keys())
-    if value in list(shortcuts.keys()):
-        value = shortcuts[value]
-    if value not in valid_keys:
-        raise click.BadParameter("--format must be one of "+valid_keys)
-    return value
-
-
-@click.command('bcdata')
-@click.argument('dataset')
-@click.option('--email',
-              help="Email address. Default: $BCDATA_EMAIL",
-              envvar='BCDATA_EMAIL',
-              callback=validate_email)
-@click.option('--driver', '-d', default="FileGDB",
-              help="Output file format. Default: FileGDB",
-              callback=validate_format)
-@click.option('--output', '-o', help="Output folder/gdb")
-@click.option('--info', '-i', is_flag=True, help="Display info about dataset")
-def cli(dataset, email, driver, output, info):
-    """Download a dataset from BC Data Distribution Service
+@cli.command()
+@click.argument("dataset")
+@click.option("--cql_filter", help="CQL filter")
+@click.option("--out_file", "-o", help="Output file")
+@click.option("--count", "-c", help="Count of features to dump")
+def dump(dataset, cql_filter, out_file, count):
+    """Dump geo data layer from DataBC WFS
     """
-    if info:
-        package_info = bcdata.package_show(dataset)
-        object_name = package_info['object_name'].lower()
-        r = {'schema': object_name.split('.')[0],
-             'table': object_name.split('.')[1]}
-        click.echo(json.dumps(r))
-
+    if "." not in dataset:
+        table = package_show(dataset)["object_name"]
     else:
-        # download to temp
-        dl_path = bcdata.download(dataset,
-                                  email,
-                                  driver=driver)
-        if not dl_path:
-            click.abort("No data downloaded, check email to view issue")
-        # if output not given, write to current directory using default folder name
-        if not output:
-            output = os.path.join(os.getcwd(), os.path.split(dl_path)[1])
-        # copy data to specified path
-        shutil.copytree(dl_path, output)
-        click.echo(dataset + " downloaded to " + output)
+        table = dataset
+    data = get_data(table, cql_filter, count=count)
+    if out_file:
+        with open(out_file, "w") as f:
+            json.dump(data.json(), f)
+    else:
+        sink = click.get_text_stream("stdout")
+        sink.write(json.dumps(data))
+
+
+@cli.command()
+def list():
+    """List DataBC layers available via dump
+    """
+    # This works too, but is much slower:
+    # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
+
+    # perhaps cache this list for speed?
+    # if cached, could use to validate dataset arg for dump and count
+    for table in sorted(list_tables()):
+        click.echo(table)
+
+
+@cli.command()
+@click.argument("dataset")
+@indent_opt
+# Options to pick out a single metadata item and print it as
+# a string.
+@click.option('--count', 'meta_member', flag_value='count',
+              help="Print the count of features.")
+@click.option('--name', 'meta_member', flag_value='name',
+              help="Print the datasource's name.")
+def info(dataset, indent, meta_member):
+    """Print basic info about a DataBC WFS layer
+    """
+    if "." not in dataset:
+        table = package_show(dataset)["object_name"]
+    else:
+        table = dataset
+    info = {}
+    info["name"] = table
+    info["count"] = get_count(table)
+    if meta_member:
+        click.echo(info[meta_member])
+    else:
+        click.echo(json.dumps(info, indent=indent))
