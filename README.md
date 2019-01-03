@@ -52,7 +52,7 @@ Find data of interest manually using the [DataBC Catalogue](https://catalogue.da
 
 Common uses might look something like this:
 
-    $ bcdata info bc-airports
+    $ bcdata info bc-airports --indent 2
     {
       "name": "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW",
       "count": 455,
@@ -68,11 +68,12 @@ Common uses might look something like this:
         "geometry_column": "SHAPE"
       }
     }
-    $ bcdata dump bc-airports -o bc-airports.geojson
+    $ bcdata dump bc-airports > bc-airports.geojson
     $ bcdata dump \
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
       -o terrace_airport.geojson \
-      --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
+      --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
+      --crs EPSG:4326
 
 
 ## Projections / CRS
