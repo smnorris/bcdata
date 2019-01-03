@@ -1,10 +1,16 @@
 import os
 import xml.etree.ElementTree as ET
+import sys
+import warnings
 
 from owslib.wfs import WebFeatureService
 import requests
 
 import bcdata
+
+
+if not sys.warnoptions:
+        warnings.simplefilter("ignore")
 
 
 def bcdc_package_show(package):
