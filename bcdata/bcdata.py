@@ -1,42 +1,34 @@
 import os
 import xml.etree.ElementTree as ET
 
+from owslib.wfs import WebFeatureService
 import requests
 
-
-BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
-WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/"
+import bcdata
 
 
-def list_tables():
-    """Get WFS capabilities and extract a list of all datasets available
-    """
-    url = "http://openmaps.gov.bc.ca/geo/ows"
-    payload = {"service": "WFS",
-               "version": "2.0.0",
-               "request": "GetCapabilities"}
-    r = requests.get(url, params=payload)
-    root = ET.fromstring(r.text)
-    # get a list of all tables
-    tables = [e[0].text.split(":")[1] for e in root[3]]
-    return tables
-
-
-def package_show(package):
+def bcdc_package_show(package):
     """Query DataBC Catalogue API about given dataset/package
     """
     params = {"id": package}
-    r = requests.get(BCDC_API_URL + "package_show", params=params)
+    r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
     if r.status_code != 200:
         raise ValueError("{d} is not present in DataBC API list".format(d=package))
     return r.json()["result"]
+
+
+def list_tables():
+    """Return a list of all datasets available via WFS
+    """
+    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version='2.0.0')
+    return [i.strip('pub:') for i in list(wfs.contents)]
 
 
 def get_count(object_name):
     """Ask DataBC WFS how many features there are in a table
     """
     #https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
-    url = os.path.join(WFS_URL, object_name, "wfs")
+    url = os.path.join(bcdata.WFS_URL, object_name, "wfs")
     payload = {
         "service": "WFS",
         "version": "2.0.0",
@@ -59,9 +51,9 @@ def get_data(dataset, query=None, number=None):
     if dataset in list_tables():
         table = dataset
     else:
-        table = package_show(dataset)["object_name"]
+        table = bcdc_package_show(dataset)["object_name"]
 
-    url = os.path.join(WFS_URL, table, "wfs")
+    url = os.path.join(bcdata.WFS_URL, table, "wfs")
     payload = {
         "service": "WFS",
         "version": "2.0.0",

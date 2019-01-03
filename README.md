@@ -80,6 +80,7 @@ While the DataBC WFS supports multiple projections, this tool does not. All data
 
 ## Other implementations
 - [bdata R package](https://github.com/bcgov/bcdata)
+- [OWSLib](https://github.com/geopython/OWSLib) has basic WFS capabilities
 - GDAL
 
         # list all layers
@@ -103,3 +104,14 @@ While the DataBC WFS supports multiple projections, this tool does not. All data
           -lco GEOMETRY_NAME=geom \
           -nln gsr_airports_svw \
           "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
+
+        # ungulate winter range to shape
+        # this only grabs the first 10,000 records
+        ogr2ogr \
+          uwr.shp \
+          -dsco OGR_WFS_PAGING_ALLOWED=ON \
+          "https://openmaps.gov.bc.ca/geo/pub/WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP&outputFormat=json&SRSNAME=epsg%3A3005"
+
+        # get the data via wget, still 10k limit
+        wget -O t.gml "https://openmaps.gov.bc.ca/geo/pub/WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP&SRSNAME=epsg%3A3005"
+

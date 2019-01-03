@@ -3,10 +3,7 @@ import click
 
 from cligj import indent_opt
 
-from bcdata import package_show
-from bcdata import get_data
-from bcdata import list_tables
-from bcdata import get_count
+import bcdata
 
 
 @click.group()
@@ -22,11 +19,11 @@ def cli():
 def dump(dataset, query, out_file, number):
     """Dump a data layer from DataBC WFS
     """
-    if dataset in list_tables():
+    if dataset in bcdata.list_tables():
         table = dataset
     else:
-        table = package_show(dataset)["object_name"]
-    data = get_data(table, query=query, number=number)
+        table = bcdata.bcdc_package_show(dataset)["object_name"]
+    data = bcdata.get_data(table, query=query, number=number)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)
@@ -44,7 +41,7 @@ def list():
 
     # perhaps cache this list for speed?
     # if cached, could use to validate dataset arg for dump and count
-    for table in sorted(list_tables()):
+    for table in sorted(bcdata.list_tables()):
         click.echo(table)
 
 
@@ -60,13 +57,15 @@ def list():
 def info(dataset, indent, meta_member):
     """Print basic info about a DataBC WFS layer
     """
-    if dataset in list_tables():
+    if dataset in bcdata.list_tables():
         table = dataset
     else:
-        table = package_show(dataset)["object_name"]
+        table = bcdata.bcdc_package_show(dataset)["object_name"]
+    wfs = bcdata.WebFeatureService(url=url, version='2.0.0')
     info = {}
     info["name"] = table
-    info["count"] = get_count(table)
+    info["count"] = bcdata.get_count(table)
+    info["schema"] = wfs.get_schema('pub:'+table)
     if meta_member:
         click.echo(info[meta_member])
     else:
