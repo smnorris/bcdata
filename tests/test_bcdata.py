@@ -37,5 +37,3 @@ def test_cql_filter():
     data = bcdata.get_data(table, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'")
     assert len(data['features']) == 1
     assert data['features'][0]['properties']['AIRPORT_NAME'] == 'Terrace (Northwest Regional) Airport'
-
-

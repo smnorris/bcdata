@@ -2,6 +2,7 @@ import json
 import click
 
 from cligj import indent_opt
+from owslib.wfs import WebFeatureService
 
 import bcdata
 
@@ -61,7 +62,7 @@ def info(dataset, indent, meta_member):
         table = dataset
     else:
         table = bcdata.bcdc_package_show(dataset)["object_name"]
-    wfs = bcdata.WebFeatureService(url=url, version='2.0.0')
+    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version='2.0.0')
     info = {}
     info["name"] = table
     info["count"] = bcdata.get_count(table)
