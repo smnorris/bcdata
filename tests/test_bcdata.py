@@ -21,23 +21,23 @@ def test_get_count_filtered():
 
 def test_get_data_small():
     table = bcdata.bcdc_package_show(AIRPORTS_KEY)['object_name']
-    data = bcdata.get_data(table)
+    data = bcdata.get_data(table, crs="EPSG:4326")
     assert data['type'] == 'FeatureCollection'
+
+
+def test_get_data_paged():
+    data = bcdata.get_data_paged(AIRPORTS_KEY, crs="EPSG:4326", pagesize=250)
+    assert len(data['features']) == 455
 
 
 def test_get_one():
     table = bcdata.bcdc_package_show(UTMZONES_KEY)['object_name']
-    data = bcdata.get_data(table, number=1)
+    data = bcdata.get_data(table, crs="EPSG:4326", number=1)
     assert len(data['features']) == 1
-
-#def test_get_data_medium():
-#    table = bcdata.bcdc_package_show(BEC_KEY)['object_name']
-#    data = get_data(table)
-#    assert data['type'] == 'FeatureCollection'
 
 
 def test_cql_filter():
     table = bcdata.bcdc_package_show(AIRPORTS_KEY)['object_name']
-    data = bcdata.get_data(table, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'")
+    data = bcdata.get_data(table, crs="EPSG:4326", query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'")
     assert len(data['features']) == 1
     assert data['features'][0]['properties']['AIRPORT_NAME'] == 'Terrace (Northwest Regional) Airport'

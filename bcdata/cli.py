@@ -1,10 +1,15 @@
 import json
 import click
+import logging
 
 from cligj import indent_opt
 from owslib.wfs import WebFeatureService
 
 import bcdata
+
+
+bcdata.configure_logging()
+log = logging.getLogger(__name__)
 
 
 @click.group()
