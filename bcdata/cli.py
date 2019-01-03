@@ -13,6 +13,16 @@ def cli():
 
 
 @cli.command()
+def list():
+    """List DataBC layers available via WMS
+    """
+    # This works too, but is much slower:
+    # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
+    for table in sorted(bcdata.list_tables()):
+        click.echo(table)
+
+
+@cli.command()
 @click.argument("dataset")
 @click.option(
     "--query",
@@ -23,10 +33,7 @@ def cli():
 def dump(dataset, query, out_file, number):
     """Dump a data layer from DataBC WFS
     """
-    if dataset in bcdata.list_tables():
-        table = dataset
-    else:
-        table = bcdata.bcdc_package_show(dataset)["object_name"]
+    table = bcdata.validate_name(dataset)
     data = bcdata.get_data(table, query=query, number=number)
     if out_file:
         with open(out_file, "w") as f:
@@ -34,19 +41,6 @@ def dump(dataset, query, out_file, number):
     else:
         sink = click.get_text_stream("stdout")
         sink.write(json.dumps(data))
-
-
-@cli.command()
-def list():
-    """List DataBC layers available to dump
-    """
-    # This works too, but is much slower:
-    # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
-
-    # perhaps cache this list for speed?
-    # if cached, could use to validate dataset arg for dump and count
-    for table in sorted(bcdata.list_tables()):
-        click.echo(table)
 
 
 @cli.command()
@@ -63,10 +57,7 @@ def list():
 def info(dataset, indent, meta_member):
     """Print basic info about a DataBC WFS layer
     """
-    if dataset in bcdata.list_tables():
-        table = dataset
-    else:
-        table = bcdata.bcdc_package_show(dataset)["object_name"]
+    table = bcdata.validate_name(dataset)
     wfs = WebFeatureService(url=bcdata.SERVICE_URL, version="2.0.0")
     info = {}
     info["name"] = table

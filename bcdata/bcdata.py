@@ -17,23 +17,32 @@ def bcdc_package_show(package):
     return r.json()["result"]
 
 
+def validate_name(dataset):
+    if dataset in list_tables():
+        return dataset
+    else:
+        return bcdc_package_show(dataset)["object_name"]
+
+
 def list_tables():
     """Return a list of all datasets available via WFS
     """
+    # todo: it might be helpful to cache this list for speed
     wfs = WebFeatureService(url=bcdata.SERVICE_URL, version="2.0.0")
     return [i.strip("pub:") for i in list(wfs.contents)]
 
 
-def get_count(object_name):
+def get_count(dataset):
     """Ask DataBC WFS how many features there are in a table
     """
     # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
-    url = os.path.join(bcdata.WFS_URL, object_name, "wfs")
+    table = validate_name(dataset)
+    url = os.path.join(bcdata.WFS_URL, table, "wfs")
     payload = {
         "service": "WFS",
         "version": "2.0.0",
         "request": "GetFeature",
-        "typeName": object_name,
+        "typeName": table,
         "resultType": "hits",
         "outputFormat": "json",
     }
@@ -48,10 +57,7 @@ def get_data(dataset, query=None, number=None):
     # http://www.opengeospatial.org/standards/wfs
     # http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
     # http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
-    if dataset in list_tables():
-        table = dataset
-    else:
-        table = bcdc_package_show(dataset)["object_name"]
+    table = validate_name(dataset)
 
     url = os.path.join(bcdata.WFS_URL, table, "wfs")
     payload = {
