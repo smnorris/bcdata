@@ -37,7 +37,7 @@ def info(dataset, indent, meta_member):
     """Print basic info about a DataBC WFS layer
     """
     table = bcdata.validate_name(dataset)
-    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version="2.0.0")
+    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     info = {}
     info["name"] = table
     info["count"] = bcdata.get_count(table)

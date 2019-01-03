@@ -8,5 +8,5 @@ __version__ = "0.3.0"
 
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
-WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/"
-SERVICE_URL = "http://openmaps.gov.bc.ca/geo/ows"
+WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
+OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"

@@ -34,7 +34,7 @@ def list_tables():
     """Return a list of all datasets available via WFS
     """
     # todo: it might be helpful to cache this list for speed
-    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version="2.0.0")
+    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     return [i.strip("pub:") for i in list(wfs.contents)]
 
 
@@ -43,7 +43,6 @@ def get_count(dataset, query=None):
     """
     # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
     table = validate_name(dataset)
-    url = os.path.join(bcdata.WFS_URL, table, "wfs")
     payload = {
         "service": "WFS",
         "version": "2.0.0",
@@ -54,7 +53,7 @@ def get_count(dataset, query=None):
     }
     if query:
         payload["CQL_FILTER"] = query
-    r = requests.get(url, params=payload)
+    r = requests.get(bcdata.WFS_URL, params=payload)
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
@@ -66,8 +65,6 @@ def get_data(dataset, query=None, number=None, crs="epsg:3005"):
     # http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
     # http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
     table = validate_name(dataset)
-
-    url = os.path.join(bcdata.WFS_URL, table, "wfs")
     payload = {
         "service": "WFS",
         "version": "2.0.0",
@@ -81,7 +78,8 @@ def get_data(dataset, query=None, number=None, crs="epsg:3005"):
     if query:
         payload["CQL_FILTER"] = query
 
-    r = requests.get(url, params=payload)
+    r = requests.get(bcdata.WFS_URL, params=payload)
+
     if r.status_code != 200:
         ValueError("WFS error {} - check your CQL_FILTER".format(str(r.status_code)))
     else:
