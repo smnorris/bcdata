@@ -53,7 +53,21 @@ Find data of interest manually using the [DataBC Catalogue](https://catalogue.da
 Common uses might look something like this:
 
     $ bcdata info bc-airports
-    {"name": "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW", "count": 455}
+    {
+      "name": "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW",
+      "count": 455,
+      "schema": {
+        "properties": {
+          "CUSTODIAN_ORG_DESCRIPTION": "string",
+          "BUSINESS_CATEGORY_CLASS": "string",
+          "BUSINESS_CATEGORY_DESCRIPTION": "string",
+          "OCCUPANT_TYPE_DESCRIPTION": "string",
+          ...etc...
+        },
+        "geometry": "GeometryCollection",
+        "geometry_column": "SHAPE"
+      }
+    }
     $ bcdata dump bc-airports -o bc-airports.geojson
     $ bcdata dump \
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
