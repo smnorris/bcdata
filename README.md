@@ -25,10 +25,10 @@ This Python module and CLI attempts to make downloads of BC geographic data quic
 
 ## Usage
 
-Find data of interest using the [DataBC Catalogue](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public). When you have found your data of interest, note either the last portion of the url or the `Object Name`. For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airports), either of these keys will work:
+Find data of interest manually using the [DataBC Catalogue](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public). Once you have found your data of interest, note either the `id` (the last portion of the url, also known as the package name) or the `Object Name` (Under `Object Description`). For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airports), either of these keys will work:
 
-- `bc-airports`
-- `WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW`
+- `bc-airports` (id)
+- `WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW` (object name)
 
 **Python module**
 

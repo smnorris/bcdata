@@ -3,7 +3,7 @@ Changes
 
 0.3.0 (2019-01-02)
 ------------------
-- major revision, nothing is backwards compatible
+Major revision, nothing is backwards compatible
 - download data via WFS rather than DWDS
 - functions renamed
 - data download is to geojson only
