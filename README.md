@@ -37,8 +37,6 @@ Find data of interest manually using the [DataBC Catalogue](https://catalogue.da
     >>> geojson
     {'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'id': 'WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW.fid-f0cdbe4_16811fe142b_-6f34', 'geometry': {'type': 'Point', ...
 
-Download times will vary based mainly on the size of your requested data.
-
 **CLI**
 
     $ bcdata --help
@@ -62,9 +60,10 @@ Common uses might look something like this:
       -o terrace_airport.geojson \
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
 
+
 ## Projections / CRS
 
-While the DataBC WFS supports multiple projections, this tool does not. All data is downloaded as `EPSG:3005` (BC Albers).
+Data are downloaded as either BC Albers (`EPSG:3005`) (default) or WGS84 (`EPSG:4326`).
 
 
 ## Development and testing
