@@ -15,6 +15,10 @@ def test_get_count():
     assert bcdata.get_count(table) == 6
 
 
+def test_get_count_filtered():
+    assert bcdata.get_count(UTMZONES_KEY, query="UTM_ZONE=10") == 1
+
+
 def test_get_data_small():
     table = bcdata.bcdc_package_show(AIRPORTS_KEY)['object_name']
     data = bcdata.get_data(table)

@@ -24,27 +24,6 @@ def list():
 
 @cli.command()
 @click.argument("dataset")
-@click.option(
-    "--query",
-    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
-)
-@click.option("--out_file", "-o", help="Output file")
-@click.option("--number", "-n", help="Number of features to dump")
-def dump(dataset, query, out_file, number):
-    """Dump a data layer from DataBC WFS
-    """
-    table = bcdata.validate_name(dataset)
-    data = bcdata.get_data(table, query=query, number=number)
-    if out_file:
-        with open(out_file, "w") as f:
-            json.dump(data.json(), f)
-    else:
-        sink = click.get_text_stream("stdout")
-        sink.write(json.dumps(data))
-
-
-@cli.command()
-@click.argument("dataset")
 @indent_opt
 # Options to pick out a single metadata item and print it as
 # a string.
@@ -67,3 +46,24 @@ def info(dataset, indent, meta_member):
         click.echo(info[meta_member])
     else:
         click.echo(json.dumps(info, indent=indent))
+
+
+@cli.command()
+@click.argument("dataset")
+@click.option(
+    "--query",
+    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+)
+@click.option("--out_file", "-o", help="Output file")
+@click.option("--number", "-n", help="Number of features to dump")
+def dump(dataset, query, out_file, number):
+    """Dump a data layer from DataBC WFS
+    """
+    table = bcdata.validate_name(dataset)
+    data = bcdata.get_data(table, query=query, number=number)
+    if out_file:
+        with open(out_file, "w") as f:
+            json.dump(data.json(), f)
+    else:
+        sink = click.get_text_stream("stdout")
+        sink.write(json.dumps(data))

@@ -38,7 +38,7 @@ def list_tables():
     return [i.strip("pub:") for i in list(wfs.contents)]
 
 
-def get_count(dataset):
+def get_count(dataset, query=None):
     """Ask DataBC WFS how many features there are in a table
     """
     # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
@@ -52,6 +52,8 @@ def get_count(dataset):
         "resultType": "hits",
         "outputFormat": "json",
     }
+    if query:
+        payload["CQL_FILTER"] = query
     r = requests.get(url, params=payload)
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
