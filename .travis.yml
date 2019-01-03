@@ -1,12 +1,10 @@
 language: python
 python:
-  - "2.7"
   - "3.6"
+  - "3.7"
 install:
   - "pip install coveralls"
   - "pip install -e .[test]"
-env:
-  - BCDATA_EMAIL=bcdatatesting@gmail.com
 script:
   - py.test
   - coverage run --source=bcdata -m py.test
