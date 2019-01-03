@@ -58,8 +58,8 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def get_data(dataset, query=None, number=None):
-    """Get GeoJSON from DataBC WFS (EPSG:3005 only)
+def get_data(dataset, query=None, number=None, crs="epsg:3005"):
+    """Get GeoJSON from DataBC WFS
     """
     # references:
     # http://www.opengeospatial.org/standards/wfs
@@ -74,7 +74,7 @@ def get_data(dataset, query=None, number=None):
         "request": "GetFeature",
         "typeName": table,
         "outputFormat": "json",
-        "SRSNAME": "epsg:3005",
+        "SRSNAME": crs,
     }
     if number:
         payload["count"] = str(number)

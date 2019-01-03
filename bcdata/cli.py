@@ -56,11 +56,12 @@ def info(dataset, indent, meta_member):
 )
 @click.option("--out_file", "-o", help="Output file")
 @click.option("--number", "-n", help="Number of features to dump")
-def dump(dataset, query, out_file, number):
+@click.option("--crs", type=click.Choice(['EPSG:3005', 'EPSG:4326']), help="Output coordinate reference system")
+def dump(dataset, query, out_file, number, crs):
     """Dump a data layer from DataBC WFS
     """
     table = bcdata.validate_name(dataset)
-    data = bcdata.get_data(table, query=query, number=number)
+    data = bcdata.get_data(table, query=query, number=number, crs=crs)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)
