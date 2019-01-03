@@ -49,26 +49,31 @@ def get_count(object_name):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def get_data(object_name, cql_filter=None, count=None):
+def get_data(dataset, query=None, number=None):
     """Get GeoJSON from DataBC WFS (EPSG:3005 only)
     """
     # references:
     # http://www.opengeospatial.org/standards/wfs
     # http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
     # http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
-    url = os.path.join(WFS_URL, object_name, "wfs")
+    if dataset in list_tables():
+        table = dataset
+    else:
+        table = package_show(dataset)["object_name"]
+
+    url = os.path.join(WFS_URL, table, "wfs")
     payload = {
         "service": "WFS",
         "version": "2.0.0",
         "request": "GetFeature",
-        "typeName": object_name,
+        "typeName": table,
         "outputFormat": "json",
         "SRSNAME": "epsg:3005"
     }
-    if count:
-        payload["count"] = str(count)
-    if cql_filter:
-        payload["CQL_FILTER"] = cql_filter
+    if number:
+        payload["count"] = str(number)
+    if query:
+        payload["CQL_FILTER"] = query
 
     r = requests.get(url, params=payload)
     if r.status_code != 200:

@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.3.0 (2019-01-02)
+------------------
+- major revision, nothing is backwards compatible
+- download data via WFS rather than DWDS
+- functions renamed
+- data download is to geojson only
+
 0.2.0 (2018-01-22)
 ------------------
 - use DataBC Catalogue API to find data (#25, #31)

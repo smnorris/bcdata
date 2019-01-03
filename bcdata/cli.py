@@ -16,17 +16,17 @@ def cli():
 
 @cli.command()
 @click.argument("dataset")
-@click.option("--cql_filter", help="CQL filter")
+@click.option("--query", help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)")
 @click.option("--out_file", "-o", help="Output file")
-@click.option("--count", "-c", help="Count of features to dump")
-def dump(dataset, cql_filter, out_file, count):
-    """Dump geo data layer from DataBC WFS
+@click.option("--number", "-n", help="Number of features to dump")
+def dump(dataset, query, out_file, number):
+    """Dump a data layer from DataBC WFS
     """
-    if "." not in dataset:
-        table = package_show(dataset)["object_name"]
-    else:
+    if dataset in list_tables():
         table = dataset
-    data = get_data(table, cql_filter, count=count)
+    else:
+        table = package_show(dataset)["object_name"]
+    data = get_data(table, query=query, number=number)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)
@@ -37,7 +37,7 @@ def dump(dataset, cql_filter, out_file, count):
 
 @cli.command()
 def list():
-    """List DataBC layers available via dump
+    """List DataBC layers available to dump
     """
     # This works too, but is much slower:
     # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
@@ -60,10 +60,10 @@ def list():
 def info(dataset, indent, meta_member):
     """Print basic info about a DataBC WFS layer
     """
-    if "." not in dataset:
-        table = package_show(dataset)["object_name"]
-    else:
+    if dataset in list_tables():
         table = dataset
+    else:
+        table = package_show(dataset)["object_name"]
     info = {}
     info["name"] = table
     info["count"] = get_count(table)
