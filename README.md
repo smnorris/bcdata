@@ -80,14 +80,26 @@ While the DataBC WFS supports multiple projections, this tool does not. All data
 
 ## Other implementations
 - [bdata R package](https://github.com/bcgov/bcdata)
-- GDAL (doesn't seem to work with `VERSION=2.0.0`)
+- GDAL
 
         # list all layers
+        # querying the endpoint this way doesn't seem to work with `VERSION=2.0.0`
         ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
 
-        # download airports to geojson
+        # describe airports
+        ogrinfo "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005" OGRGeoJSON -so
+
+        # airports to geojson
         ogr2ogr \
           -f GeoJSON \
           airports.geojson \
-          WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0 \
-          pub:WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW
+          "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
+
+        # airports to postgres
+        ogr2ogr \
+          -f PostgreSQL \
+          PG:"host=localhost user=postgres dbname=postgis password=postgres" \
+          -lco SCHEMA=whse_imagery_and_base_maps \
+          -lco GEOMETRY_NAME=geom \
+          -nln gsr_airports_svw \
+          "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
