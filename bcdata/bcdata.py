@@ -20,14 +20,14 @@ def bcdc_package_show(package):
 def list_tables():
     """Return a list of all datasets available via WFS
     """
-    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version='2.0.0')
-    return [i.strip('pub:') for i in list(wfs.contents)]
+    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version="2.0.0")
+    return [i.strip("pub:") for i in list(wfs.contents)]
 
 
 def get_count(object_name):
     """Ask DataBC WFS how many features there are in a table
     """
-    #https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
+    # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
     url = os.path.join(bcdata.WFS_URL, object_name, "wfs")
     payload = {
         "service": "WFS",
@@ -35,7 +35,7 @@ def get_count(object_name):
         "request": "GetFeature",
         "typeName": object_name,
         "resultType": "hits",
-        "outputFormat": "json"
+        "outputFormat": "json",
     }
     r = requests.get(url, params=payload)
     return int(ET.fromstring(r.text).attrib["numberMatched"])
@@ -60,7 +60,7 @@ def get_data(dataset, query=None, number=None):
         "request": "GetFeature",
         "typeName": table,
         "outputFormat": "json",
-        "SRSNAME": "epsg:3005"
+        "SRSNAME": "epsg:3005",
     }
     if number:
         payload["count"] = str(number)

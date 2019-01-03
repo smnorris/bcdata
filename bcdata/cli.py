@@ -14,7 +14,10 @@ def cli():
 
 @cli.command()
 @click.argument("dataset")
-@click.option("--query", help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)")
+@click.option(
+    "--query",
+    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+)
 @click.option("--out_file", "-o", help="Output file")
 @click.option("--number", "-n", help="Number of features to dump")
 def dump(dataset, query, out_file, number):
@@ -51,10 +54,12 @@ def list():
 @indent_opt
 # Options to pick out a single metadata item and print it as
 # a string.
-@click.option('--count', 'meta_member', flag_value='count',
-              help="Print the count of features.")
-@click.option('--name', 'meta_member', flag_value='name',
-              help="Print the datasource's name.")
+@click.option(
+    "--count", "meta_member", flag_value="count", help="Print the count of features."
+)
+@click.option(
+    "--name", "meta_member", flag_value="name", help="Print the datasource's name."
+)
 def info(dataset, indent, meta_member):
     """Print basic info about a DataBC WFS layer
     """
@@ -62,11 +67,11 @@ def info(dataset, indent, meta_member):
         table = dataset
     else:
         table = bcdata.bcdc_package_show(dataset)["object_name"]
-    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version='2.0.0')
+    wfs = WebFeatureService(url=bcdata.SERVICE_URL, version="2.0.0")
     info = {}
     info["name"] = table
     info["count"] = bcdata.get_count(table)
-    info["schema"] = wfs.get_schema('pub:'+table)
+    info["schema"] = wfs.get_schema("pub:" + table)
     if meta_member:
         click.echo(info[meta_member])
     else:
