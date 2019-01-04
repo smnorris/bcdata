@@ -11,7 +11,7 @@ import bcdata
 
 
 if not sys.warnoptions:
-        warnings.simplefilter("ignore")
+    warnings.simplefilter("ignore")
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +92,9 @@ def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
         r = requests.get(bcdata.WFS_URL, params=payload)
 
         if r.status_code != 200:
-            ValueError("WFS error {} - check your CQL_FILTER".format(str(r.status_code)))
+            ValueError(
+                "WFS error {} - check your CQL_FILTER".format(str(r.status_code))
+            )
         else:
             return r.json()
 
@@ -113,11 +115,11 @@ def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
             wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
             sortby = sorted(wfs.get_schema("pub:" + table)["properties"].keys())[0]
 
-        outjson = dict(type='FeatureCollection', features=[])
+        outjson = dict(type="FeatureCollection", features=[])
 
         # todo - run in parallel
         for i in range(math.ceil(n / pagesize)):
-            logging.info("getting page "+str(i))
+            logging.info("getting page " + str(i))
             payload = {
                 "service": "WFS",
                 "version": "2.0.0",
@@ -127,14 +129,16 @@ def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
                 "SRSNAME": crs,
                 "sortby": sortby,
                 "startIndex": (i * pagesize),
-                "count": pagesize
+                "count": pagesize,
             }
             if query:
                 payload["CQL_FILTER"] = query
 
             r = requests.get(bcdata.WFS_URL, params=payload)
             if r.status_code != 200:
-                ValueError("WFS error {} - check your CQL_FILTER".format(str(r.status_code)))
+                ValueError(
+                    "WFS error {} - check your CQL_FILTER".format(str(r.status_code))
+                )
             else:
-                outjson['features'] += (r.json()['features'])
+                outjson["features"] += r.json()["features"]
         return outjson

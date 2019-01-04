@@ -1,12 +1,13 @@
 Changes
 =======
 
-0.3.0 (2019-01-02)
+0.3.0 (2019-01-04)
 ------------------
 Major revision, nothing is backwards compatible
 - download data via WFS rather than DWDS
 - functions renamed
-- data download is to geojson only
+- data downloaded to file is to geojson only
+- added `bc2pg` command for mirroring BC table in postgres
 
 0.2.0 (2018-01-22)
 ------------------

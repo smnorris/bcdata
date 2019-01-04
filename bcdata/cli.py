@@ -24,11 +24,11 @@ def parse_db_url(db_url):
     """
     u = urlparse(db_url)
     db = {}
-    db['database'] = u.path[1:]
-    db['user'] = u.username
-    db['password'] = u.password
-    db['host'] = u.hostname
-    db['port'] = u.port
+    db["database"] = u.path[1:]
+    db["user"] = u.username
+    db["password"] = u.password
+    db["host"] = u.hostname
+    db["port"] = u.port
     return db
 
 
@@ -80,8 +80,12 @@ def info(dataset, indent, meta_member):
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
 @click.option("--out_file", "-o", help="Output file")
-@click.option("--crs", type=click.Choice(['EPSG:3005', 'EPSG:4326']), help="Output coordinate reference system")
-def dump(dataset, query, out_file,  crs):
+@click.option(
+    "--crs",
+    type=click.Choice(["EPSG:3005", "EPSG:4326"]),
+    help="Output coordinate reference system",
+)
+def dump(dataset, query, out_file, crs):
     """Dump a data layer from DataBC WFS
     """
     table = bcdata.validate_name(dataset)
@@ -101,7 +105,9 @@ def dump(dataset, query, out_file,  crs):
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
-@click.option("--pagesize", "-p", default=10000, help="Max number of records to request")
+@click.option(
+    "--pagesize", "-p", default=10000, help="Max number of records to request"
+)
 @click.option("--sortby", "-s", help="Name of sort field")
 def bc2pg(dataset, db_url, query, pagesize, sortby):
     """Replicate a DataBC table in a postgres database
@@ -131,7 +137,7 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
         "version": "2.0.0",
         "request": "GetFeature",
         "typename": src_table,
-        "outputFormat": "json"
+        "outputFormat": "json",
     }
     if query:
         request["CQL_FILTER"] = query
@@ -141,21 +147,19 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
     # for tables smaller than the pagesize, just get everything at once
     if n <= pagesize:
         payload = urlencode(request, doseq=True)
-        url = bcdata.WFS_URL+"?" + payload
+        url = bcdata.WFS_URL + "?" + payload
         command = [
             "ogr2ogr",
             "-f PostgreSQL",
             'PG:"host={h} user={u} dbname={db} password={pwd}"'.format(
-              h=db['host'],
-              u=db['user'],
-              db=db['database'],
-              pwd=db['password']),
+                h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
+            ),
             "-t_srs EPSG:3005",
             "-lco OVERWRITE=YES",
             "-lco SCHEMA={}".format(schema),
             "-lco GEOMETRY_NAME=geom",
             "-nln {}".format(table),
-            '"'+url+'"'
+            '"' + url + '"',
         ]
         click.echo("Loading {} to {}".format(src_table, db_url))
         subprocess.call(" ".join(command), shell=True)
@@ -179,20 +183,18 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
         request["startIndex"] = 0
         request["count"] = pagesize
         payload = urlencode(request, doseq=True)
-        url = bcdata.WFS_URL+"?" + payload
+        url = bcdata.WFS_URL + "?" + payload
         command = [
             "ogr2ogr",
             "-f PostgreSQL",
             'PG:"host={h} user={u} dbname={db} password={pwd}"'.format(
-              h=db['host'],
-              u=db['user'],
-              db=db['database'],
-              pwd=db['password']),
+                h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
+            ),
             "-t_srs EPSG:3005",
             "-lco OVERWRITE=YES",
             "-lco SCHEMA={}".format(schema),
             "-nln {}".format(table),
-            '"'+url+'"'
+            '"' + url + '"',
         ]
         click.echo("Loading chunk 1 of {}".format(str(chunks)))
         subprocess.call(" ".join(command), shell=True)
@@ -200,9 +202,9 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
         # now append to the newly created table
         # todo: run in parallel
         for i in range(1, chunks):
-            request["startIndex"] = (i * pagesize)
+            request["startIndex"] = i * pagesize
             payload = urlencode(request, doseq=True)
-            url = bcdata.WFS_URL+"?" + payload
+            url = bcdata.WFS_URL + "?" + payload
             command = [
                 "ogr2ogr",
                 "-update",
@@ -211,16 +213,17 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
                 # note that schema must be specified here in connection
                 # string when appending to a layer, -lco opts are ignored
                 'PG:"host={h} user={u} dbname={db} password={pwd} active_schema={s}"'.format(
-                  h=db['host'],
-                  u=db['user'],
-                  db=db['database'],
-                  pwd=db['password'],
-                  s=schema),
+                    h=db["host"],
+                    u=db["user"],
+                    db=db["database"],
+                    pwd=db["password"],
+                    s=schema,
+                ),
                 "-t_srs EPSG:3005",
                 "-nln {}".format(table),
-                '"'+url+'"'
+                '"' + url + '"',
             ]
-            click.echo("Loading chunk {} of {}".format(str(i+1), str(chunks)))
+            click.echo("Loading chunk {} of {}".format(str(i + 1), str(chunks)))
             subprocess.call(" ".join(command), shell=True)
 
     # todo - add a check to make sure feature counts add up
