@@ -23,7 +23,7 @@ This Python module and CLI attempts to make downloads of BC geographic data quic
 
     $ pip install bcdata
 
-To enable autocomplete of dataset names with the command line tools, add this line to your `.bashrc` as per this [guide](https://click.palletsprojects.com/en/7.x/bashcomplete/?highlight=autocomplete#activation):
+To enable autocomplete of dataset names (full object names only) with the command line tools, add this line to your `.bashrc` as per this [guide](https://click.palletsprojects.com/en/7.x/bashcomplete/?highlight=autocomplete#activation).
 
     eval "$(_BCDATA_COMPLETE=source bcdata)"
 
@@ -57,6 +57,11 @@ Find data of interest manually using the [DataBC Catalogue](https://catalogue.da
 
 Common uses might look something like this:
 
+    # search the data listing for AIRPORTS
+    $ bcdata list | grep AIRPORTS
+      WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW
+
+    # if we already know the id, we can use that rather than the object name
     $ bcdata info bc-airports --indent 2
     {
       "name": "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW",
@@ -73,13 +78,18 @@ Common uses might look something like this:
         "geometry_column": "SHAPE"
       }
     }
+
+    # dump data to file
     $ bcdata dump bc-airports > bc-airports.geojson
+
+    # dump a filtered dataset to WGS84 geojson and send to geojsonio
+    # (requires geojson-cli https://github.com/mapbox/geojsonio-cli)
     $ bcdata dump \
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
-      -o terrace_airport.geojson \
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
-      --crs EPSG:4326
-    # load airports directly to postgres
+      --crs EPSG:4326 | geojsonio
+
+    # load all airports directly to postgres
     $ bcdata bc2pg \
       bc-airports \
       --db_url postgresql://postgres:postgres@localhost:5432/postgis

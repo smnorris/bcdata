@@ -111,6 +111,7 @@ def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
 
     # if dealing with something small, just run a single request
     if n <= pagesize:
+        outjson = dict(type="FeatureCollection", features=[])
         payload = {
             "service": "WFS",
             "version": "2.0.0",
@@ -131,7 +132,8 @@ def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
                 "WFS error {} - check your CQL_FILTER".format(str(r.status_code))
             )
         else:
-            return r.json()
+            outjson["features"] += r.json()["features"]
+            return outjson
 
     # DataBC WFS getcapabilities says that it supports paging,
     # and the spec says that responses should include 'next URI'
