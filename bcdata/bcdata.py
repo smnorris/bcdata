@@ -60,7 +60,7 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def get_data(dataset, query=None, number=None, crs="epsg:3005"):
+def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
     """Get GeoJSON from DataBC WFS
     """
     # references:
@@ -68,55 +68,14 @@ def get_data(dataset, query=None, number=None, crs="epsg:3005"):
     # http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
     # http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
     table = validate_name(dataset)
-    payload = {
-        "service": "WFS",
-        "version": "2.0.0",
-        "request": "GetFeature",
-        "typeName": table,
-        "outputFormat": "json",
-        "SRSNAME": crs,
-    }
-    if number:
-        payload["count"] = str(number)
-    if query:
-        payload["CQL_FILTER"] = query
 
-    r = requests.get(bcdata.WFS_URL, params=payload)
+    # First, can we handle the data with just one request?
+    # The server imposes a 10k record limit - how many records are there?
 
-    if r.status_code != 200:
-        ValueError("WFS error {} - check your CQL_FILTER".format(str(r.status_code)))
-    else:
-        return r.json()
-
-
-def get_data_paged(dataset, query=None, crs="epsg:3005", pagesize=10000, sortby=None):
-    """Get GeoJSON from DataBC WFS, piece by piece
-    """
-    table = validate_name(dataset)
-
-    # DataBC WFS getcapabilities says that it supports paging,
-    # and the spec says that responses should include 'next URI'
-    # (section 7.7.4.4.1)....
-    # But I do not see any next uri in the responses. Instead of following
-    # the paged urls, just generate urls based on number of features in the
-    # dataset.
-
-    # So - how many records are there?
     n = bcdata.get_count(table)
 
-    # A sort key is needed when using startindex.
-    # If we don't know what we want to sort by, just pick the first column in
-    # the table in alphabetical order...
-    # Ideally we would get the primary key from bcdc api, but it doesn't seem
-    # to be avaiable
-    if not sortby:
-        wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-        sortby = sorted(wfs.get_schema("pub:" + table)["properties"].keys())[0]
-
-    outjson = dict(type='FeatureCollection', features=[])
-
-    for i in range(math.ceil(n / pagesize)):
-        logging.info("getting page "+str(i))
+    # if dealing with something small, just run a single request
+    if n <= pagesize:
         payload = {
             "service": "WFS",
             "version": "2.0.0",
@@ -124,16 +83,57 @@ def get_data_paged(dataset, query=None, crs="epsg:3005", pagesize=10000, sortby=
             "typeName": table,
             "outputFormat": "json",
             "SRSNAME": crs,
-            "sortby": sortby,
-            "startIndex": (i * pagesize),
-            "count": pagesize
         }
+        if sortby:
+            payload["sortby"] = sortby
         if query:
             payload["CQL_FILTER"] = query
 
         r = requests.get(bcdata.WFS_URL, params=payload)
+
         if r.status_code != 200:
             ValueError("WFS error {} - check your CQL_FILTER".format(str(r.status_code)))
         else:
-            outjson['features'] += (r.json()['features'])
-    return outjson
+            return r.json()
+
+    # DataBC WFS getcapabilities says that it supports paging,
+    # and the spec says that responses should include 'next URI'
+    # (section 7.7.4.4.1)....
+    # But I do not see any next uri in the responses. Instead of following
+    # the paged urls, for datasets with >10k records, just generate urls
+    # based on number of features in the dataset.
+    else:
+
+        # A sort key is needed when using startindex.
+        # If we don't know what we want to sort by, just pick the first
+        # column in the table in alphabetical order...
+        # Ideally we would get the primary key from bcdc api, but it doesn't
+        # seem to be available
+        if not sortby:
+            wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
+            sortby = sorted(wfs.get_schema("pub:" + table)["properties"].keys())[0]
+
+        outjson = dict(type='FeatureCollection', features=[])
+
+        for i in range(math.ceil(n / pagesize)):
+            logging.info("getting page "+str(i))
+            payload = {
+                "service": "WFS",
+                "version": "2.0.0",
+                "request": "GetFeature",
+                "typeName": table,
+                "outputFormat": "json",
+                "SRSNAME": crs,
+                "sortby": sortby,
+                "startIndex": (i * pagesize),
+                "count": pagesize
+            }
+            if query:
+                payload["CQL_FILTER"] = query
+
+            r = requests.get(bcdata.WFS_URL, params=payload)
+            if r.status_code != 200:
+                ValueError("WFS error {} - check your CQL_FILTER".format(str(r.status_code)))
+            else:
+                outjson['features'] += (r.json()['features'])
+        return outjson

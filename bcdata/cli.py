@@ -60,13 +60,12 @@ def info(dataset, indent, meta_member):
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
 @click.option("--out_file", "-o", help="Output file")
-@click.option("--number", "-n", help="Number of features to dump")
 @click.option("--crs", type=click.Choice(['EPSG:3005', 'EPSG:4326']), help="Output coordinate reference system")
-def dump(dataset, query, out_file, number, crs):
+def dump(dataset, query, out_file,  crs):
     """Dump a data layer from DataBC WFS
     """
     table = bcdata.validate_name(dataset)
-    data = bcdata.get_data(table, query=query, number=number, crs=crs)
+    data = bcdata.get_data(table, query=query, crs=crs)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)

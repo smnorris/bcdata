@@ -26,14 +26,8 @@ def test_get_data_small():
 
 
 def test_get_data_paged():
-    data = bcdata.get_data_paged(AIRPORTS_KEY, crs="EPSG:4326", pagesize=250)
+    data = bcdata.get_data(AIRPORTS_KEY, crs="EPSG:4326", pagesize=250)
     assert len(data['features']) == 455
-
-
-def test_get_one():
-    table = bcdata.bcdc_package_show(UTMZONES_KEY)['object_name']
-    data = bcdata.get_data(table, crs="EPSG:4326", number=1)
-    assert len(data['features']) == 1
 
 
 def test_cql_filter():
