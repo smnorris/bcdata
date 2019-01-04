@@ -86,10 +86,7 @@ def info(dataset, indent, meta_member):
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
 @click.option("--out_file", "-o", help="Output file")
-@click.option(
-    "--crs",
-    help="Output coordinate reference system",
-)
+@click.option("--crs", help="Output coordinate reference system")
 def dump(dataset, query, out_file):
     """Dump a data layer from DataBC WFS
     """

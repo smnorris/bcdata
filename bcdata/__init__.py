@@ -13,6 +13,7 @@ BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
 WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
 
+
 def configure_logging():
     logger = logging.getLogger()
     formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
