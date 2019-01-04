@@ -98,9 +98,9 @@ Data are downloaded as either BC Albers (`EPSG:3005`) (default) or WGS84 (`EPSG:
 
 
 ## Other implementations
-- [bdata R package](https://github.com/bcgov/bcdata)
+- [bcdata R package](https://github.com/bcgov/bcdata)
 - [OWSLib](https://github.com/geopython/OWSLib) has basic WFS capabilities
-- GDAL
+- GDAL / curl / wget:
 
         # list all layers
         # querying the endpoint this way doesn't seem to work with `VERSION=2.0.0`
