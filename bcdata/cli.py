@@ -6,8 +6,6 @@ import subprocess
 from subprocess import Popen, PIPE
 from urllib.parse import urlencode
 from urllib.parse import urlparse
-import multiprocessing
-from functools import partial
 
 import click
 from cligj import indent_opt
