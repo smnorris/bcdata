@@ -46,9 +46,10 @@ Find data of interest manually using the [DataBC Catalogue](https://catalogue.da
       --help  Show this message and exit.
 
     Commands:
-      dump  Dump a data layer from DataBC WFS
-      info  Print basic info about a DataBC WFS layer
-      list  List DataBC layers available to dump
+      bc2pg  Replicate a DataBC table in a postgres database
+      dump   Dump a data layer from DataBC WFS
+      info   Print basic info about a DataBC WFS layer
+      list   List DataBC layers available via WMS
 
 Common uses might look something like this:
 
@@ -74,6 +75,10 @@ Common uses might look something like this:
       -o terrace_airport.geojson \
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
       --crs EPSG:4326
+    # load airports directly to postgres
+    $ bcdata bc2pg \
+      bc-airports \
+      --db_url postgresql://postgres:postgres@localhost:5432/postgis
 
 
 ## Projections / CRS

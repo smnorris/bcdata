@@ -115,6 +115,7 @@ def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
 
         outjson = dict(type='FeatureCollection', features=[])
 
+        # todo - run in parallel
         for i in range(math.ceil(n / pagesize)):
             logging.info("getting page "+str(i))
             payload = {
