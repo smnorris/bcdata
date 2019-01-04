@@ -82,12 +82,12 @@ Common uses might look something like this:
     # dump data to file
     $ bcdata dump bc-airports > bc-airports.geojson
 
-    # dump a filtered dataset to WGS84 geojson and send to geojsonio
+    # get a filtered dataset and send it to geojsonio
     # (requires geojson-cli https://github.com/mapbox/geojsonio-cli)
     $ bcdata dump \
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
-      --crs EPSG:4326 | geojsonio
+       | geojsonio
 
     # load all airports directly to postgres
     $ bcdata bc2pg \
@@ -97,7 +97,16 @@ Common uses might look something like this:
 
 ## Projections / CRS
 
-Data are downloaded as either BC Albers (`EPSG:3005`) (default) or WGS84 (`EPSG:4326`).
+**CLI**
+
+`bcdata dump` returns GeoJSON in WGS84 (`EPSG:4326`).
+
+`bcdata bc2pg` loads data to PostgreSQL in BC Albers (`EPSG:3005`).
+
+
+**Python module**
+
+`bcdata.get_data()` defaults to `EPSG:4236` but any CRS can be specified (that the server will accept).
 
 
 ## Development and testing

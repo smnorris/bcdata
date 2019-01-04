@@ -95,7 +95,7 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def get_data(dataset, query=None, crs="epsg:3005", sortby=None, pagesize=10000):
+def get_data(dataset, query=None, crs="epsg:4326", sortby=None, pagesize=10000):
     """Get GeoJSON from DataBC WFS
     """
     # references:
