@@ -1,8 +1,13 @@
+from datetime import datetime
+from datetime import timedelta
+import json
+import logging
 import math
-import xml.etree.ElementTree as ET
+import os
+from pathlib import Path
 import sys
 import warnings
-import logging
+import xml.etree.ElementTree as ET
 
 from owslib.wfs import WebFeatureService
 import requests
@@ -14,6 +19,20 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 log = logging.getLogger(__name__)
+
+
+def check_cache(path):
+    """Return true if the file does not exist or is older than 30 days
+    """
+    if not os.path.exists(path):
+        return True
+    else:
+        # check the age
+        mod_date = datetime.fromtimestamp(os.path.getmtime(path))
+        if mod_date < (datetime.now() - timedelta(days=30)):
+            return True
+        else:
+            return False
 
 
 def bcdc_package_show(package):
@@ -33,12 +52,28 @@ def validate_name(dataset):
         return bcdc_package_show(dataset)["object_name"]
 
 
-def list_tables():
+def list_tables(refresh=False, cache_file=None):
     """Return a list of all datasets available via WFS
     """
-    # todo: it might be helpful to cache this list for speed
-    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-    return [i.strip("pub:") for i in list(wfs.contents)]
+    # default cache listing all objects available is
+    # ~/.bcdata
+    if not cache_file:
+        cache_file = os.path.join(str(Path.home()), ".bcdata")
+
+    # regenerate the cache if:
+    # - the cache file doesn't exist
+    # - we force a refresh
+    # - the cache is older than 1 month
+    if refresh or check_cache(cache_file):
+        wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
+        bcdata_objects = [i.strip("pub:") for i in list(wfs.contents)]
+        with open(cache_file, "w") as outfile:
+            json.dump(sorted(bcdata_objects), outfile)
+    else:
+        with open(cache_file, "r") as infile:
+            bcdata_objects = json.load(infile)
+
+    return bcdata_objects
 
 
 def get_count(dataset, query=None):

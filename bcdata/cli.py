@@ -33,23 +33,28 @@ def parse_db_url(db_url):
     return db
 
 
+def get_objects(ctx, args, incomplete):
+    return [k for k in bcdata.list_tables() if incomplete in k]
+
+
 @click.group()
 def cli():
     pass
 
 
 @cli.command()
-def list():
+@click.option("--refresh", "-r", is_flag=True, help="Refresh the cached list")
+def list(refresh):
     """List DataBC layers available via WMS
     """
     # This works too, but is much slower:
     # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
-    for table in sorted(bcdata.list_tables()):
+    for table in bcdata.list_tables(refresh):
         click.echo(table)
 
 
 @cli.command()
-@click.argument("dataset")
+@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @indent_opt
 # Options to pick out a single metadata item and print it as
 # a string.
@@ -75,7 +80,7 @@ def info(dataset, indent, meta_member):
 
 
 @cli.command()
-@click.argument("dataset")
+@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @click.option(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
@@ -100,7 +105,7 @@ def dump(dataset, query, out_file, crs):
 
 
 @cli.command()
-@click.argument("dataset")
+@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @click.option("--db_url", "-db", default=os.environ["DATABASE_URL"])
 @click.option(
     "--query",
