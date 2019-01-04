@@ -3,8 +3,11 @@ import logging
 import math
 import os
 import subprocess
+from subprocess import Popen, PIPE
 from urllib.parse import urlencode
 from urllib.parse import urlparse
+import multiprocessing
+from functools import partial
 
 import click
 from cligj import indent_opt
@@ -200,7 +203,8 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
         subprocess.call(" ".join(command), shell=True)
 
         # now append to the newly created table
-        # todo: run in parallel
+        # first, build the command strings
+        commands = []
         for i in range(1, chunks):
             request["startIndex"] = i * pagesize
             payload = urlencode(request, doseq=True)
@@ -223,8 +227,13 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
                 "-nln {}".format(table),
                 '"' + url + '"',
             ]
-            click.echo("Loading chunk {} of {}".format(str(i + 1), str(chunks)))
-            subprocess.call(" ".join(command), shell=True)
+            commands.append(" ".join(command))
+
+        # now execute in parallel
+        click.echo("Loading remaining chunks in parallel")
+        procs_list = [Popen(cmd, shell=True) for cmd in commands]
+        for proc in procs_list:
+            proc.wait()
 
     # todo - add a check to make sure feature counts add up
 
