@@ -23,6 +23,10 @@ This Python module and CLI attempts to make downloads of BC geographic data quic
 
     $ pip install bcdata
 
+To enable autocomplete of dataset names with the command line tools, add this line to your `.bashrc` as per this [guide](https://click.palletsprojects.com/en/7.x/bashcomplete/?highlight=autocomplete#activation):
+
+    eval "$(_BCDATA_COMPLETE=source bcdata)"
+
 ## Usage
 
 Find data of interest manually using the [DataBC Catalogue](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public). Once you have found your data of interest, note either the `id` (the last portion of the url, also known as the package name) or the `Object Name` (Under `Object Description`). For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airports), either of these keys will work:
