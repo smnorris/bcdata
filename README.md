@@ -106,31 +106,35 @@ Data are downloaded as either BC Albers (`EPSG:3005`) (default) or WGS84 (`EPSG:
         # querying the endpoint this way doesn't seem to work with `VERSION=2.0.0`
         ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
 
-        # describe airports
-        ogrinfo "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005" OGRGeoJSON -so
+        # define a request url for airports
+        airports_url="https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
 
-        # airports to geojson
+        # describe airports
+        ogrinfo -so $airports_url OGRGeoJSON
+
+        # dump airports to geojson
         ogr2ogr \
           -f GeoJSON \
           airports.geojson \
-          "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
+          $airports_url
 
-        # airports to postgres
+        # load airports to postgres
         ogr2ogr \
           -f PostgreSQL \
           PG:"host=localhost user=postgres dbname=postgis password=postgres" \
           -lco SCHEMA=whse_imagery_and_base_maps \
           -lco GEOMETRY_NAME=geom \
           -nln gsr_airports_svw \
-          "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
+          $airports_url
 
-        # ungulate winter range to shape
-        # this only grabs the first 10,000 records
+        # Try requesting a larger dataset - ungulate winter range
+        uwr_url="https://openmaps.gov.bc.ca/geo/pub/WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP&outputFormat=json&SRSNAME=epsg%3A3005"
+
+        # The request only returns the first 10,000 records
         ogr2ogr \
           uwr.shp \
           -dsco OGR_WFS_PAGING_ALLOWED=ON \
-          "https://openmaps.gov.bc.ca/geo/pub/WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP&outputFormat=json&SRSNAME=epsg%3A3005"
+          $uwr_url
 
-        # get the data via wget, still 10k limit
-        wget -O t.gml "https://openmaps.gov.bc.ca/geo/pub/WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP&SRSNAME=epsg%3A3005"
-
+        # wget works too, but still only 10k records
+        wget -O uwr.gml $uwr_url
