@@ -84,6 +84,8 @@ Common uses might look something like this:
 
     # get a filtered dataset and send it to geojsonio
     # (requires geojson-cli https://github.com/mapbox/geojsonio-cli)
+    # Note that quotes are always needed around a CQL FILTER provided to the
+    # --query option
     $ bcdata dump \
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \

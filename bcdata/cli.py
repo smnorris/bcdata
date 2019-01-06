@@ -2,8 +2,9 @@ import json
 import logging
 import math
 import os
+import re
 import subprocess
-from subprocess import Popen, PIPE
+from subprocess import Popen
 from urllib.parse import urlencode
 from urllib.parse import urlparse
 
@@ -37,6 +38,42 @@ def get_objects(ctx, args, incomplete):
     return [k for k in bcdata.list_tables() if incomplete in k]
 
 
+# bounds handling direct from rasterio
+# https://github.com/mapbox/rasterio/blob/master/rasterio/rio/options.py
+# https://github.com/mapbox/rasterio/blob/master/rasterio/rio/clip.py
+
+def from_like_context(ctx, param, value):
+    """Return the value for an option from the context if the option
+    or `--all` is given, else return None."""
+    if ctx.obj and ctx.obj.get('like') and (
+            value == 'like' or ctx.obj.get('all_like')):
+        return ctx.obj['like'][param.name]
+    else:
+        return None
+
+
+def bounds_handler(ctx, param, value):
+    """Handle different forms of bounds."""
+    retval = from_like_context(ctx, param, value)
+    if retval is None and value is not None:
+        try:
+            value = value.strip(', []')
+            retval = tuple(float(x) for x in re.split(r'[,\s]+', value))
+            assert len(retval) == 4
+            return retval
+        except Exception:
+            raise click.BadParameter(
+                "{0!r} is not a valid bounding box representation".format(
+                    value))
+    else:  # pragma: no cover
+        return retval
+
+
+bounds_opt = click.option(
+    '--bounds', default=None, callback=bounds_handler,
+    help='Bounds: "left bottom right top" or "[left, bottom, right, top]".')
+
+
 @click.group()
 def cli():
     pass
@@ -65,7 +102,9 @@ def list(refresh):
     "--name", "meta_member", flag_value="name", help="Print the datasource's name."
 )
 def info(dataset, indent, meta_member):
-    """Print basic info about a DataBC WFS layer
+    """Print basic metadata about a DataBC WFS layer as JSON.
+
+    Optionally print a single metadata item as a string.
     """
     table = bcdata.validate_name(dataset)
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
@@ -83,15 +122,31 @@ def info(dataset, indent, meta_member):
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @click.option(
     "--query",
-    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+    help="A valid CQL or ECQL query, quote enclosed (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
 @click.option("--out_file", "-o", help="Output file")
-@click.option("--crs", help="Output coordinate reference system")
-def dump(dataset, query, out_file):
+@bounds_opt
+def dump(dataset, query, out_file, bounds):
     """Dump a data layer from DataBC WFS
+
+    \b
+      $ bcdata dump bc-airports
+      $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
+      $ bcdata dump bc-airports --bounds xmin ymin xmax ymax
+
+    The values of --bounds must be in BC Albers.
+
+     It can also be combined to read bounds of a feature dataset using Fiona:
+    \b
+      $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
+
     """
     table = bcdata.validate_name(dataset)
-    data = bcdata.get_data(table, query=query)
+    if bounds:
+        bbox = ",".join([str(b) for b in bounds])
+    else:
+        bbox = None
+    data = bcdata.get_data(table, query=query, bbox=bbox)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)
@@ -102,7 +157,7 @@ def dump(dataset, query, out_file):
 
 @cli.command()
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)
-@click.option("--db_url", "-db", default=os.environ["DATABASE_URL"])
+@click.option("--db_url", "-db", help="SQLAlchemy database url", default=os.environ["DATABASE_URL"])
 @click.option(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",

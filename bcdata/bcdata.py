@@ -95,7 +95,7 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def get_data(dataset, query=None, crs="epsg:4326", sortby=None, pagesize=10000):
+def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
     """Get GeoJSON from DataBC WFS
     """
     # references:
@@ -124,6 +124,8 @@ def get_data(dataset, query=None, crs="epsg:4326", sortby=None, pagesize=10000):
             payload["sortby"] = sortby
         if query:
             payload["CQL_FILTER"] = query
+        if bbox:
+            payload["bbox"] = bbox
 
         r = requests.get(bcdata.WFS_URL, params=payload)
 
@@ -155,6 +157,7 @@ def get_data(dataset, query=None, crs="epsg:4326", sortby=None, pagesize=10000):
         outjson = dict(type="FeatureCollection", features=[])
 
         # todo - run in parallel
+        # todo - return features as generator
         for i in range(math.ceil(n / pagesize)):
             logging.info("getting page " + str(i))
             payload = {
