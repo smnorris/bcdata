@@ -133,7 +133,7 @@ def info(dataset, indent, meta_member):
 @click.option("--out_file", "-o", help="Output file")
 @bounds_opt
 def dump(dataset, query, out_file, bounds):
-    """Dump a data layer from DataBC WFS to GeoJSON
+    """Download a DataBC WFS layer and write to stdout as GeoJSON feature collection
 
     \b
       $ bcdata dump bc-airports
@@ -176,8 +176,7 @@ def dump(dataset, query, out_file, bounds):
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
-    """Print the features of input dataset as a sequence of
-    GeoJSON features.
+    """Download a DataBC WFS layer and write to stdout as GeoJSON feature objects. In this case, cat does not concatenate.
     """
     dump_kwds = {"sort_keys": True}
     if indent:
@@ -210,7 +209,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 def bc2pg(dataset, db_url, query, pagesize, sortby):
-    """Copy a data from DataBC WFS to postgres - a wrapper around ogr2ogr
+    """Download a DataBC WFS layer to postgres - just a wrapper around ogr2ogr
 
      \b
       $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis

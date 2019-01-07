@@ -113,6 +113,27 @@ There are several commands available:
                            right, top]".
       --help               Show this message and exit.
 
+#### `cat`
+
+    $ bcdata cat --help
+    Usage: bcdata cat [OPTIONS] DATASET
+
+      Download a DataBC WFS layer and write to stdout as GeoJSON feature
+      objects. In this case, cat does not concatenate.
+
+    Options:
+      --query TEXT               A valid `CQL` or `ECQL` query (https://docs.geose
+                                 rver.org/stable/en/user/tutorials/cql/cql_tutoria
+                                 l.html)
+      --indent INTEGER           Indentation level for JSON output
+      --bounds TEXT              Bounds: "left bottom right top" or "[left,
+                                 bottom, right, top]".
+      --compact / --not-compact  Use compact separators (',', ':').
+      --dst-crs, --dst_crs TEXT  Destination CRS.
+      -p, --pagesize INTEGER     Max number of records to request
+      -s, --sortby TEXT          Name of sort field
+      --help                     Show this message and exit.
+
 #### `bc2pg`
 
     $ bcdata bc2pg --help
@@ -161,7 +182,7 @@ Describe a dataset. Note that if we know the id of a dataset, we can use that ra
       }
     }
 
-Dump data to file:
+Dump data to geojson:
 
     $ bcdata dump bc-airports > bc-airports.geojson
 
@@ -172,17 +193,26 @@ Get a single feature and send it to geojsonio (requires [geojson-cli](https://gi
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
        | geojsonio
 
+Save a layer to a geopackage in BC Albers:
+
+    $ bcdata cat bc-airports --dest_crs EPSG:3005 \
+      | fio collect \
+      | fio load --f GPKG airports.gpkg
+
 Load a layer to postgres:
 
     $ bcdata bc2pg \
       bc-airports \
       --db_url postgresql://postgres:postgres@localhost:5432/postgis
 
+
 ## Projections / CRS
 
 **CLI**
 
 `bcdata dump` returns GeoJSON in WGS84 (`EPSG:4326`).
+
+`bcdata cat` provides the `--dst-crs` option, use any CRS the WFS server supports.
 
 `bcdata bc2pg` loads data to PostgreSQL in BC Albers (`EPSG:3005`).
 
@@ -243,4 +273,4 @@ Load a layer to postgres:
           $uwr_url
 
         # wget works too, but still only 10k records
-        wget -O uwr.gml $uwr_url
+        wget -O uwr.geojson $uwr_url
