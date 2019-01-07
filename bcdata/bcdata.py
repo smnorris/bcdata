@@ -24,8 +24,9 @@ log = logging.getLogger(__name__)
 
 
 def get_sortkey(table):
-    # If we don't know what we want to sort by, just pick the first
-    # column in the table in alphabetical order...
+    """Get a field to sort by
+    """
+    # Just pick the first column in the table in alphabetical order.
     # Ideally we would get the primary key from bcdc api, but it doesn't
     # seem to be available
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
@@ -33,7 +34,8 @@ def get_sortkey(table):
 
 
 def check_cache(path):
-    """Return true if the file does not exist or is older than 30 days
+    """Return true if the cache file holding list of all datasets
+    does not exist or is older than 30 days
     """
     if not os.path.exists(path):
         return True
@@ -47,7 +49,7 @@ def check_cache(path):
 
 
 def bcdc_package_show(package):
-    """Query DataBC Catalogue API about given dataset/package
+    """Query DataBC Catalogue API about given package
     """
     params = {"id": package}
     r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
@@ -57,6 +59,8 @@ def bcdc_package_show(package):
 
 
 def validate_name(dataset):
+    """Check wfs/cache and the bcdc api to see if dataset name is valid
+    """
     if dataset in list_tables():
         return dataset
     else:
@@ -88,7 +92,7 @@ def list_tables(refresh=False, cache_file=None):
 
 
 def get_count(dataset, query=None):
-    """Ask DataBC WFS how many features there are in a table
+    """Ask DataBC WFS how many features there are in a table/query
     """
     # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
     table = validate_name(dataset)
@@ -107,19 +111,24 @@ def get_count(dataset, query=None):
 
 
 def make_request(parameters):
+    """Submit a getfeature request to DataBC WFS and return features
+    """
     r = requests.get(bcdata.WFS_URL, params=parameters)
     return r.json()["features"]
 
 
-def define_request(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
-    # references:
-    # http://www.opengeospatial.org/standards/wfs
-    # http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
-    # http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
-    table = validate_name(dataset)
+def define_request(
+    dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000
+):
+    """Define the getfeature request parameters required to download a dataset
 
-    # First, can we handle the data with just one request?
-    # The server imposes a 10k record limit - how many records are there?
+    References:
+    - http://www.opengeospatial.org/standards/wfs
+    - http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
+    - http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
+    """
+    # validate the table name and find out how many features it holds
+    table = validate_name(dataset)
     n = bcdata.get_count(table)
 
     # DataBC WFS getcapabilities says that it supports paging,
@@ -129,11 +138,13 @@ def define_request(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None,
     # the paged urls, for datasets with >10k records, just generate urls
     # based on number of features in the dataset.
     chunks = math.ceil(n / pagesize)
+
+    # if making several requests, we need to sort by something
     if chunks > 1 and not sortby:
         sortby = get_sortkey(table)
 
     # build the request parameters for each chunk
-    payloads = []
+    param_dicts = []
     for i in range(chunks):
         request = {
             "service": "WFS",
@@ -152,12 +163,14 @@ def define_request(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None,
         if chunks > 1:
             request["startIndex"] = i * pagesize
             request["count"] = pagesize
-        payloads.append(request)
-    return payloads
+        param_dicts.append(request)
+    return param_dicts
 
 
-def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
-    """Get GeoJSON from DataBC WFS
+def get_data(
+    dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000
+):
+    """Get GeoJSON featurecollection from DataBC WFS
     """
     param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
 
@@ -170,7 +183,9 @@ def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pages
     return outjson
 
 
-def get_features(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
+def get_features(
+    dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000
+):
     """Yield features from DataBC WFS
     """
     param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)

@@ -43,12 +43,12 @@ def get_objects(ctx, args, incomplete):
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/options.py
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/clip.py
 
+
 def from_like_context(ctx, param, value):
     """Return the value for an option from the context if the option
     or `--all` is given, else return None."""
-    if ctx.obj and ctx.obj.get('like') and (
-            value == 'like' or ctx.obj.get('all_like')):
-        return ctx.obj['like'][param.name]
+    if ctx.obj and ctx.obj.get("like") and (value == "like" or ctx.obj.get("all_like")):
+        return ctx.obj["like"][param.name]
     else:
         return None
 
@@ -58,23 +58,26 @@ def bounds_handler(ctx, param, value):
     retval = from_like_context(ctx, param, value)
     if retval is None and value is not None:
         try:
-            value = value.strip(', []')
-            retval = tuple(float(x) for x in re.split(r'[,\s]+', value))
+            value = value.strip(", []")
+            retval = tuple(float(x) for x in re.split(r"[,\s]+", value))
             assert len(retval) == 4
             return retval
         except Exception:
             raise click.BadParameter(
-                "{0!r} is not a valid bounding box representation".format(
-                    value))
+                "{0!r} is not a valid bounding box representation".format(value)
+            )
     else:  # pragma: no cover
         return retval
 
 
 bounds_opt = click.option(
-    '--bounds', default=None, callback=bounds_handler,
-    help='Bounds: "left bottom right top" or "[left, bottom, right, top]".')
+    "--bounds",
+    default=None,
+    callback=bounds_handler,
+    help='Bounds: "left bottom right top" or "[left, bottom, right, top]".',
+)
 
-dst_crs_opt = click.option('--dst-crs', '--dst_crs', help="Destination CRS.")
+dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS.")
 
 
 @click.group()
@@ -176,11 +179,11 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     """Print the features of input datasets as a sequence of
     GeoJSON features.
     """
-    dump_kwds = {'sort_keys': True}
+    dump_kwds = {"sort_keys": True}
     if indent:
-        dump_kwds['indent'] = indent
+        dump_kwds["indent"] = indent
     if compact:
-        dump_kwds['separators'] = (',', ':')
+        dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
     if bounds:
         bbox = ",".join([str(b) for b in bounds])
@@ -192,7 +195,12 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 
 @cli.command()
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)
-@click.option("--db_url", "-db", help="SQLAlchemy database url", default=os.environ["DATABASE_URL"])
+@click.option(
+    "--db_url",
+    "-db",
+    help="SQLAlchemy database url",
+    default=os.environ["DATABASE_URL"],
+)
 @click.option(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
