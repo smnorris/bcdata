@@ -8,9 +8,11 @@ from pathlib import Path
 import sys
 import warnings
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 
 from owslib.wfs import WebFeatureService
 import requests
+
 
 import bcdata
 
@@ -19,6 +21,15 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 log = logging.getLogger(__name__)
+
+
+def get_sortkey(table):
+    # If we don't know what we want to sort by, just pick the first
+    # column in the table in alphabetical order...
+    # Ideally we would get the primary key from bcdc api, but it doesn't
+    # seem to be available
+    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
+    return sorted(wfs.get_schema("pub:" + table)["properties"].keys())[0]
 
 
 def check_cache(path):
@@ -95,9 +106,12 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
-    """Get GeoJSON from DataBC WFS
-    """
+def make_request(parameters):
+    r = requests.get(bcdata.WFS_URL, params=parameters)
+    return r.json()["features"]
+
+
+def define_request(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
     # references:
     # http://www.opengeospatial.org/standards/wfs
     # http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
@@ -106,13 +120,22 @@ def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pages
 
     # First, can we handle the data with just one request?
     # The server imposes a 10k record limit - how many records are there?
-
     n = bcdata.get_count(table)
 
-    # if dealing with something small, just run a single request
-    if n <= pagesize:
-        outjson = dict(type="FeatureCollection", features=[])
-        payload = {
+    # DataBC WFS getcapabilities says that it supports paging,
+    # and the spec says that responses should include 'next URI'
+    # (section 7.7.4.4.1)....
+    # But I do not see any next uri in the responses. Instead of following
+    # the paged urls, for datasets with >10k records, just generate urls
+    # based on number of features in the dataset.
+    chunks = math.ceil(n / pagesize)
+    if chunks > 1 and not sortby:
+        sortby = get_sortkey(table)
+
+    # build the request parameters for each chunk
+    payloads = []
+    for i in range(chunks):
+        request = {
             "service": "WFS",
             "version": "2.0.0",
             "request": "GetFeature",
@@ -121,64 +144,38 @@ def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pages
             "SRSNAME": crs,
         }
         if sortby:
-            payload["sortby"] = sortby
+            request["sortby"] = sortby
         if query:
-            payload["CQL_FILTER"] = query
+            request["CQL_FILTER"] = query
         if bbox:
-            payload["bbox"] = bbox
+            request["bbox"] = bbox
+        if chunks > 1:
+            request["startIndex"] = i * pagesize
+            request["count"] = pagesize
+        payloads.append(request)
+    return payloads
 
-        r = requests.get(bcdata.WFS_URL, params=payload)
 
-        if r.status_code != 200:
-            ValueError(
-                "WFS error {} - check your CQL_FILTER".format(str(r.status_code))
-            )
-        else:
-            outjson["features"] += r.json()["features"]
-            return outjson
+def get_data(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
+    """Get GeoJSON from DataBC WFS
+    """
+    param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
 
-    # DataBC WFS getcapabilities says that it supports paging,
-    # and the spec says that responses should include 'next URI'
-    # (section 7.7.4.4.1)....
-    # But I do not see any next uri in the responses. Instead of following
-    # the paged urls, for datasets with >10k records, just generate urls
-    # based on number of features in the dataset.
-    else:
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(make_request, param_dicts)
 
-        # A sort key is needed when using startindex.
-        # If we don't know what we want to sort by, just pick the first
-        # column in the table in alphabetical order...
-        # Ideally we would get the primary key from bcdc api, but it doesn't
-        # seem to be available
-        if not sortby:
-            wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-            sortby = sorted(wfs.get_schema("pub:" + table)["properties"].keys())[0]
+    outjson = dict(type="FeatureCollection", features=[])
+    for result in results:
+        outjson["features"] += result
+    return outjson
 
-        outjson = dict(type="FeatureCollection", features=[])
 
-        # todo - run in parallel
-        # todo - return features as generator
-        for i in range(math.ceil(n / pagesize)):
-            logging.info("getting page " + str(i))
-            payload = {
-                "service": "WFS",
-                "version": "2.0.0",
-                "request": "GetFeature",
-                "typeName": table,
-                "outputFormat": "json",
-                "SRSNAME": crs,
-                "sortby": sortby,
-                "startIndex": (i * pagesize),
-                "count": pagesize,
-            }
-            if query:
-                payload["CQL_FILTER"] = query
+def get_features(dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000):
+    """Yield features from DataBC WFS
+    """
+    param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
 
-            r = requests.get(bcdata.WFS_URL, params=payload)
-            if r.status_code != 200:
-                ValueError(
-                    "WFS error {} - check your CQL_FILTER".format(str(r.status_code))
-                )
-            else:
-                outjson["features"] += r.json()["features"]
-        return outjson
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        for result in executor.map(make_request, param_dicts):
+            for feature in result:
+                yield feature

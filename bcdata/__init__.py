@@ -1,5 +1,6 @@
 from .bcdata import bcdc_package_show
 from .bcdata import get_data
+from .bcdata import get_features
 from .bcdata import get_count
 from .bcdata import list_tables
 from .bcdata import validate_name

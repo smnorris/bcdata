@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 import click
 from cligj import indent_opt
+from cligj import compact_opt
 from owslib.wfs import WebFeatureService
 
 import pgdata
@@ -155,6 +156,38 @@ def dump(dataset, query, out_file, bounds):
     else:
         sink = click.get_text_stream("stdout")
         sink.write(json.dumps(data))
+
+
+@cli.command()
+@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
+@click.option(
+    "--query",
+    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+)
+@indent_opt
+@bounds_opt
+@compact_opt
+@dst_crs_opt
+@click.option(
+    "--pagesize", "-p", default=10000, help="Max number of records to request"
+)
+@click.option("--sortby", "-s", help="Name of sort field")
+def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
+    """Print the features of input datasets as a sequence of
+    GeoJSON features.
+    """
+    dump_kwds = {'sort_keys': True}
+    if indent:
+        dump_kwds['indent'] = indent
+    if compact:
+        dump_kwds['separators'] = (',', ':')
+    table = bcdata.validate_name(dataset)
+    if bounds:
+        bbox = ",".join([str(b) for b in bounds])
+    else:
+        bbox = None
+    for feat in bcdata.get_features(table, query=query, bbox=bbox):
+        click.echo(json.dumps(feat, **dump_kwds))
 
 
 @cli.command()
