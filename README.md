@@ -7,14 +7,14 @@ Python and command line tools for quick access to DataBC geo-data available via 
 
 There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
-but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl` can be awkward.
+but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl/wget` can be awkward.
 
 This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with existing Python GIS tools like `fiona` and `rasterio`.
 
 
 **Note**
 
-- it is the user's responsibility to check the licensing for any downloads (data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
+- it is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
 - this is not specifically endorsed by the Province of Britsh Columbia or DataBC
 - use with care, please don't overload the service
 
