@@ -9,14 +9,14 @@ There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
 but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl` can be awkward.
 
-This Python module and CLI attempts to make downloads of BC geographic data quick and easy.
+This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with existing Python GIS tools like `fiona` and `rasterio`.
 
 
-**Notes**
+**Note**
 
-- this tool is for my convenience, it is in no way endorsed by the Province of Britsh Columbia or DataBC
+- it is the user's responsibility to check the licensing for any downloads (data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
+- this is not specifically endorsed by the Province of Britsh Columbia or DataBC
 - use with care, please don't overload the service
-- data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc), but it is up to the user to check the licensing for any data downloaded
 
 
 ## Installation
@@ -29,19 +29,23 @@ To enable autocomplete of dataset names (full object names only) with the comman
 
 ## Usage
 
-Find data of interest manually using the [DataBC Catalogue](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public). Once you have found your data of interest, note either the `id` (the last portion of the url, also known as the package name) or the `Object Name` (Under `Object Description`). For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airports), either of these keys will work:
+Typical usage will involve a manual search of the [DataBC Catalogue](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public) to find a layer of interest. Once a dataset of interest is found, note the key with which to retreive it. This can be either the `id`/`package name` (the last portion of the url) or the `Object Name` (Under `Object Description`).
 
-- `bc-airports` (id)
-- `WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW` (object name)
+For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airports), either of these keys will work:
 
-**Python module**
+- id/package name: `bc-airports`
+- object name: `WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW`
+
+### Python module
 
     >>> import bcdata
     >>> geojson = bcdata.get_data('bc-airports', query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'")
     >>> geojson
     {'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'id': 'WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW.fid-f0cdbe4_16811fe142b_-6f34', 'geometry': {'type': 'Point', ...
 
-**CLI**
+### CLI
+
+There are several commands available:
 
     $ bcdata --help
     Usage: bcdata [OPTIONS] COMMAND [ARGS]...
@@ -55,13 +59,91 @@ Find data of interest manually using the [DataBC Catalogue](https://catalogue.da
       info   Print basic info about a DataBC WFS layer
       list   List DataBC layers available via WMS
 
-Common uses might look something like this:
 
-    # search the data listing for AIRPORTS
-    $ bcdata list | grep AIRPORTS
+#### `list`
+
+    $ bcdata list --help
+    Usage: bcdata list [OPTIONS]
+
+      List DataBC layers available via WFS
+
+    Options:
+      -r, --refresh  Refresh the cached list
+      --help         Show this message and exit.
+
+
+#### `info`
+
+    $ bcdata info --help
+    Usage: bcdata info [OPTIONS] DATASET
+
+      Print basic metadata about a DataBC WFS layer as JSON.
+
+      Optionally print a single metadata item as a string.
+
+    Options:
+      --indent INTEGER  Indentation level for JSON output
+      --count           Print the count of features.
+      --name            Print the datasource's name.
+      --help            Show this message and exit.
+
+
+#### `dump`
+
+    $ bcdata dump --help
+    Usage: bcdata dump [OPTIONS] DATASET
+
+      Dump a data layer from DataBC WFS to GeoJSON
+
+        $ bcdata dump bc-airports
+        $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
+        $ bcdata dump bc-airports --bounds xmin ymin xmax ymax
+
+      The values of --bounds must be in BC Albers.
+
+       It can also be combined to read bounds of a feature dataset using Fiona:
+         $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
+
+    Options:
+      --query TEXT         A valid CQL or ECQL query, quote enclosed (https://docs
+                           .geoserver.org/stable/en/user/tutorials/cql/cql_tutoria
+                           l.html)
+      -o, --out_file TEXT  Output file
+      --bounds TEXT        Bounds: "left bottom right top" or "[left, bottom,
+                           right, top]".
+      --help               Show this message and exit.
+
+#### `bc2pg`
+
+    $ bcdata bc2pg --help
+    Usage: bcdata bc2pg [OPTIONS] DATASET
+
+      Copy a data from DataBC WFS to postgres - a wrapper around ogr2ogr
+
+         $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
+
+      The default target database can be specified by setting the $DATABASE_URL
+      environment variable.
+      https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+
+    Options:
+      -db, --db_url TEXT      SQLAlchemy database url
+      --query TEXT            A valid `CQL` or `ECQL` query (https://docs.geoserve
+                              r.org/stable/en/user/tutorials/cql/cql_tutorial.html
+                              )
+      -p, --pagesize INTEGER  Max number of records to request
+      -s, --sortby TEXT       Name of sort field
+      --help                  Show this message and exit.
+
+#### CLI examples
+
+Search the data listing for airports:
+
+      $ bcdata list | grep AIRPORTS
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW
 
-    # if we already know the id, we can use that rather than the object name
+Describe a dataset. Note that if we know the id of a dataset, we can use that rather than the object name:
+
     $ bcdata info bc-airports --indent 2
     {
       "name": "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW",
@@ -79,23 +161,22 @@ Common uses might look something like this:
       }
     }
 
-    # dump data to file
+Dump data to file:
+
     $ bcdata dump bc-airports > bc-airports.geojson
 
-    # get a filtered dataset and send it to geojsonio
-    # (requires geojson-cli https://github.com/mapbox/geojsonio-cli)
-    # Note that quotes are always needed around a CQL FILTER provided to the
-    # --query option
+Get a single feature and send it to geojsonio (requires [geojson-cli](https://github.com/mapbox/geojsonio-cli)).  Note the double quotes  required around a CQL FILTER provided to the `--query` option.
+
     $ bcdata dump \
       WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
       --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
        | geojsonio
 
-    # load all airports directly to postgres
+Load a layer to postgres:
+
     $ bcdata bc2pg \
       bc-airports \
       --db_url postgresql://postgres:postgres@localhost:5432/postgis
-
 
 ## Projections / CRS
 

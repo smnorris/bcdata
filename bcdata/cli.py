@@ -73,6 +73,8 @@ bounds_opt = click.option(
     '--bounds', default=None, callback=bounds_handler,
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]".')
 
+dst_crs_opt = click.option('--dst-crs', '--dst_crs', help="Destination CRS.")
+
 
 @click.group()
 def cli():
@@ -82,7 +84,7 @@ def cli():
 @cli.command()
 @click.option("--refresh", "-r", is_flag=True, help="Refresh the cached list")
 def list(refresh):
-    """List DataBC layers available via WMS
+    """List DataBC layers available via WFS
     """
     # This works too, but is much slower:
     # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
@@ -127,7 +129,7 @@ def info(dataset, indent, meta_member):
 @click.option("--out_file", "-o", help="Output file")
 @bounds_opt
 def dump(dataset, query, out_file, bounds):
-    """Dump a data layer from DataBC WFS
+    """Dump a data layer from DataBC WFS to GeoJSON
 
     \b
       $ bcdata dump bc-airports
@@ -167,18 +169,16 @@ def dump(dataset, query, out_file, bounds):
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 def bc2pg(dataset, db_url, query, pagesize, sortby):
-    """Replicate a DataBC table in a postgres database
+    """Copy a data from DataBC WFS to postgres - a wrapper around ogr2ogr
+
+     \b
+      $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
+
+    The default target database can be specified by setting the $DATABASE_URL
+    environment variable.
+    https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
     """
-    # Just a wrapper around a command like this:
-    """
-    ogr2ogr \
-          -f PostgreSQL \
-          PG:"host=localhost user=postgres dbname=postgis password=postgres" \
-          -lco SCHEMA=whse_imagery_and_base_maps \
-          -lco GEOMETRY_NAME=geom \
-          -nln gsr_airports_svw \
-          "https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
-    """
+
     src_table = bcdata.validate_name(dataset)
     schema, table = [i.lower() for i in src_table.split(".")]
 
