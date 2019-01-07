@@ -178,7 +178,7 @@ def get_data(
 ):
     """Get GeoJSON featurecollection from DataBC WFS
     """
-    param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
+    param_dicts = define_request(dataset, query, crs, bbox, sortby, pagesize)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = executor.map(make_request, param_dicts)
@@ -200,7 +200,7 @@ def get_features(
 ):
     """Yield features from DataBC WFS
     """
-    param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
+    param_dicts = define_request(dataset, query, crs, bbox, sortby, pagesize)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for result in executor.map(make_request, param_dicts):
