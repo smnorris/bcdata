@@ -168,13 +168,19 @@ def define_request(
 
 
 def get_data(
-    dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000
+    dataset,
+    query=None,
+    crs="epsg:4326",
+    bbox=None,
+    sortby=None,
+    pagesize=10000,
+    max_workers=5,
 ):
     """Get GeoJSON featurecollection from DataBC WFS
     """
     param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = executor.map(make_request, param_dicts)
 
     outjson = dict(type="FeatureCollection", features=[])
@@ -184,13 +190,19 @@ def get_data(
 
 
 def get_features(
-    dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000
+    dataset,
+    query=None,
+    crs="epsg:4326",
+    bbox=None,
+    sortby=None,
+    pagesize=10000,
+    max_workers=5,
 ):
     """Yield features from DataBC WFS
     """
     param_dicts = define_request(dataset, query, crs, bbox, sortby, 10000)
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for result in executor.map(make_request, param_dicts):
             for feature in result:
                 yield feature
