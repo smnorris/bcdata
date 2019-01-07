@@ -176,7 +176,7 @@ def dump(dataset, query, out_file, bounds):
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
-    """Print the features of input datasets as a sequence of
+    """Print the features of input dataset as a sequence of
     GeoJSON features.
     """
     dump_kwds = {"sort_keys": True}
@@ -229,80 +229,34 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
         click.echo("Schema {} does not exist, creating it".format(schema))
         conn.create_schema(schema)
 
+    # build parameters for each required request
+    param_dicts = bcdata.define_request(dataset, query=query, sortby=sortby, pagesize=10000)
+
+    # run the first request / load
+    payload = urlencode(param_dicts[0], doseq=True)
+    url = bcdata.WFS_URL + "?" + payload
     db = parse_db_url(db_url)
-    request = {
-        "service": "WFS",
-        "version": "2.0.0",
-        "request": "GetFeature",
-        "typename": src_table,
-        "outputFormat": "json",
-    }
-    if query:
-        request["CQL_FILTER"] = query
+    command = [
+        "ogr2ogr",
+        "-f PostgreSQL",
+        'PG:"host={h} user={u} dbname={db} password={pwd}"'.format(
+            h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
+        ),
+        "-t_srs EPSG:3005",
+        "-lco OVERWRITE=YES",
+        "-lco SCHEMA={}".format(schema),
+        "-lco GEOMETRY_NAME=geom",
+        "-nln {}".format(table),
+        '"' + url + '"',
+    ]
+    click.echo("Loading {} to {}".format(src_table, db_url))
+    subprocess.call(" ".join(command), shell=True)
 
-    n = bcdata.get_count(src_table)
-
-    # for tables smaller than the pagesize, just get everything at once
-    if n <= pagesize:
-        payload = urlencode(request, doseq=True)
-        url = bcdata.WFS_URL + "?" + payload
-        command = [
-            "ogr2ogr",
-            "-f PostgreSQL",
-            'PG:"host={h} user={u} dbname={db} password={pwd}"'.format(
-                h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
-            ),
-            "-t_srs EPSG:3005",
-            "-lco OVERWRITE=YES",
-            "-lco SCHEMA={}".format(schema),
-            "-lco GEOMETRY_NAME=geom",
-            "-nln {}".format(table),
-            '"' + url + '"',
-        ]
-        click.echo("Loading {} to {}".format(src_table, db_url))
-        subprocess.call(" ".join(command), shell=True)
-
-    # for bigger tables, iterate through the chunks
-    else:
-        # first, how many requests need to be made?
-        chunks = math.ceil(n / pagesize)
-
-        # A sort key is needed when using startindex.
-        # If we don't know what we want to sort by, just pick the first
-        # column in the table in alphabetical order...
-        # Ideally we would get the primary key from bcdc api, but it doesn't
-        # seem to be available
-        if not sortby:
-            wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-            sortby = sorted(wfs.get_schema("pub:" + src_table)["properties"].keys())[0]
-
-        # run the first insert
-        request["sortby"] = sortby
-        request["startIndex"] = 0
-        request["count"] = pagesize
-        payload = urlencode(request, doseq=True)
-        url = bcdata.WFS_URL + "?" + payload
-        command = [
-            "ogr2ogr",
-            "-f PostgreSQL",
-            'PG:"host={h} user={u} dbname={db} password={pwd}"'.format(
-                h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
-            ),
-            "-t_srs EPSG:3005",
-            "-lco OVERWRITE=YES",
-            "-lco SCHEMA={}".format(schema),
-            "-nln {}".format(table),
-            '"' + url + '"',
-        ]
-        click.echo("Loading chunk 1 of {}".format(str(chunks)))
-        subprocess.call(" ".join(command), shell=True)
-
-        # now append to the newly created table
-        # first, build the command strings
+    # build commands for the rest of the chunks
+    if len(param_dicts) > 1:
         commands = []
-        for i in range(1, chunks):
-            request["startIndex"] = i * pagesize
-            payload = urlencode(request, doseq=True)
+        for chunk, paramdict in enumerate(param_dicts[1:]):
+            payload = urlencode(paramdict, doseq=True)
             url = bcdata.WFS_URL + "?" + payload
             command = [
                 "ogr2ogr",
@@ -323,7 +277,6 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
                 '"' + url + '"',
             ]
             commands.append(" ".join(command))
-
         # now execute in parallel
         click.echo("Loading remaining chunks in parallel")
         procs_list = [Popen(cmd, shell=True) for cmd in commands]
@@ -331,5 +284,4 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
             proc.wait()
 
     # todo - add a check to make sure feature counts add up
-
     click.echo("Load of {} to {} complete".format(src_table, db_url))

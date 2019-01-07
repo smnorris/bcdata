@@ -4,6 +4,7 @@ from .bcdata import get_features
 from .bcdata import get_count
 from .bcdata import list_tables
 from .bcdata import validate_name
+from .bcdata import define_request
 
 import logging
 
