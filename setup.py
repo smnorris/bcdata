@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=read("requirements.txt").splitlines(),
-    extras_require={"test": ["pytest"]},
+    tests_require=["pytest", "rasterio"],
     entry_points="""
       [console_scripts]
       bcdata=bcdata.cli:cli
