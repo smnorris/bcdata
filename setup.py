@@ -1,4 +1,5 @@
 import os
+
 from setuptools import setup, find_packages
 
 
@@ -44,7 +45,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=read("requirements.txt").splitlines(),
-    tests_require=["pytest", "rasterio"],
+    extras_require={'test': ['pytest>=3', 'rasterio']},
     entry_points="""
       [console_scripts]
       bcdata=bcdata.cli:cli
