@@ -5,7 +5,7 @@ from .wfs import get_count
 from .wfs import list_tables
 from .wfs import validate_name
 from .wfs import define_request
-from .wcs import dem25
+from .wcs import get_dem
 
 import logging
 

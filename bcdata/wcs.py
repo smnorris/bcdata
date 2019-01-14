@@ -3,7 +3,7 @@ import requests
 import bcdata
 
 
-def dem(
+def get_dem(
     bounds,
     out_file="dem.tif",
     dst_crs="EPSG:3005",

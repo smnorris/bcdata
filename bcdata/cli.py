@@ -142,7 +142,7 @@ def dem(bounds, dst_crs, out_file, resolution):
     """
     if not dst_crs:
         dst_crs = 'EPSG:3005'
-    bcdata.dem(bounds, dst_crs=dst_crs, out_file=out_file, resolution=resolution)
+    bcdata.get_dem(bounds, dst_crs=dst_crs, out_file=out_file, resolution=resolution)
 
 
 @cli.command()

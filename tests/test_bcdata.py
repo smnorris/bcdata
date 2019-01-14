@@ -52,7 +52,7 @@ def test_bounds_filter():
 
 def test_dem():
     bounds = [1046891, 704778, 1055345, 709629]
-    out_file = bcdata.dem(bounds, "test_dem.tif")
+    out_file = bcdata.get_dem(bounds, "test_dem.tif")
     assert os.path.exists("test_dem.tif")
     with rasterio.open("test_dem.tif") as src:
         stats = [{'min': float(b.min()),
