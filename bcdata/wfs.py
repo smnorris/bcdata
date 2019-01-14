@@ -118,7 +118,7 @@ def make_request(parameters):
 
 
 def define_request(
-    dataset, query=None, crs="epsg:4326", bbox=None, sortby=None, pagesize=10000
+    dataset, query=None, crs="epsg:4326", bounds=None, sortby=None, pagesize=10000
 ):
     """Define the getfeature request parameters required to download a dataset
 
@@ -143,6 +143,7 @@ def define_request(
     if chunks > 1 and not sortby:
         sortby = get_sortkey(table)
 
+
     # build the request parameters for each chunk
     param_dicts = []
     for i in range(chunks):
@@ -158,8 +159,8 @@ def define_request(
             request["sortby"] = sortby
         if query:
             request["CQL_FILTER"] = query
-        if bbox:
-            request["bbox"] = bbox
+        if bounds:
+            request["bbox"] = ",".join([str(b) for b in bounds])
         if chunks > 1:
             request["startIndex"] = i * pagesize
             request["count"] = pagesize
@@ -171,14 +172,14 @@ def get_data(
     dataset,
     query=None,
     crs="epsg:4326",
-    bbox=None,
+    bounds=None,
     sortby=None,
     pagesize=10000,
     max_workers=5,
 ):
     """Get GeoJSON featurecollection from DataBC WFS
     """
-    param_dicts = define_request(dataset, query, crs, bbox, sortby, pagesize)
+    param_dicts = define_request(dataset, query, crs, bounds, sortby, pagesize)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = executor.map(make_request, param_dicts)
@@ -193,14 +194,14 @@ def get_features(
     dataset,
     query=None,
     crs="epsg:4326",
-    bbox=None,
+    bounds=None,
     sortby=None,
     pagesize=10000,
     max_workers=5,
 ):
     """Yield features from DataBC WFS
     """
-    param_dicts = define_request(dataset, query, crs, bbox, sortby, pagesize)
+    param_dicts = define_request(dataset, query, crs, bounds, sortby, pagesize)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for result in executor.map(make_request, param_dicts):

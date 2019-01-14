@@ -1,4 +1,9 @@
+import os
+
+import rasterio
+
 import bcdata
+
 
 AIRPORTS_KEY = 'bc-airports'
 UTMZONES_KEY = 'utm-zones-of-british-columbia'
@@ -40,6 +45,19 @@ def test_cql_filter():
     assert data['features'][0]['properties']['AIRPORT_NAME'] == 'Terrace (Northwest Regional) Airport'
 
 
-def test_bbox_filter():
-    data = bcdata.get_data(AIRPORTS_KEY, bbox="1188000,377051,1207437,390361")
+def test_bounds_filter():
+    data = bcdata.get_data(AIRPORTS_KEY, bounds=[1188000, 377051, 1207437, 390361])
     assert len(data['features']) == 8
+
+
+def test_dem():
+    bounds = [1046891, 704778, 1055345, 709629]
+    out_file = bcdata.dem25(bounds, "test_dem.tif")
+    assert os.path.exists("test_dem.tif")
+    with rasterio.open("test_dem.tif") as src:
+        stats = [{'min': float(b.min()),
+                  'max': float(b.max()),
+                  'mean': float(b.mean())
+                  } for b in src.read()]
+    assert stats[0]['max'] == 3982
+    os.remove("test_dem.tif")

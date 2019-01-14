@@ -1,10 +1,11 @@
-from .bcdata import bcdc_package_show
-from .bcdata import get_data
-from .bcdata import get_features
-from .bcdata import get_count
-from .bcdata import list_tables
-from .bcdata import validate_name
-from .bcdata import define_request
+from .wfs import bcdc_package_show
+from .wfs import get_data
+from .wfs import get_features
+from .wfs import get_count
+from .wfs import list_tables
+from .wfs import validate_name
+from .wfs import define_request
+from .wcs import dem25
 
 import logging
 
@@ -14,6 +15,7 @@ __version__ = "0.3.1dev"
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
 WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
+WCS_URL = "http://delivery.openmaps.gov.bc.ca/om/wcs"
 
 
 def configure_logging():

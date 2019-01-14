@@ -77,6 +77,14 @@ bounds_opt = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]".',
 )
 
+bounds_opt_required = click.option(
+    "--bounds",
+    required=True,
+    default=None,
+    callback=bounds_handler,
+    help='Bounds: "left bottom right top" or "[left, bottom, right, top]".',
+)
+
 dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS.")
 
 
@@ -125,6 +133,18 @@ def info(dataset, indent, meta_member):
 
 
 @cli.command()
+@click.option("--out_file", "-o", help="Output file", default="dem25.tif")
+@bounds_opt_required
+@dst_crs_opt
+def dem25(bounds, dst_crs, out_file):
+    """Dump 25m DEM TIFF to file
+    """
+    if not dst_crs:
+        dst_crs = 'EPSG:3005'
+    bcdata.dem25(bounds, dst_crs=dst_crs, out_file=out_file)
+
+
+@cli.command()
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @click.option(
     "--query",
@@ -148,11 +168,7 @@ def dump(dataset, query, out_file, bounds):
 
     """
     table = bcdata.validate_name(dataset)
-    if bounds:
-        bbox = ",".join([str(b) for b in bounds])
-    else:
-        bbox = None
-    data = bcdata.get_data(table, query=query, bbox=bbox)
+    data = bcdata.get_data(table, query=query, bounds=bounds)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)
@@ -184,11 +200,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     if compact:
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
-    if bounds:
-        bbox = ",".join([str(b) for b in bounds])
-    else:
-        bbox = None
-    for feat in bcdata.get_features(table, query=query, bbox=bbox):
+    for feat in bcdata.get_features(table, query=query, bounds=bounds):
         click.echo(json.dumps(feat, **dump_kwds))
 
 
