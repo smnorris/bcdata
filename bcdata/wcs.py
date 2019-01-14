@@ -6,7 +6,8 @@ import bcdata
 def dem25(
     bounds,
     out_file="dem.tif",
-    dst_crs="EPSG:3005"
+    dst_crs="EPSG:3005",
+    resolution=25
 ):
     """Get 25m DEM for provided bounds, write to GeoTIFF
     """
@@ -20,8 +21,8 @@ def dem25(
         "Format": "GeoTIFF",
         "bbox": bbox,
         "CRS": dst_crs,
-        "resx": "25",
-        "resy": "25",
+        "resx": str(resolution),
+        "resy": str(resolution),
     }
     # request data from WCS
     r = requests.get(bcdata.WCS_URL, params=payload)

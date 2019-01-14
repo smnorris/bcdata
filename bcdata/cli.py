@@ -136,12 +136,13 @@ def info(dataset, indent, meta_member):
 @click.option("--out_file", "-o", help="Output file", default="dem25.tif")
 @bounds_opt_required
 @dst_crs_opt
-def dem25(bounds, dst_crs, out_file):
-    """Dump 25m DEM TIFF to file
+@click.option("--resolution", "-r", type=int, default=25)
+def dem(bounds, dst_crs, out_file, resolution):
+    """Dump BC DEM to TIFF
     """
     if not dst_crs:
         dst_crs = 'EPSG:3005'
-    bcdata.dem25(bounds, dst_crs=dst_crs, out_file=out_file)
+    bcdata.dem(bounds, dst_crs=dst_crs, out_file=out_file, resolution=resolution)
 
 
 @cli.command()
@@ -153,7 +154,7 @@ def dem25(bounds, dst_crs, out_file):
 @click.option("--out_file", "-o", help="Output file")
 @bounds_opt
 def dump(dataset, query, out_file, bounds):
-    """Download a DataBC WFS layer and write to stdout as GeoJSON feature collection
+    """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
       $ bcdata dump bc-airports
@@ -192,8 +193,9 @@ def dump(dataset, query, out_file, bounds):
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
-    """Download a DataBC WFS layer and write to stdout as GeoJSON feature objects. In this case, cat does not concatenate.
+    """Write DataBC features to stdout as GeoJSON feature objects.
     """
+    # Note that cat does not concatenate!
     dump_kwds = {"sort_keys": True}
     if indent:
         dump_kwds["indent"] = indent
@@ -221,7 +223,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 def bc2pg(dataset, db_url, query, pagesize, sortby):
-    """Download a DataBC WFS layer to postgres - just a wrapper around ogr2ogr
+    """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
       $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis

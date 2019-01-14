@@ -54,10 +54,12 @@ There are several commands available:
       --help  Show this message and exit.
 
     Commands:
-      bc2pg  Replicate a DataBC table in a postgres database
-      dump   Dump a data layer from DataBC WFS
-      info   Print basic info about a DataBC WFS layer
-      list   List DataBC layers available via WMS
+      bc2pg  Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
+      cat    Write DataBC features to stdout as GeoJSON feature objects.
+      dem    Dump BC DEM to TIFF
+      dump   Write DataBC features to stdout as GeoJSON feature collection.
+      info   Print basic metadata about a DataBC WFS layer as JSON.
+      list   List DataBC layers available via WFS
 
 
 #### `list`
@@ -133,6 +135,23 @@ There are several commands available:
       -p, --pagesize INTEGER     Max number of records to request
       -s, --sortby TEXT          Name of sort field
       --help                     Show this message and exit.
+
+
+#### `dem`
+
+    $ bcdata dem --help
+    Usage: bcdata dem [OPTIONS]
+
+      Dump BC DEM to TIFF
+
+    Options:
+      -o, --out_file TEXT        Output file
+      --bounds TEXT              Bounds: "left bottom right top" or "[left,
+                                 bottom, right, top]".  [required]
+      --dst-crs, --dst_crs TEXT  Destination CRS.
+      -r, --resolution INTEGER
+      --help                     Show this message and exit.
+
 
 #### `bc2pg`
 
