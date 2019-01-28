@@ -299,13 +299,15 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
             commands.append(" ".join(command))
 
         # now execute in parallel
-        click.echo("Loading remaining chunks in parallel")
+        click.echo("table created, loading remaining chunks")
 
         # https://stackoverflow.com/questions/14533458
         pool = Pool(max_workers)
-        for i, returncode in enumerate(pool.imap(partial(call, shell=True), commands)):
-            if returncode != 0:
-                click.echo("%d command failed: %d" % (i, returncode))
+        with click.progressbar(pool.imap(partial(call, shell=True), commands) , length=len(param_dicts)) as bar:
+            for returncode in bar:
+                if returncode != 0:
+                    click.echo("Command failed: %d" % (returncode))
+
 
     # todo - add a check to make sure feature counts add up
     click.echo("Load of {} to {} complete".format(src_table, db_url))
