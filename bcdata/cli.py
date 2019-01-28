@@ -249,7 +249,7 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
 
     # build parameters for each required request
     param_dicts = bcdata.define_request(
-        dataset, query=query, sortby=sortby, pagesize=10000
+        dataset, query=query, sortby=sortby, pagesize=pagesize
     )
 
     # run the first request / load
@@ -299,7 +299,7 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
             commands.append(" ".join(command))
 
         # now execute in parallel
-        click.echo("table created, loading remaining chunks")
+        click.echo("Table created, loading remaining chunks:")
 
         # https://stackoverflow.com/questions/14533458
         pool = Pool(max_workers)
