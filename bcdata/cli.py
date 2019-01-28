@@ -4,9 +4,11 @@ import math
 import os
 import re
 import subprocess
-from subprocess import Popen
 from urllib.parse import urlencode
 from urllib.parse import urlparse
+from functools import partial
+from multiprocessing.dummy import Pool
+from subprocess import call
 
 import click
 from cligj import indent_opt
@@ -202,7 +204,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     if compact:
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
-    for feat in bcdata.get_features(table, query=query, bounds=bounds):
+    for feat in bcdata.get_features(table, query=query, bounds=bounds, sortby=sortby):
         click.echo(json.dumps(feat, **dump_kwds))
 
 
@@ -222,7 +224,8 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option("--sortby", "-s", help="Name of sort field")
-def bc2pg(dataset, db_url, query, pagesize, sortby):
+@click.option("--max_workers", "-w", default=5, help="Max number of concurrent requests")
+def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -290,11 +293,15 @@ def bc2pg(dataset, db_url, query, pagesize, sortby):
                 '"' + url + '"',
             ]
             commands.append(" ".join(command))
+
         # now execute in parallel
         click.echo("Loading remaining chunks in parallel")
-        procs_list = [Popen(cmd, shell=True) for cmd in commands]
-        for proc in procs_list:
-            proc.wait()
+
+        # https://stackoverflow.com/questions/14533458
+        pool = Pool(max_workers)
+        for i, returncode in enumerate(pool.imap(partial(call, shell=True), commands)):
+            if returncode != 0:
+               click.echo("%d command failed: %d" % (i, returncode))
 
     # todo - add a check to make sure feature counts add up
     click.echo("Load of {} to {} complete".format(src_table, db_url))
