@@ -143,7 +143,6 @@ def define_request(
     if chunks > 1 and not sortby:
         sortby = get_sortkey(table)
 
-
     # build the request parameters for each chunk
     param_dicts = []
     for i in range(chunks):

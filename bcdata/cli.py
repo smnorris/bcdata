@@ -143,7 +143,7 @@ def dem(bounds, dst_crs, out_file, resolution):
     """Dump BC DEM to TIFF
     """
     if not dst_crs:
-        dst_crs = 'EPSG:3005'
+        dst_crs = "EPSG:3005"
     bcdata.get_dem(bounds, dst_crs=dst_crs, out_file=out_file, resolution=resolution)
 
 
@@ -224,7 +224,9 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option("--sortby", "-s", help="Name of sort field")
-@click.option("--max_workers", "-w", default=5, help="Max number of concurrent requests")
+@click.option(
+    "--max_workers", "-w", default=5, help="Max number of concurrent requests"
+)
 def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
@@ -246,7 +248,9 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
         conn.create_schema(schema)
 
     # build parameters for each required request
-    param_dicts = bcdata.define_request(dataset, query=query, sortby=sortby, pagesize=10000)
+    param_dicts = bcdata.define_request(
+        dataset, query=query, sortby=sortby, pagesize=10000
+    )
 
     # run the first request / load
     payload = urlencode(param_dicts[0], doseq=True)
@@ -301,7 +305,7 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
         pool = Pool(max_workers)
         for i, returncode in enumerate(pool.imap(partial(call, shell=True), commands)):
             if returncode != 0:
-               click.echo("%d command failed: %d" % (i, returncode))
+                click.echo("%d command failed: %d" % (i, returncode))
 
     # todo - add a check to make sure feature counts add up
     click.echo("Load of {} to {} complete".format(src_table, db_url))
