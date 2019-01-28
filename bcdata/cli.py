@@ -306,7 +306,7 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
         with click.progressbar(pool.imap(partial(call, shell=True), commands) , length=len(param_dicts)) as bar:
             for returncode in bar:
                 if returncode != 0:
-                    click.echo("Command failed: %d" % (returncode))
+                    click.echo("Command failed: {}".format(returncode))
 
 
     # todo - add a check to make sure feature counts add up
