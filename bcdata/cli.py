@@ -217,6 +217,12 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     default=os.environ["DATABASE_URL"],
 )
 @click.option(
+    "--table", help="Destination table name"
+)
+@click.option(
+    "--schema", help="Destination schema name"
+)
+@click.option(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
@@ -227,7 +233,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--max_workers", "-w", default=5, help="Max number of concurrent requests"
 )
-def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
+def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -238,9 +244,12 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
     https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
     """
 
-    src_table = bcdata.validate_name(dataset)
-    schema, table = [i.lower() for i in src_table.split(".")]
-
+    src = bcdata.validate_name(dataset)
+    src_schema, src_table = [i.lower() for i in src.split(".")]
+    if not schema:
+        schema = src_schema
+    if not table:
+        table = src_table
     # create schema if it does not exist
     conn = pgdata.connect(db_url)
     if schema not in conn.schemas:
@@ -269,7 +278,7 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
         "-nln {}".format(table),
         '"' + url + '"',
     ]
-    click.echo("Loading {} to {}".format(src_table, db_url))
+    click.echo("Loading {} to {} in {}".format(src, schema+"."+table, db_url))
     subprocess.call(" ".join(command), shell=True)
 
     # build commands for the rest of the chunks
@@ -308,6 +317,4 @@ def bc2pg(dataset, db_url, query, pagesize, sortby, max_workers):
                 if returncode != 0:
                     click.echo("Command failed: {}".format(returncode))
 
-
-    # todo - add a check to make sure feature counts add up
-    click.echo("Load of {} to {} complete".format(src_table, db_url))
+    click.echo("Load of {} to {} in {} complete".format(src, schema+"."+table, db_url))
