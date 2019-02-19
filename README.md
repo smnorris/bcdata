@@ -201,6 +201,17 @@ Describe a dataset. Note that if we know the id of a dataset, we can use that ra
       }
     }
 
+The JSON output can be manipulated with [jq](https://stedolan.github.io/jq/). For example, to show only the fields available in the dataset:
+
+    $ bcdata info bc-airports | jq '.schema.properties'
+    {
+      "CUSTODIAN_ORG_DESCRIPTION": "string",
+      "BUSINESS_CATEGORY_CLASS": "string",
+      "BUSINESS_CATEGORY_DESCRIPTION": "string",
+      "OCCUPANT_TYPE_DESCRIPTION": "string",
+      etc...
+    }
+
 Dump data to geojson:
 
     $ bcdata dump bc-airports > bc-airports.geojson

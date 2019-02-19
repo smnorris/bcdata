@@ -278,7 +278,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers):
         "-nln {}".format(table),
         '"' + url + '"',
     ]
-    click.echo("Loading {} to {} in {}".format(src, schema+"."+table, db_url))
+    click.echo(" ".join(command))
     subprocess.call(" ".join(command), shell=True)
 
     # build commands for the rest of the chunks
