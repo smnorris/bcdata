@@ -274,8 +274,7 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
                     db=db["database"],
                     pwd=db["password"],
         )
-        if append:
-            db_string = db_string + " active_schema="+schema
+
         # create the table
         if not append:
             command = [
