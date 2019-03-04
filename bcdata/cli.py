@@ -227,13 +227,16 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
 @click.option(
+    "--append", is_flag=True, help="Append to existing table"
+)
+@click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--max_workers", "-w", default=5, help="Max number of concurrent requests"
 )
-def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers):
+def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_workers):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -243,13 +246,13 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers):
     environment variable.
     https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
     """
-
     src = bcdata.validate_name(dataset)
     src_schema, src_table = [i.lower() for i in src.split(".")]
     if not schema:
         schema = src_schema
     if not table:
         table = src_table
+
     # create schema if it does not exist
     conn = pgdata.connect(db_url)
     if schema not in conn.schemas:
@@ -260,61 +263,78 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers):
     param_dicts = bcdata.define_request(
         dataset, query=query, sortby=sortby, pagesize=pagesize
     )
-
-    # run the first request / load
-    payload = urlencode(param_dicts[0], doseq=True)
-    url = bcdata.WFS_URL + "?" + payload
-    db = parse_db_url(db_url)
-    command = [
-        "ogr2ogr",
-        "-f PostgreSQL",
-        'PG:"host={h} user={u} dbname={db} password={pwd}"'.format(
-            h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
-        ),
-        "-t_srs EPSG:3005",
-        "-lco OVERWRITE=YES",
-        "-lco SCHEMA={}".format(schema),
-        "-lco GEOMETRY_NAME=geom",
-        "-nln {}".format(table),
-        '"' + url + '"',
-    ]
-    click.echo(" ".join(command))
-    subprocess.call(" ".join(command), shell=True)
-
-    # build commands for the rest of the chunks
-    if len(param_dicts) > 1:
-        commands = []
-        for chunk, paramdict in enumerate(param_dicts[1:]):
-            payload = urlencode(paramdict, doseq=True)
-            url = bcdata.WFS_URL + "?" + payload
-            command = [
-                "ogr2ogr",
-                "-update",
-                "-append",
-                "-f PostgreSQL",
-                # note that schema must be specified here in connection
-                # string when appending to a layer, -lco opts are ignored
-                'PG:"host={h} user={u} dbname={db} password={pwd} active_schema={s}"'.format(
+    try:
+        # run the first request / load
+        payload = urlencode(param_dicts[0], doseq=True)
+        url = bcdata.WFS_URL + "?" + payload
+        db = parse_db_url(db_url)
+        db_string = 'PG:host={h} user={u} dbname={db} password={pwd}'.format(
                     h=db["host"],
                     u=db["user"],
                     db=db["database"],
                     pwd=db["password"],
-                    s=schema,
-                ),
-                "-t_srs EPSG:3005",
-                "-nln {}".format(table),
-                '"' + url + '"',
+        )
+        if append:
+            db_string = db_string + " active_schema="+schema
+        # create the table
+        if not append:
+            command = [
+                "ogr2ogr",
+                "-lco",
+                "OVERWRITE=YES",
+                "-lco",
+                "SCHEMA={}".format(schema),
+                "-lco",
+                "GEOMETRY_NAME=geom",
+                "-f",
+                "PostgreSQL",
+                db_string,
+                "-t_srs",
+                "EPSG:3005",
+                "-nln",
+                table,
+                url,
             ]
-            commands.append(" ".join(command))
+            click.echo(" ".join(command))
+            subprocess.run(command)
 
-        # now execute in parallel
-        click.echo("Table created, loading remaining chunks:")
+        # append to table when append specified or processing many chunks
+        if len(param_dicts) > 1 or append:
+            # define starting index in list of requests
+            if append:
+                idx = 0
+            else:
+                idx = 1
+            commands = []
+            for chunk, paramdict in enumerate(param_dicts[idx:]):
+                payload = urlencode(paramdict, doseq=True)
+                url = bcdata.WFS_URL + "?" + payload
+                command = [
+                    "ogr2ogr",
+                    "-update",
+                    "-append",
+                    "-f",
+                    "PostgreSQL",
+                    db_string + " active_schema="+schema,
+                    "-t_srs",
+                    "EPSG:3005",
+                    "-nln",
+                    table,
+                    url,
+                ]
+                commands.append(command)
 
-        # https://stackoverflow.com/questions/14533458
-        pool = Pool(max_workers)
-        with click.progressbar(pool.imap(partial(call, shell=True), commands) , length=len(param_dicts)) as bar:
-            for returncode in bar:
-                if returncode != 0:
-                    click.echo("Command failed: {}".format(returncode))
+            # now execute in parallel
+            click.echo("Loading remaining chunks:")
 
-    click.echo("Load of {} to {} in {} complete".format(src, schema+"."+table, db_url))
+            # https://stackoverflow.com/questions/14533458
+            pool = Pool(max_workers)
+            with click.progressbar(pool.imap(partial(call), commands) , length=len(param_dicts)) as bar:
+                for returncode in bar:
+                    if returncode != 0:
+                        click.echo("Command failed: {}".format(returncode))
+
+        click.echo("Load of {} to {} in {} complete".format(src, schema+"."+table, db_url))
+    except Exception:
+        click.echo("Data load failed")
+        raise click.Abort()

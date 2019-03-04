@@ -129,7 +129,7 @@ def define_request(
     """
     # validate the table name and find out how many features it holds
     table = validate_name(dataset)
-    n = bcdata.get_count(table)
+    n = bcdata.get_count(table, query=query)
 
     # DataBC WFS getcapabilities says that it supports paging,
     # and the spec says that responses should include 'next URI'
