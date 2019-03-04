@@ -3,4 +3,3 @@ click
 cligj
 owslib
 pgdata
-fwakit
