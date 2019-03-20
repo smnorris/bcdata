@@ -1,6 +1,17 @@
 Changes
 =======
 
+0.3.2 (2019-)
+------------------
+- enable different projections for bcdata cat (#48)
+- handle WCS request errors
+
+0.3.1 (2019-01-28)
+------------------
+- fix #45
+- add progress bar
+- enable bc2pg pagesize
+
 0.3.0 (2019-01-04)
 ------------------
 Major revision, nothing is backwards compatible

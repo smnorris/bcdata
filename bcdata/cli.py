@@ -204,7 +204,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     if compact:
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
-    for feat in bcdata.get_features(table, query=query, bounds=bounds, sortby=sortby):
+    for feat in bcdata.get_features(table, query=query, bounds=bounds, sortby=sortby, crs=dst_crs):
         click.echo(json.dumps(feat, **dump_kwds))
 
 
@@ -322,9 +322,6 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
                     url,
                 ]
                 commands.append(command)
-
-            # now execute in parallel
-            click.echo("Loading remaining chunks:")
 
             # https://stackoverflow.com/questions/14533458
             pool = Pool(max_workers)
