@@ -214,7 +214,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--db_url",
     "-db",
     help="SQLAlchemy database url",
-    default=os.environ["DATABASE_URL"],
+    default=os.environ.get("DATABASE_URL"),
 )
 @click.option(
     "--table", help="Destination table name"

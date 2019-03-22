@@ -212,7 +212,7 @@ The JSON output can be manipulated with [jq](https://stedolan.github.io/jq/). Fo
       etc...
     }
 
-Dump data to geojson:
+Dump data to geojson ([`EPSG:4326` only](https://tools.ietf.org/html/rfc7946#section-4)):
 
     $ bcdata dump bc-airports > bc-airports.geojson
 
