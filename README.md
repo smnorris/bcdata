@@ -227,7 +227,7 @@ Save a layer to a geopackage in BC Albers:
 
     $ bcdata cat bc-airports --dst-crs EPSG:3005 \
       | fio collect \
-      | fio load -f GPKG airports.gpkg
+      | fio load -f GPKG --dst-crs EPSG:3005 airports.gpkg
 
 Load a layer to postgres:
 
