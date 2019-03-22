@@ -31,4 +31,6 @@ def get_dem(bounds, out_file="dem.tif", dst_crs="EPSG:3005", resolution=25):
             file.write(r.content)
         return out_file
     else:
-        raise RuntimeError("WCS request failed with status code {}".format(str(r.status_code)))
+        raise RuntimeError(
+            "WCS request failed with status code {}".format(str(r.status_code))
+        )

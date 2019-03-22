@@ -204,7 +204,9 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     if compact:
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
-    for feat in bcdata.get_features(table, query=query, bounds=bounds, sortby=sortby, crs=dst_crs):
+    for feat in bcdata.get_features(
+        table, query=query, bounds=bounds, sortby=sortby, crs=dst_crs
+    ):
         click.echo(json.dumps(feat, **dump_kwds))
 
 
@@ -216,19 +218,13 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     help="SQLAlchemy database url",
     default=os.environ.get("DATABASE_URL"),
 )
-@click.option(
-    "--table", help="Destination table name"
-)
-@click.option(
-    "--schema", help="Destination schema name"
-)
+@click.option("--table", help="Destination table name")
+@click.option("--schema", help="Destination schema name")
 @click.option(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
-@click.option(
-    "--append", is_flag=True, help="Append to existing table"
-)
+@click.option("--append", is_flag=True, help="Append to existing table")
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
@@ -268,11 +264,8 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
         payload = urlencode(param_dicts[0], doseq=True)
         url = bcdata.WFS_URL + "?" + payload
         db = parse_db_url(db_url)
-        db_string = 'PG:host={h} user={u} dbname={db} password={pwd}'.format(
-                    h=db["host"],
-                    u=db["user"],
-                    db=db["database"],
-                    pwd=db["password"],
+        db_string = "PG:host={h} user={u} dbname={db} password={pwd}".format(
+            h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
         )
 
         # create the table
@@ -314,7 +307,7 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
                     "-append",
                     "-f",
                     "PostgreSQL",
-                    db_string + " active_schema="+schema,
+                    db_string + " active_schema=" + schema,
                     "-t_srs",
                     "EPSG:3005",
                     "-nln",
@@ -325,12 +318,16 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
 
             # https://stackoverflow.com/questions/14533458
             pool = Pool(max_workers)
-            with click.progressbar(pool.imap(partial(call), commands) , length=len(param_dicts)) as bar:
+            with click.progressbar(
+                pool.imap(partial(call), commands), length=len(param_dicts)
+            ) as bar:
                 for returncode in bar:
                     if returncode != 0:
                         click.echo("Command failed: {}".format(returncode))
 
-        click.echo("Load of {} to {} in {} complete".format(src, schema+"."+table, db_url))
+        click.echo(
+            "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
+        )
     except Exception:
         click.echo("Data load failed")
         raise click.Abort()
