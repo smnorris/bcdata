@@ -1,9 +1,11 @@
 Changes
 =======
 
-0.3.2 (2019-)
+0.3.2 (2019-03-22)
 ------------------
-- enable different projections for bcdata cat (#48)
+- add append option to bc2pg
+- fix bcdata cat not requesting specified CRS (#48)
+- fix crash when DATABASE_URL not set (#49)
 - handle WCS request errors
 
 0.3.1 (2019-01-28)
