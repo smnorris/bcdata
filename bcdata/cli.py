@@ -138,13 +138,14 @@ def info(dataset, indent, meta_member):
 @click.option("--out_file", "-o", help="Output file", default="dem25.tif")
 @bounds_opt_required
 @dst_crs_opt
+@click.option("--src-crs", "--src_crs", help="CRS of provided bounds", default="EPSG:3005")
 @click.option("--resolution", "-r", type=int, default=25)
-def dem(bounds, dst_crs, out_file, resolution):
+def dem(bounds, src_crs, dst_crs, out_file, resolution):
     """Dump BC DEM to TIFF
     """
     if not dst_crs:
         dst_crs = "EPSG:3005"
-    bcdata.get_dem(bounds, dst_crs=dst_crs, out_file=out_file, resolution=resolution)
+    bcdata.get_dem(bounds, out_file=out_file, src_crs=src_crs, dst_crs=dst_crs, resolution=resolution)
 
 
 @cli.command()
@@ -186,7 +187,6 @@ def dump(dataset, query, out_file, bounds):
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
-@indent_opt
 @bounds_opt
 @compact_opt
 @dst_crs_opt
@@ -208,7 +208,6 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
         table, query=query, bounds=bounds, sortby=sortby, crs=dst_crs
     ):
         click.echo(json.dumps(feat, **dump_kwds))
-
 
 @cli.command()
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)

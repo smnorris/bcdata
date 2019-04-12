@@ -7,10 +7,11 @@ import bcdata
 log = logging.getLogger(__name__)
 
 
-def get_dem(bounds, out_file="dem.tif", dst_crs="EPSG:3005", resolution=25):
+def get_dem(bounds, out_file="dem.tif", src_crs="EPSG:3005", dst_crs="EPSG:3005", resolution=25):
     """Get 25m DEM for provided bounds, write to GeoTIFF
     """
     bbox = ",".join([str(b) for b in bounds])
+    # todo: validate resolution units are equivalent to src_crs units
     # build request
     payload = {
         "service": "WCS",
@@ -19,7 +20,8 @@ def get_dem(bounds, out_file="dem.tif", dst_crs="EPSG:3005", resolution=25):
         "coverage": "pub:bc_elevation_25m_bcalb",
         "Format": "GeoTIFF",
         "bbox": bbox,
-        "CRS": dst_crs,
+        "CRS": src_crs,
+        "RESPONSE_CRS": dst_crs,
         "resx": str(resolution),
         "resy": str(resolution),
     }
