@@ -188,6 +188,7 @@ def dump(dataset, query, out_file, bounds):
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
 @bounds_opt
+@indent_opt
 @compact_opt
 @dst_crs_opt
 @click.option(
