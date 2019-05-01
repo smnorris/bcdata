@@ -232,7 +232,10 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--max_workers", "-w", default=5, help="Max number of concurrent requests"
 )
-def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_workers):
+@click.option(
+    "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
+)
+def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_workers, dim):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -287,6 +290,8 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
                 table,
                 url,
             ]
+            if dim:
+                command = command + ["-dim", dim]
             click.echo(" ".join(command))
             subprocess.run(command)
 
@@ -314,6 +319,8 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
                     table,
                     url,
                 ]
+                if dim:
+                    command = command + ["-dim", dim]
                 commands.append(command)
 
             # https://stackoverflow.com/questions/14533458
