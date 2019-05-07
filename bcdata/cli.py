@@ -206,7 +206,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
     for feat in bcdata.get_features(
-        table, query=query, bounds=bounds, sortby=sortby, crs=dst_crs
+        table, query=query, bounds=bounds, sortby=sortby.upper(), crs=dst_crs
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 
@@ -260,7 +260,7 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
 
     # build parameters for each required request
     param_dicts = bcdata.define_request(
-        dataset, query=query, sortby=sortby, pagesize=pagesize
+        dataset, query=query, sortby=sortby.upper(), pagesize=pagesize
     )
     try:
         # run the first request / load

@@ -5,6 +5,7 @@ Changes
 ------------------
 - fix get_dem to use CRS parameters correctly (#53)
 - add --dim option to bc2pg to support loading data with Z dimensions
+- make CLI option sortby case insensitive
 - bug fixes
 
 0.3.2 (2019-03-22)
