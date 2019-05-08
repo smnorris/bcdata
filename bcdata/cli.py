@@ -236,7 +236,10 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
 )
-def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim):
+@click.option(
+    "--fid", help="Primary key of dataset"
+)
+def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim, fid):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -293,6 +296,8 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
             ]
             if dim:
                 command = command + ["-dim", dim]
+            if fid:
+                command = command + ["-lco", "FID={}".format(fid)]
             click.echo(" ".join(command))
             subprocess.run(command)
 
@@ -326,6 +331,8 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
                 ]
                 if dim:
                     command = command + ["-dim", dim]
+                if fid:
+                    command = command + ["-lco", "FID={}".format(fid)]
                 commands.append(command)
 
             # https://stackoverflow.com/questions/14533458
@@ -339,14 +346,23 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
 
             # combine output and delete temp tables,
             # but first make sure output does not exist
-            conn.execute("DROP TABLE IF EXISTS {}.{}".format(schema, table))
+            # ** note that any dependent views will have to be re-created **
+            conn.execute("DROP TABLE IF EXISTS {}.{} CASCADE".format(schema, table))
             sql = "CREATE TABLE {}.{} AS ".format(schema, table)
             selects = ["SELECT * FROM {}.{}{}".format(schema, table, str(i)) for i, _x in enumerate(param_dicts, start=1)]
             sql = sql + " UNION ALL ".join(selects)
             conn.execute(sql)
             click.echo("Indexing geometry")
             conn[schema+"."+table].create_index_geom()
-
+            # deal with primary key, ogc_fid is not unique
+            if fid:
+                sql = "ALTER TABLE {}.{} ADD PRIMARY KEY ({})".format(schema, table, fid.lower())
+                conn.execute(sql)
+            else:
+                sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid"
+                conn.execute(sql)
+                sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY"
+                conn.execute(sql)
             drops = ["DROP TABLE {}.{}{}".format(schema, table, str(i)) for i, _x in enumerate(param_dicts, start=1)]
             click.echo("Dropping temp tables")
             for drop in drops:
@@ -355,6 +371,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
         click.echo(
             "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
         )
+
     except Exception:
         click.echo("Data load failed")
         raise click.Abort()
