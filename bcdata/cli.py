@@ -226,7 +226,6 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
-@click.option("--append", is_flag=True, help="Append to existing table")
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
@@ -237,7 +236,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
 )
-def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_workers, dim):
+def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -276,36 +275,31 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
         )
 
         # create the table
-        if not append:
-            command = [
-                "ogr2ogr",
-                "-lco",
-                "OVERWRITE=YES",
-                "-lco",
-                "SCHEMA={}".format(schema),
-                "-lco",
-                "GEOMETRY_NAME=geom",
-                "-f",
-                "PostgreSQL",
-                db_string,
-                "-t_srs",
-                "EPSG:3005",
-                "-nln",
-                table,
-                url,
-            ]
-            if dim:
-                command = command + ["-dim", dim]
-            click.echo(" ".join(command))
-            subprocess.run(command)
+        command = [
+            "ogr2ogr",
+            "-lco",
+            "OVERWRITE=YES",
+            "-lco",
+            "SCHEMA={}".format(schema),
+            "-lco",
+            "GEOMETRY_NAME=geom",
+            "-f",
+            "PostgreSQL",
+            db_string,
+            "-t_srs",
+            "EPSG:3005",
+            "-nln",
+            table,
+            url,
+        ]
+        if dim:
+            command = command + ["-dim", dim]
+        click.echo(" ".join(command))
+        subprocess.run(command)
 
         # append to table when append specified or processing many chunks
-        if len(param_dicts) > 1 or append:
-            # define starting index in list of requests
-            if append:
-                idx = 0
-            else:
-                idx = 1
+        if len(param_dicts) > 1:
+            idx = 1
             commands = []
             for chunk, paramdict in enumerate(param_dicts[idx:]):
                 payload = urlencode(paramdict, doseq=True)
