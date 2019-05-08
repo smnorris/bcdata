@@ -24,13 +24,12 @@ log = logging.getLogger(__name__)
 
 
 def get_sortkey(table):
-    """Get a field to sort by
     """
-    # Just pick the first column in the table in alphabetical order.
-    # Ideally we would get the primary key from bcdc api, but it doesn't
-    # seem to be available
+    Sort by the first column in the table - generally this should be the
+    primary key
+    """
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-    return sorted(wfs.get_schema("pub:" + table)["properties"].keys())[0]
+    return list(wfs.get_schema("pub:" + table)["properties"].keys())[0]
 
 
 def check_cache(path):

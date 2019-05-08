@@ -3,9 +3,12 @@ Changes
 
 0.3.3 (2019-)
 ------------------
+- bc2pg - load each request to a separate table before combining (#56)
+- set default sortby column to be first column in table
+  (generally the primary key)
+- make CLI option sortby case insensitive
 - fix get_dem to use CRS parameters correctly (#53)
 - add --dim option to bc2pg to support loading data with Z dimensions
-- make CLI option sortby case insensitive
 - bug fixes
 
 0.3.2 (2019-03-22)

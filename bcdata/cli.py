@@ -226,7 +226,6 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
-@click.option("--append", is_flag=True, help="Append to existing table")
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
@@ -237,7 +236,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
 )
-def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_workers, dim):
+def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -267,16 +266,14 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
         dataset, query=query, sortby=sortby, pagesize=pagesize
     )
     try:
-        # run the first request / load
-        payload = urlencode(param_dicts[0], doseq=True)
-        url = bcdata.WFS_URL + "?" + payload
         db = parse_db_url(db_url)
         db_string = "PG:host={h} user={u} dbname={db} password={pwd}".format(
             h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
         )
-
-        # create the table
-        if not append:
+        # for single page requests, write directly to output table
+        if len(param_dicts) == 1:
+            payload = urlencode(param_dicts[0], doseq=True)
+            url = bcdata.WFS_URL + "?" + payload
             command = [
                 "ogr2ogr",
                 "-lco",
@@ -299,28 +296,32 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
             click.echo(" ".join(command))
             subprocess.run(command)
 
-        # append to table when append specified or processing many chunks
-        if len(param_dicts) > 1 or append:
-            # define starting index in list of requests
-            if append:
-                idx = 0
-            else:
-                idx = 1
+        # for muli-page requests, load to temp tables and combine
+        # when complete
+        if len(param_dicts) > 1:
             commands = []
-            for chunk, paramdict in enumerate(param_dicts[idx:]):
+            for i, paramdict in enumerate(param_dicts, start=1):
                 payload = urlencode(paramdict, doseq=True)
                 url = bcdata.WFS_URL + "?" + payload
                 command = [
                     "ogr2ogr",
-                    "-update",
-                    "-append",
+                    "-lco",
+                    "OVERWRITE=YES",
+                    "-lco",
+                    "SCHEMA={}".format(schema),
+                    "-lco",
+                    "GEOMETRY_NAME=geom",
                     "-f",
                     "PostgreSQL",
-                    db_string + " active_schema=" + schema,
+                    db_string,
                     "-t_srs",
                     "EPSG:3005",
                     "-nln",
-                    table,
+                    table+str(i),
+                    "-lco",
+                    "SPATIAL_INDEX=NONE",
+                    "-lco",
+                    "UNLOGGED=ON",
                     url,
                 ]
                 if dim:
@@ -335,6 +336,21 @@ def bc2pg(dataset, db_url, table, schema, query, append, pagesize, sortby, max_w
                 for returncode in bar:
                     if returncode != 0:
                         click.echo("Command failed: {}".format(returncode))
+
+            # combine output and delete temp tables,
+            # but first make sure output does not exist
+            conn.execute("DROP TABLE IF EXISTS {}.{}".format(schema, table))
+            sql = "CREATE TABLE {}.{} AS ".format(schema, table)
+            selects = ["SELECT * FROM {}.{}{}".format(schema, table, str(i)) for i, _x in enumerate(param_dicts, start=1)]
+            sql = sql + " UNION ALL ".join(selects)
+            conn.execute(sql)
+            click.echo("Indexing geometry")
+            conn[schema+"."+table].create_index_geom()
+
+            drops = ["DROP TABLE {}.{}{}".format(schema, table, str(i)) for i, _x in enumerate(param_dicts, start=1)]
+            click.echo("Dropping temp tables")
+            for drop in drops:
+                conn.execute(drop)
 
         click.echo(
             "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
