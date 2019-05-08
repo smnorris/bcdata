@@ -236,7 +236,8 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
 )
-def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim):
+@click.option("--fid", "Primary key of dataset")
+def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim, fid):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -294,6 +295,8 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
         ]
         if dim:
             command = command + ["-dim", dim]
+        if fid:
+            command = command + ["-lco", "FID={}".format(fid)]
         click.echo(" ".join(command))
         subprocess.run(command)
 
@@ -319,6 +322,8 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
                 ]
                 if dim:
                     command = command + ["-dim", dim]
+                if fid:
+                    command = command + ["-lco", "FID={}".format(fid)]
                 commands.append(command)
 
             # https://stackoverflow.com/questions/14533458
