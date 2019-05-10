@@ -360,9 +360,9 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
         # deal with primary key - becaue loading to many tables,
         # ogc_fid is not unique
         if not fid:
-            sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid"
+            sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid".format(schema, table)
             conn.execute(sql)
-            sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY"
+            sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(schema, table)
             conn.execute(sql)
 
     click.echo(
