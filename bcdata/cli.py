@@ -253,6 +253,10 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
         schema = src_schema
     if not table:
         table = src_table
+    # if fid provided and sortby is not, sort by the fid
+    if fid and not sortby:
+        sortby = fid
+    # the column has to be capitalized to be found
     if sortby:
         sortby = sortby.upper()
 
@@ -307,7 +311,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
     # write to additional separate tables if data is larger than 10k recs
     if len(param_dicts) > 1:
         commands = []
-        for n, paramdict in enumerate(param_dicts[1:2]):
+        for n, paramdict in enumerate(param_dicts[1:]):
             # create table to load to (so types are identical)
             sql = """
             CREATE TABLE {schema}.{table}_{n}
@@ -344,7 +348,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
                     click.echo("Command failed: {}".format(returncode))
 
         # once loaded, combine & drop
-        for n, _x in enumerate(param_dicts[1:2]):
+        for n, _x in enumerate(param_dicts[1:]):
             sql = """INSERT INTO {schema}.{table} SELECT * FROM {schema}.{table}_{n}""".format(
                 schema=schema, table=table, n=str(n))
             conn.execute(sql)
