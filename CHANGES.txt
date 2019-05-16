@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.3.3 (2019-)
+0.3.3 (2019-05-16)
 ------------------
 - use OBJECTID as default sortby key (#57)
 - bc2pg - add dim option to support loading data with Z dimensions
