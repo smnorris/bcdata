@@ -26,6 +26,7 @@ setup(
     version=version,
     description=u"Python tools for quick access to DataBC geo-data available via WFS",
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
