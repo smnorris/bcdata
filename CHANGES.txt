@@ -3,12 +3,11 @@ Changes
 
 0.3.3 (2019-)
 ------------------
-- bc2pg - load each request to a separate table before combining (#56)
-- set default sortby column to be first column in table
-  (generally the primary key)
-- make CLI option sortby case insensitive
+- use OBJECTID as default sortby key (#57)
+- bc2pg - add dim option to support loading data with Z dimensions
+- bc2pg - add fid option to enable correct assignment of primary key
+- bc2pg - remove sortby option
 - fix get_dem to use CRS parameters correctly (#53)
-- add --dim option to bc2pg to support loading data with Z dimensions
 - bug fixes
 
 0.3.2 (2019-03-22)

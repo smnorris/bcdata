@@ -212,6 +212,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 
+
 @cli.command()
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @click.option(
@@ -229,17 +230,14 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
-@click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--max_workers", "-w", default=5, help="Max number of concurrent requests"
 )
 @click.option(
     "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
 )
-@click.option(
-    "--fid", help="Primary key of dataset"
-)
-def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim, fid):
+@click.option("--fid", default=None, help="Primary key of dataset")
+def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -255,9 +253,9 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
         schema = src_schema
     if not table:
         table = src_table
-    if sortby:
-        sortby = sortby.upper()
-
+    # always upper
+    if fid:
+        fid = fid.upper()
     # create schema if it does not exist
     conn = pgdata.connect(db_url)
     if schema not in conn.schemas:
@@ -266,112 +264,103 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
 
     # build parameters for each required request
     param_dicts = bcdata.define_request(
-        dataset, query=query, sortby=sortby, pagesize=pagesize
+        dataset, query=query, sortby=fid, pagesize=pagesize
     )
-    try:
-        db = parse_db_url(db_url)
-        db_string = "PG:host={h} user={u} dbname={db} password={pwd}".format(
-            h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
-        )
-        # for single page requests, write directly to output table
-        if len(param_dicts) == 1:
-            payload = urlencode(param_dicts[0], doseq=True)
+
+    # run the first request / load
+    payload = urlencode(param_dicts[0], doseq=True)
+    url = bcdata.WFS_URL + "?" + payload
+    db = parse_db_url(db_url)
+    db_string = "PG:host={h} user={u} dbname={db} password={pwd}".format(
+        h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
+    )
+
+    # create the table
+    command = [
+        "ogr2ogr",
+        "-lco",
+        "OVERWRITE=YES",
+        "-lco",
+        "SCHEMA={}".format(schema),
+        "-lco",
+        "GEOMETRY_NAME=geom",
+        "-f",
+        "PostgreSQL",
+        db_string,
+        "-t_srs",
+        "EPSG:3005",
+        "-lco",
+        "SPATIAL_INDEX=NONE",
+        "-lco",
+        "UNLOGGED=ON",
+        "-nln",
+        table,
+        url,
+    ]
+    if dim:
+        command = command + ["-dim", dim]
+    if fid:
+        command = command + ["-lco", "FID={}".format(fid)]
+    click.echo(" ".join(command))
+    subprocess.run(command)
+
+    # write to additional separate tables if data is larger than 10k recs
+    if len(param_dicts) > 1:
+        commands = []
+        for n, paramdict in enumerate(param_dicts[1:]):
+            # create table to load to (so types are identical)
+            sql = """
+            CREATE TABLE {schema}.{table}_{n}
+            (LIKE {schema}.{table}
+            INCLUDING ALL)
+            """.format(schema=schema, table=table, n=str(n))
+            conn.execute(sql)
+            payload = urlencode(paramdict, doseq=True)
             url = bcdata.WFS_URL + "?" + payload
             command = [
                 "ogr2ogr",
-                "-lco",
-                "OVERWRITE=YES",
-                "-lco",
-                "SCHEMA={}".format(schema),
-                "-lco",
-                "GEOMETRY_NAME=geom",
+                "-update",
+                "-append",
                 "-f",
                 "PostgreSQL",
-                db_string,
+                db_string + " active_schema=" + schema,
                 "-t_srs",
                 "EPSG:3005",
                 "-nln",
-                table,
+                table+"_"+str(n),
                 url,
             ]
             if dim:
                 command = command + ["-dim", dim]
-            if fid:
-                command = command + ["-lco", "FID={}".format(fid)]
-            click.echo(" ".join(command))
-            subprocess.run(command)
+            commands.append(command)
 
-        # for muli-page requests, load to temp tables and combine
-        # when complete
-        if len(param_dicts) > 1:
-            commands = []
-            for i, paramdict in enumerate(param_dicts, start=1):
-                payload = urlencode(paramdict, doseq=True)
-                url = bcdata.WFS_URL + "?" + payload
-                command = [
-                    "ogr2ogr",
-                    "-lco",
-                    "OVERWRITE=YES",
-                    "-lco",
-                    "SCHEMA={}".format(schema),
-                    "-lco",
-                    "GEOMETRY_NAME=geom",
-                    "-f",
-                    "PostgreSQL",
-                    db_string,
-                    "-t_srs",
-                    "EPSG:3005",
-                    "-nln",
-                    table+str(i),
-                    "-lco",
-                    "SPATIAL_INDEX=NONE",
-                    "-lco",
-                    "UNLOGGED=ON",
-                    url,
-                ]
-                if dim:
-                    command = command + ["-dim", dim]
-                if fid:
-                    command = command + ["-lco", "FID={}".format(fid)]
-                commands.append(command)
+        # https://stackoverflow.com/questions/14533458
+        pool = Pool(max_workers)
+        with click.progressbar(
+            pool.imap(partial(call), commands), length=len(param_dicts)
+        ) as bar:
+            for returncode in bar:
+                if returncode != 0:
+                    click.echo("Command failed: {}".format(returncode))
 
-            # https://stackoverflow.com/questions/14533458
-            pool = Pool(max_workers)
-            with click.progressbar(
-                pool.imap(partial(call), commands), length=len(param_dicts)
-            ) as bar:
-                for returncode in bar:
-                    if returncode != 0:
-                        click.echo("Command failed: {}".format(returncode))
-
-            # combine output and delete temp tables,
-            # but first make sure output does not exist
-            # ** note that any dependent views will have to be re-created **
-            conn.execute("DROP TABLE IF EXISTS {}.{} CASCADE".format(schema, table))
-            sql = "CREATE TABLE {}.{} AS ".format(schema, table)
-            selects = ["SELECT * FROM {}.{}{}".format(schema, table, str(i)) for i, _x in enumerate(param_dicts, start=1)]
-            sql = sql + " UNION ALL ".join(selects)
+        # once loaded, combine & drop
+        for n, _x in enumerate(param_dicts[1:]):
+            sql = """INSERT INTO {schema}.{table} SELECT * FROM {schema}.{table}_{n}""".format(
+                schema=schema, table=table, n=str(n))
             conn.execute(sql)
-            click.echo("Indexing geometry")
-            conn[schema+"."+table].create_index_geom()
-            # deal with primary key, ogc_fid is not unique
-            if fid:
-                sql = "ALTER TABLE {}.{} ADD PRIMARY KEY ({})".format(schema, table, fid.lower())
-                conn.execute(sql)
-            else:
-                sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid"
-                conn.execute(sql)
-                sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY"
-                conn.execute(sql)
-            drops = ["DROP TABLE {}.{}{}".format(schema, table, str(i)) for i, _x in enumerate(param_dicts, start=1)]
-            click.echo("Dropping temp tables")
-            for drop in drops:
-                conn.execute(drop)
+            sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
+            conn.execute(sql)
+        conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
+        click.echo("Indexing geometry")
+        conn[schema+"."+table].create_index_geom()
+        # deal with primary key - becaue loading to many tables,
+        # ogc_fid is not unique
+        if not fid:
+            sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid".format(schema, table)
+            conn.execute(sql)
+            sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(schema, table)
+            conn.execute(sql)
 
-        click.echo(
-            "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
-        )
-
-    except Exception:
-        click.echo("Data load failed")
-        raise click.Abort()
+    click.echo(
+        "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
+    )
