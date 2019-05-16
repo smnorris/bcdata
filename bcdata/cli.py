@@ -289,10 +289,6 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
         db_string,
         "-t_srs",
         "EPSG:3005",
-        "-lco",
-        "SPATIAL_INDEX=NONE",
-        "-lco",
-        "UNLOGGED=ON",
         "-nln",
         table,
         url,
@@ -301,6 +297,10 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
         command = command + ["-dim", dim]
     if fid:
         command = command + ["-lco", "FID={}".format(fid)]
+    # for speed with big loads - unlogged, no spatial index
+    if len(param_dicts) > 1:
+        command = command + ["-lco", "UNLOGGED=ON"]
+        command = command + ["-lco", "SPATIAL_INDEX=NONE"]
     click.echo(" ".join(command))
     subprocess.run(command)
 
