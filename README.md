@@ -155,7 +155,7 @@ There are several commands available:
 
 #### `bc2pg`
 
-    $ bc2pg --help
+    $ bcdata bc2pg --help
     Usage: bcdata bc2pg [OPTIONS] DATASET
 
       Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
@@ -174,7 +174,6 @@ There are several commands available:
                                  rver.org/stable/en/user/tutorials/cql/cql_tutoria
                                  l.html)
       -p, --pagesize INTEGER     Max number of records to request
-      -s, --sortby TEXT          Name of sort field
       -w, --max_workers INTEGER  Max number of concurrent requests
       --dim TEXT                 Force the coordinate dimension to val (valid
                                  values are XY, XYZ)
