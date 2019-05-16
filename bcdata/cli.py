@@ -212,6 +212,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 
+
 @cli.command()
 @click.argument("dataset", type=click.STRING, autocompletion=get_objects)
 @click.option(
@@ -229,7 +230,6 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
-@click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--max_workers", "-w", default=5, help="Max number of concurrent requests"
 )
@@ -237,7 +237,7 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
-def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, dim, fid):
+def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -253,13 +253,9 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
         schema = src_schema
     if not table:
         table = src_table
-    # if fid provided and sortby is not, sort by the fid
-    if fid and not sortby:
-        sortby = fid
-    # the column has to be capitalized to be found
-    if sortby:
-        sortby = sortby.upper()
-
+    # always upper
+    if fid:
+        fid = fid.upper()
     # create schema if it does not exist
     conn = pgdata.connect(db_url)
     if schema not in conn.schemas:
@@ -268,7 +264,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, sortby, max_workers, 
 
     # build parameters for each required request
     param_dicts = bcdata.define_request(
-        dataset, query=query, sortby=sortby, pagesize=pagesize
+        dataset, query=query, sortby=fid, pagesize=pagesize
     )
 
     # run the first request / load

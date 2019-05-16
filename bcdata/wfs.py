@@ -24,12 +24,22 @@ log = logging.getLogger(__name__)
 
 
 def get_sortkey(table):
-    """
-    Sort by the first column in the table - generally this should be the
-    primary key
+    """Check data for unique columns avaialbe for sorging paged requests
     """
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-    return list(wfs.get_schema("pub:" + table)["properties"].keys())[0]
+    columns = list(wfs.get_schema("pub:" + table)["properties"].keys())
+    # use OBJECTID as default sort key, if present
+    if "OBJECTID" in columns:
+        return "OBJECTID"
+    # if OBJECTID is not present (several GSR tables), use SEQUENCE_ID
+    elif "SEQUENCE_ID" in columns:
+        return "SEQUENCE_ID"
+    # otherwise, it should be safe to presume first column is the primary key
+    # (WHSE_FOREST_VEGETATION.VEG_COMP_LYR_R1_POLY's FEATURE_ID appears to be
+    # the only public case, and very large veg downloads are likely better
+    # accessed via some other channel)
+    else:
+        return columns[0]
 
 
 def check_cache(path):
