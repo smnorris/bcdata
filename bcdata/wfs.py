@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 def get_sortkey(table):
-    """Check data for unique columns avaialbe for sorging paged requests
+    """Check data for unique columns available for sorting paged requests
     """
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     columns = list(wfs.get_schema("pub:" + table)["properties"].keys())
