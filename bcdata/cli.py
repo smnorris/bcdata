@@ -76,15 +76,15 @@ bounds_opt = click.option(
     "--bounds",
     default=None,
     callback=bounds_handler,
-    help='Bounds: "left bottom right top" or "[left, bottom, right, top]".',
+    help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-bounds_opt_required = click.option(
+bounds_opt_dem = click.option(
     "--bounds",
     required=True,
     default=None,
     callback=bounds_handler,
-    help='Bounds: "left bottom right top" or "[left, bottom, right, top]".',
+    help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
 dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS.")
@@ -136,16 +136,24 @@ def info(dataset, indent, meta_member):
 
 @cli.command()
 @click.option("--out_file", "-o", help="Output file", default="dem25.tif")
-@bounds_opt_required
+@bounds_opt_dem
 @dst_crs_opt
-@click.option("--src-crs", "--src_crs", help="CRS of provided bounds", default="EPSG:3005")
+@click.option(
+    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+)
 @click.option("--resolution", "-r", type=int, default=25)
-def dem(bounds, src_crs, dst_crs, out_file, resolution):
+def dem(bounds, bounds_crs, dst_crs, out_file, resolution):
     """Dump BC DEM to TIFF
     """
     if not dst_crs:
         dst_crs = "EPSG:3005"
-    bcdata.get_dem(bounds, out_file=out_file, src_crs=src_crs, dst_crs=dst_crs, resolution=resolution)
+    bcdata.get_dem(
+        bounds,
+        out_file=out_file,
+        src_crs=src_crs,
+        dst_crs=dst_crs,
+        resolution=resolution,
+    )
 
 
 @cli.command()
@@ -156,7 +164,10 @@ def dem(bounds, src_crs, dst_crs, out_file, resolution):
 )
 @click.option("--out_file", "-o", help="Output file")
 @bounds_opt
-def dump(dataset, query, out_file, bounds):
+@click.option(
+    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+)
+def dump(dataset, query, out_file, bounds, bounds_crs):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -172,7 +183,7 @@ def dump(dataset, query, out_file, bounds):
 
     """
     table = bcdata.validate_name(dataset)
-    data = bcdata.get_data(table, query=query, bounds=bounds)
+    data = bcdata.get_data(table, query=query, bounds=bounds, bounds_crs=bounds_crs)
     if out_file:
         with open(out_file, "w") as f:
             json.dump(data.json(), f)
@@ -195,7 +206,10 @@ def dump(dataset, query, out_file, bounds):
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option("--sortby", "-s", help="Name of sort field")
-def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
+@click.option(
+    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+)
+def cat(dataset, query, bounds, bounds_crs, indent, compact, dst_crs, pagesize, sortby):
     """Write DataBC features to stdout as GeoJSON feature objects.
     """
     # Note that cat does not concatenate!
@@ -208,7 +222,12 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
     for feat in bcdata.get_features(
-        table, query=query, bounds=bounds, sortby=sortby, crs=dst_crs
+        table,
+        query=query,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
+        sortby=sortby,
+        crs=dst_crs,
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 
@@ -234,7 +253,9 @@ def cat(dataset, query, bounds, indent, compact, dst_crs, pagesize, sortby):
     "--max_workers", "-w", default=5, help="Max number of concurrent requests"
 )
 @click.option(
-    "--dim", default=None, help="Force the coordinate dimension to val (valid values are XY, XYZ)"
+    "--dim",
+    default=None,
+    help="Force the coordinate dimension to val (valid values are XY, XYZ)",
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
 def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid):
@@ -313,7 +334,9 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
             CREATE TABLE {schema}.{table}_{n}
             (LIKE {schema}.{table}
             INCLUDING ALL)
-            """.format(schema=schema, table=table, n=str(n))
+            """.format(
+                schema=schema, table=table, n=str(n)
+            )
             conn.execute(sql)
             payload = urlencode(paramdict, doseq=True)
             url = bcdata.WFS_URL + "?" + payload
@@ -327,7 +350,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
                 "-t_srs",
                 "EPSG:3005",
                 "-nln",
-                table+"_"+str(n),
+                table + "_" + str(n),
                 url,
             ]
             if dim:
@@ -346,19 +369,22 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
         # once loaded, combine & drop
         for n, _x in enumerate(param_dicts[1:]):
             sql = """INSERT INTO {schema}.{table} SELECT * FROM {schema}.{table}_{n}""".format(
-                schema=schema, table=table, n=str(n))
+                schema=schema, table=table, n=str(n)
+            )
             conn.execute(sql)
             sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
             conn.execute(sql)
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
         click.echo("Indexing geometry")
-        conn[schema+"."+table].create_index_geom()
+        conn[schema + "." + table].create_index_geom()
         # deal with primary key - becaue loading to many tables,
         # ogc_fid is not unique
         if not fid:
             sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid".format(schema, table)
             conn.execute(sql)
-            sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(schema, table)
+            sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(
+                schema, table
+            )
             conn.execute(sql)
 
     click.echo(

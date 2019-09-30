@@ -127,7 +127,13 @@ def make_request(parameters):
 
 
 def define_request(
-    dataset, query=None, crs="epsg:4326", bounds=None, sortby=None, pagesize=10000
+    dataset,
+    query=None,
+    crs="epsg:4326",
+    bounds=None,
+    bounds_crs="EPSG:3005",
+    sortby=None,
+    pagesize=10000,
 ):
     """Define the getfeature request parameters required to download a dataset
 
@@ -139,6 +145,8 @@ def define_request(
     # validate the table name and find out how many features it holds
     table = validate_name(dataset)
     n = bcdata.get_count(table, query=query)
+    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
+    geom_column = wfs.get_schema("pub:" + table)["geometry_column"]
 
     # DataBC WFS getcapabilities says that it supports paging,
     # and the spec says that responses should include 'next URI'
@@ -165,10 +173,18 @@ def define_request(
         }
         if sortby:
             request["sortby"] = sortby
-        if query:
+        # build the CQL based on query and bounds
+        # (the bbox param shortcut is mutually exclusive with CQL_FILTER)
+        if query and not bounds:
             request["CQL_FILTER"] = query
         if bounds:
-            request["bbox"] = ",".join([str(b) for b in bounds])
+            b0, b1, b2, b3 = [str(b) for b in bounds]
+            bnd_query = f"bbox({geom_column}, {b0}, {b1}, {b2}, {b3}, '{bounds_crs}')"
+            if not query:
+                request["CQL_FILTER"] = bnd_query
+            else:
+                request["CQL_FILTER"] = query + " AND " + bnd_query
+
         if chunks > 1:
             request["startIndex"] = i * pagesize
             request["count"] = pagesize
@@ -181,13 +197,23 @@ def get_data(
     query=None,
     crs="epsg:4326",
     bounds=None,
+    bounds_crs="epsg:3005",
     sortby=None,
     pagesize=10000,
     max_workers=5,
 ):
     """Get GeoJSON featurecollection from DataBC WFS
     """
-    param_dicts = define_request(dataset, query, crs, bounds, sortby, pagesize)
+    param_dicts = define_request(
+        dataset,
+        query=query,
+        crs=crs,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
+        sortby=sortby,
+        pagesize=pagesize,
+    )
+    print(param_dicts[0])
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = executor.map(make_request, param_dicts)
@@ -203,13 +229,22 @@ def get_features(
     query=None,
     crs="epsg:4326",
     bounds=None,
+    bounds_crs="epsg:3005",
     sortby=None,
     pagesize=10000,
     max_workers=5,
 ):
     """Yield features from DataBC WFS
     """
-    param_dicts = define_request(dataset, query, crs, bounds, sortby, pagesize)
+    param_dicts = define_request(
+        dataset,
+        query=query,
+        crs=crs,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
+        sortby=sortby,
+        pagesize=pagesize,
+    )
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for result in executor.map(make_request, param_dicts):
