@@ -95,7 +95,7 @@ There are several commands available:
     $ bcdata dump --help
     Usage: bcdata dump [OPTIONS] DATASET
 
-      Dump a data layer from DataBC WFS to GeoJSON
+      Write DataBC features to stdout as GeoJSON feature collection.
 
         $ bcdata dump bc-airports
         $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
@@ -107,34 +107,39 @@ There are several commands available:
          $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
 
     Options:
-      --query TEXT         A valid CQL or ECQL query, quote enclosed (https://docs
-                           .geoserver.org/stable/en/user/tutorials/cql/cql_tutoria
-                           l.html)
-      -o, --out_file TEXT  Output file
-      --bounds TEXT        Bounds: "left bottom right top" or "[left, bottom,
-                           right, top]".
-      --help               Show this message and exit.
+      --query TEXT                    A valid CQL or ECQL query, quote enclosed (h
+                                      ttps://docs.geoserver.org/stable/en/user/tut
+                                      orials/cql/cql_tutorial.html)
+      -o, --out_file TEXT             Output file
+      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                      bottom, right, top]". Coordinates are BC
+                                      Albers (default) or --bounds_crs
+      --bounds-crs, --bounds_crs TEXT
+                                      CRS of provided bounds
+      --help                          Show this message and exit.
 
 #### `cat`
 
     $ bcdata cat --help
     Usage: bcdata cat [OPTIONS] DATASET
 
-      Download a DataBC WFS layer and write to stdout as GeoJSON feature
-      objects. In this case, cat does not concatenate.
+      Write DataBC features to stdout as GeoJSON feature objects.
 
     Options:
-      --query TEXT               A valid `CQL` or `ECQL` query (https://docs.geose
-                                 rver.org/stable/en/user/tutorials/cql/cql_tutoria
-                                 l.html)
-      --indent INTEGER           Indentation level for JSON output
-      --bounds TEXT              Bounds: "left bottom right top" or "[left,
-                                 bottom, right, top]".
-      --compact / --not-compact  Use compact separators (',', ':').
-      --dst-crs, --dst_crs TEXT  Destination CRS.
-      -p, --pagesize INTEGER     Max number of records to request
-      -s, --sortby TEXT          Name of sort field
-      --help                     Show this message and exit.
+      --query TEXT                    A valid `CQL` or `ECQL` query (https://docs.
+                                      geoserver.org/stable/en/user/tutorials/cql/c
+                                      ql_tutorial.html)
+      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                      bottom, right, top]". Coordinates are BC
+                                      Albers (default) or --bounds_crs
+      --indent INTEGER                Indentation level for JSON output
+      --compact / --not-compact       Use compact separators (',', ':').
+      --dst-crs, --dst_crs TEXT       Destination CRS.
+      -p, --pagesize INTEGER          Max number of records to request
+      -s, --sortby TEXT               Name of sort field
+      --bounds-crs, --bounds_crs TEXT
+                                      CRS of provided bounds
+      --help                          Show this message and exit.
 
 
 #### `dem`
@@ -145,12 +150,15 @@ There are several commands available:
       Dump BC DEM to TIFF
 
     Options:
-      -o, --out_file TEXT        Output file
-      --bounds TEXT              Bounds: "left bottom right top" or "[left,
-                                 bottom, right, top]".  [required]
-      --dst-crs, --dst_crs TEXT  Destination CRS.
+      -o, --out_file TEXT             Output file
+      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                      bottom, right, top]". Coordinates are BC
+                                      Albers (default) or --bounds_crs  [required]
+      --dst-crs, --dst_crs TEXT       Destination CRS.
+      --bounds-crs, --bounds_crs TEXT
+                                      CRS of provided bounds
       -r, --resolution INTEGER
-      --help                     Show this message and exit.
+      --help                          Show this message and exit.
 
 
 #### `bc2pg`

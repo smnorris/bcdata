@@ -7,7 +7,9 @@ import bcdata
 log = logging.getLogger(__name__)
 
 
-def get_dem(bounds, out_file="dem.tif", src_crs="EPSG:3005", dst_crs="EPSG:3005", resolution=25):
+def get_dem(
+    bounds, out_file="dem.tif", src_crs="EPSG:3005", dst_crs="EPSG:3005", resolution=25
+):
     """Get 25m DEM for provided bounds, write to GeoTIFF
     """
     bbox = ",".join([str(b) for b in bounds])

@@ -50,6 +50,12 @@ def test_bounds_filter():
     assert len(data['features']) == 8
 
 
+def test_cql_bounds_filter():
+    data = bcdata.get_data(AIRPORTS_KEY, query="AIRPORT_NAME='Victoria International Airport'", bounds=[1167680.0, 367958.0, 1205720.0, 432374.0], bounds_crs="EPSG:3005")
+    assert len(data['features']) == 1
+    assert data['features'][0]['properties']['AIRPORT_NAME'] == "Victoria International Airport"
+
+
 def test_dem():
     bounds = [1046891, 704778, 1055345, 709629]
     out_file = bcdata.get_dem(bounds, "test_dem.tif")
