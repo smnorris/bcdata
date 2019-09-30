@@ -9,7 +9,7 @@ from .wcs import get_dem
 
 import logging
 
-__version__ = "0.3.4dev0"
+__version__ = "0.3.4"
 
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
