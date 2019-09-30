@@ -3,7 +3,7 @@ Changes
 
 0.3.4
 ------------------
-- support using --bounds and --filter at the same time (#56)
+- support using --bounds and --filter at the same time (#58)
 - support --bounds_crs option for most tools/functions
 - rename --src_crs option for dem command to --bounds_crs
 
