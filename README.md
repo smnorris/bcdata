@@ -240,11 +240,28 @@ Save a layer to a geopackage in BC Albers:
       | fio collect \
       | fio load -f GPKG --dst-crs EPSG:3005 airports.gpkg
 
-Load a layer to postgres:
+Load a couple of layer to postgres and run a query:
 
-    $ bcdata bc2pg \
-      bc-airports \
-      --db_url postgresql://postgres:postgres@localhost:5432/postgis
+    $ bcdata bc2pg bc-airports \
+        --db_url postgresql://postgres:postgres@localhost:5432/postgis
+
+    $ bcdata bc2pg WHSE_LEGAL_ADMIN_BOUNDARIES.ABMS_MUNICIPALITIES_SP \
+        --db_url postgresql://postgres:postgres@localhost:5432/postgis
+
+    $ psql -c \
+      "SELECT airport_name
+       FROM whse_imagery_and_base_maps.gsr_airports_svw a
+       INNER JOIN whse_legal_admin_boundaries.abms_municipalities_sp m
+       ON ST_Intersects(a.geom, m.geom)
+       WHERE admin_area_name LIKE '%Victoria%'"
+                               airport_name
+    ------------------------------------------------------------------
+     Victoria Harbour (Camel Point) Heliport
+     Victoria Inner Harbour AirportÂ (Victoria Harbour Water Airport)
+     Victoria Harbour (Shoal Point) Heliport
+    (3 rows)
+
+
 
 
 ## Projections / CRS

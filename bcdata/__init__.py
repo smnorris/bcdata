@@ -9,13 +9,13 @@ from .wcs import get_dem
 
 import logging
 
-__version__ = "0.3.5"
+__version__ = "0.3.6dev0"
 
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
-WFS_URL = "http://openmaps.gov.bc.ca/geo/pub/wfs"
+WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
-WCS_URL = "http://delivery.openmaps.gov.bc.ca/om/wcs"
+WCS_URL = "https://delivery.openmaps.gov.bc.ca/om/wcs"
 
 
 def configure_logging():
