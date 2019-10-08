@@ -1,9 +1,14 @@
 Changes
 =======
 
-0.3.5 ()
+0.3.6 ()
 ------------------
 
+
+0.3.5 (2019-10-08)
+------------------
+- use http WFS requests to avoid certificate errors (#59)
+- fix bug introduced in v0.3.4 (#60)
 
 
 0.3.4 (2019-09-30)
