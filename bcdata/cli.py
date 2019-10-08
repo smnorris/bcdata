@@ -150,7 +150,7 @@ def dem(bounds, bounds_crs, dst_crs, out_file, resolution):
     bcdata.get_dem(
         bounds,
         out_file=out_file,
-        src_crs=src_crs,
+        src_crs=bounds_crs,
         dst_crs=dst_crs,
         resolution=resolution,
     )

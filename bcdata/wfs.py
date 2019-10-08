@@ -213,8 +213,6 @@ def get_data(
         sortby=sortby,
         pagesize=pagesize,
     )
-    print(param_dicts[0])
-
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = executor.map(make_request, param_dicts)
 
