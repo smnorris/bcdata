@@ -93,7 +93,7 @@ There are several commands available:
 #### `dump`
 
     $ bcdata dump --help
-        Usage: bcdata dump [OPTIONS] DATASET
+    Usage: bcdata dump [OPTIONS] DATASET
 
       Write DataBC features to stdout as GeoJSON feature collection.
 
@@ -114,6 +114,8 @@ There are several commands available:
                                       Albers (default) or --bounds_crs
       --bounds-crs, --bounds_crs TEXT
                                       CRS of provided bounds
+      -v, --verbose                   Increase verbosity.
+      -q, --quiet                     Decrease verbosity.
       --help                          Show this message and exit.
 
 #### `cat`
@@ -137,6 +139,8 @@ There are several commands available:
       -s, --sortby TEXT               Name of sort field
       --bounds-crs, --bounds_crs TEXT
                                       CRS of provided bounds
+      -v, --verbose                   Increase verbosity.
+      -q, --quiet                     Decrease verbosity.
       --help                          Show this message and exit.
 
 
@@ -156,6 +160,8 @@ There are several commands available:
       --bounds-crs, --bounds_crs TEXT
                                       CRS of provided bounds
       -r, --resolution INTEGER
+      -v, --verbose                   Increase verbosity.
+      -q, --quiet                     Decrease verbosity.
       --help                          Show this message and exit.
 
 
@@ -184,7 +190,10 @@ There are several commands available:
       --dim TEXT                 Force the coordinate dimension to val (valid
                                  values are XY, XYZ)
       --fid TEXT                 Primary key of dataset
+      -v, --verbose              Increase verbosity.
+      -q, --quiet                Decrease verbosity.
       --help                     Show this message and exit.
+
 
 #### CLI examples
 
@@ -261,7 +270,7 @@ Load a couple of layer to postgres and run a query:
      Victoria Harbour (Shoal Point) Heliport
     (3 rows)
 
-
+Note that the `Â` shown in the harbour airport name is present in the source data, this is not a bcdata or encoding issue.
 
 
 ## Projections / CRS

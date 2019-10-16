@@ -1,3 +1,4 @@
+import sys
 import json
 import logging
 import os
@@ -12,6 +13,8 @@ from subprocess import call
 import click
 from cligj import indent_opt
 from cligj import compact_opt
+from cligj import verbose_opt, quiet_opt
+
 from owslib.wfs import WebFeatureService
 
 import pgdata
@@ -19,8 +22,9 @@ import pgdata
 import bcdata
 
 
-bcdata.configure_logging()
-log = logging.getLogger(__name__)
+def configure_logging(verbosity):
+    log_level = max(10, 30 - 10 * verbosity)
+    logging.basicConfig(stream=sys.stderr, level=log_level)
 
 
 def parse_db_url(db_url):
@@ -141,9 +145,13 @@ def info(dataset, indent, meta_member):
     "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
 )
 @click.option("--resolution", "-r", type=int, default=25)
-def dem(bounds, bounds_crs, dst_crs, out_file, resolution):
+@verbose_opt
+@quiet_opt
+def dem(bounds, bounds_crs, dst_crs, out_file, resolution, verbose, quiet):
     """Dump BC DEM to TIFF
     """
+    verbosity = verbose - quiet
+    configure_logging(verbosity)
     if not dst_crs:
         dst_crs = "EPSG:3005"
     bcdata.get_dem(
@@ -166,7 +174,9 @@ def dem(bounds, bounds_crs, dst_crs, out_file, resolution):
 @click.option(
     "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
 )
-def dump(dataset, query, out_file, bounds, bounds_crs):
+@verbose_opt
+@quiet_opt
+def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -179,6 +189,8 @@ def dump(dataset, query, out_file, bounds, bounds_crs):
       $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
 
     """
+    verbosity = verbose - quiet
+    configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
     data = bcdata.get_data(table, query=query, bounds=bounds, bounds_crs=bounds_crs)
     if out_file:
@@ -206,10 +218,15 @@ def dump(dataset, query, out_file, bounds, bounds_crs):
 @click.option(
     "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
 )
-def cat(dataset, query, bounds, bounds_crs, indent, compact, dst_crs, pagesize, sortby):
+@verbose_opt
+@quiet_opt
+def cat(dataset, query, bounds, bounds_crs, indent, compact, dst_crs, pagesize, sortby, verbose, quiet):
     """Write DataBC features to stdout as GeoJSON feature objects.
     """
     # Note that cat does not concatenate!
+    verbosity = verbose - quiet
+    configure_logging(verbosity)
+
     dump_kwds = {"sort_keys": True}
     if sortby:
         sortby = sortby.upper()
@@ -255,7 +272,9 @@ def cat(dataset, query, bounds, bounds_crs, indent, compact, dst_crs, pagesize, 
     help="Force the coordinate dimension to val (valid values are XY, XYZ)",
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
-def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid):
+@verbose_opt
+@quiet_opt
+def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid, verbose, quiet):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b
@@ -265,6 +284,14 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
     environment variable.
     https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
     """
+
+    # for this command, default to INFO level logging
+    # (echo the ogr2ogr commands by default)
+    verbosity = verbose - quiet
+    log_level = max(10, 20 - 10 * verbosity)
+    logging.basicConfig(stream=sys.stderr, level=log_level)
+    log = logging.getLogger(__name__)
+
     src = bcdata.validate_name(dataset)
     src_schema, src_table = [i.lower() for i in src.split(".")]
     if not schema:
@@ -319,7 +346,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
     if len(param_dicts) > 1:
         command = command + ["-lco", "UNLOGGED=ON"]
         command = command + ["-lco", "SPATIAL_INDEX=NONE"]
-    click.echo(" ".join(command))
+    log.info(" ".join(command))
     subprocess.run(command)
 
     # write to additional separate tables if data is larger than 10k recs
@@ -372,7 +399,7 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
             sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
             conn.execute(sql)
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
-        click.echo("Indexing geometry")
+        log.info("Indexing geometry")
         conn[schema + "." + table].create_index_geom()
         # deal with primary key - becaue loading to many tables,
         # ogc_fid is not unique
@@ -384,6 +411,6 @@ def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid
             )
             conn.execute(sql)
 
-    click.echo(
+    log.info(
         "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
     )
