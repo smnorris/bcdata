@@ -52,7 +52,6 @@ def get_dem(
 
     # request data from WCS
     r = requests.get(bcdata.WCS_URL, params=payload)
-    log.debug(r.url)
 
     # save to tiff
     if r.status_code == 200:
@@ -61,5 +60,5 @@ def get_dem(
         return out_file
     else:
         raise RuntimeError(
-            "WCS request failed with status code {}".format(str(r.status_code))
+            "WCS request {} failed with status code {}".format(r.url, str(r.status_code))
         )
