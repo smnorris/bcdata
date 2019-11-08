@@ -69,7 +69,7 @@ def test_dem(tmpdir):
     assert stats[0]['max'] == 3982
 
 
-# interpolation takes a while to run, comment out for now
+# interpolation takes a while to run, comment out for for faster tests
 #def test_dem_resample(tmpdir):
 #    bounds = [1046891, 704778, 1055345, 709629]
 #    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="bilinear", resolution=50)
