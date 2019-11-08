@@ -8,12 +8,32 @@ log = logging.getLogger(__name__)
 
 
 def get_dem(
-    bounds, out_file="dem.tif", src_crs="EPSG:3005", dst_crs="EPSG:3005", resolution=25
+    bounds, out_file="dem.tif", src_crs="EPSG:3005", dst_crs="EPSG:3005", resolution=25, interpolation=None
 ):
-    """Get 25m DEM for provided bounds, write to GeoTIFF
+    """Get TRIM DEM for provided bounds, write to GeoTIFF.
     """
     bbox = ",".join([str(b) for b in bounds])
-    # todo: validate resolution units are equivalent to src_crs units
+
+    # do not upsample
+    if resolution < 25:
+        raise ValueError("Resolution requested must be 25m or greater")
+
+    # if specifying interpolation method, there has to actually be a
+    # resampling requested - resolution can't be the native 25m
+    if interpolation and resolution == 25:
+        raise ValueError("Requested coverage at native resolution, no resampling required, interpolation {} invalid")
+
+    # if downsampling, default to bilinear (the server defaults to nearest)
+    if resolution > 25 and not interpolation:
+        log.info("Interpolation not specified, defaulting to bilinear")
+        interpolation = "bilinear"
+
+    # make sure interpolation is valid
+    if interpolation:
+        valid_interpolations = ["nearest", "bilinear", "bicubic"]
+        if interpolation not in valid_interpolations:
+            raise ValueError("Interpolation {} invalid. Valid keys are: {}".format(interpolation, ",".join(valid_interpolations)))
+
     # build request
     payload = {
         "service": "WCS",
@@ -27,8 +47,13 @@ def get_dem(
         "resx": str(resolution),
         "resy": str(resolution),
     }
+    if interpolation:
+        payload["INTERPOLATION"] = interpolation
+
     # request data from WCS
     r = requests.get(bcdata.WCS_URL, params=payload)
+    log.debug(r.url)
+
     # save to tiff
     if r.status_code == 200:
         with open(out_file, "wb") as file:

@@ -123,6 +123,7 @@ def make_request(parameters):
     """Submit a getfeature request to DataBC WFS and return features
     """
     r = requests.get(bcdata.WFS_URL, params=parameters)
+    log.debug(r.url)
     return r.json()["features"]
 
 

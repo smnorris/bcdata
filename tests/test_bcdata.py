@@ -1,6 +1,7 @@
 import os
 
 import rasterio
+import pytest
 
 import bcdata
 
@@ -56,14 +57,38 @@ def test_cql_bounds_filter():
     assert data['features'][0]['properties']['AIRPORT_NAME'] == "Victoria International Airport"
 
 
-def test_dem():
+def test_dem(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
-    out_file = bcdata.get_dem(bounds, "test_dem.tif")
-    assert os.path.exists("test_dem.tif")
-    with rasterio.open("test_dem.tif") as src:
+    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"))
+    assert os.path.exists(out_file)
+    with rasterio.open(out_file) as src:
         stats = [{'min': float(b.min()),
                   'max': float(b.max()),
                   'mean': float(b.mean())
                   } for b in src.read()]
     assert stats[0]['max'] == 3982
-    os.remove("test_dem.tif")
+
+
+# interpolation takes a while to run, comment out for now
+#def test_dem_resample(tmpdir):
+#    bounds = [1046891, 704778, 1055345, 709629]
+#    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="bilinear", resolution=50)
+#    assert os.path.exists(out_file)
+#    with rasterio.open(out_file) as src:
+#        stats = [{'min': float(b.min()),
+#                  'max': float(b.max()),
+#                  'mean': float(b.mean())
+#                  } for b in src.read()]
+#    assert stats[0]['max'] == 3956.0
+
+
+def test_dem_invalid_resample1(tmpdir):
+    with pytest.raises(ValueError):
+        bounds = [1046891, 704778, 1055345, 709629]
+        out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="cubic", resolution=50)
+
+
+def test_dem_invalid_resample2(tmpdir):
+    with pytest.raises(ValueError):
+        bounds = [1046891, 704778, 1055345, 709629]
+        out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="bilinear")

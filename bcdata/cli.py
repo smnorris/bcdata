@@ -145,9 +145,10 @@ def info(dataset, indent, meta_member):
     "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
 )
 @click.option("--resolution", "-r", type=int, default=25)
+@click.option("--interpolation", "-i", type=click.Choice(["nearest", "bilinear", "bicubic"], case_sensitive=False))
 @verbose_opt
 @quiet_opt
-def dem(bounds, bounds_crs, dst_crs, out_file, resolution, verbose, quiet):
+def dem(bounds, bounds_crs, dst_crs, out_file, resolution, interpolation, verbose, quiet):
     """Dump BC DEM to TIFF
     """
     verbosity = verbose - quiet
@@ -160,6 +161,7 @@ def dem(bounds, bounds_crs, dst_crs, out_file, resolution, verbose, quiet):
         src_crs=bounds_crs,
         dst_crs=dst_crs,
         resolution=resolution,
+        interpolation=interpolation
     )
 
 
