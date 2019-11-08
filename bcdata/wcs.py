@@ -18,15 +18,15 @@ def get_dem(
     if resolution < 25:
         raise ValueError("Resolution requested must be 25m or greater")
 
-    # if specifying interpolation method, there has to actually be a
-    # resampling requested - resolution can't be the native 25m
-    if interpolation and resolution == 25:
-        raise ValueError("Requested coverage at native resolution, no resampling required, interpolation {} invalid")
-
     # if downsampling, default to bilinear (the server defaults to nearest)
     if resolution > 25 and not interpolation:
         log.info("Interpolation not specified, defaulting to bilinear")
         interpolation = "bilinear"
+
+    # if specifying interpolation method, there has to actually be a
+    # resampling requested - resolution can't be the native 25m
+    if interpolation and resolution == 25:
+        raise ValueError("Requested coverage at native resolution, no resampling required, interpolation {} invalid")
 
     # make sure interpolation is valid
     if interpolation:
@@ -45,12 +45,14 @@ def get_dem(
         "CRS": src_crs,
         "RESPONSE_CRS": dst_crs,
         "resx": str(resolution),
-        "resy": str(resolution),
+        "resy": str(resolution)
     }
+
     if interpolation:
         payload["INTERPOLATION"] = interpolation
 
     # request data from WCS
+    log.debug(payload)
     r = requests.get(bcdata.WCS_URL, params=payload)
 
     # save to tiff

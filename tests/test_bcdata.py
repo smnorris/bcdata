@@ -82,13 +82,13 @@ def test_dem(tmpdir):
 #    assert stats[0]['max'] == 3956.0
 
 
-def test_dem_invalid_resample1(tmpdir):
+def test_dem_invalid_resample1():
     with pytest.raises(ValueError):
         bounds = [1046891, 704778, 1055345, 709629]
-        out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="cubic", resolution=50)
+        bcdata.get_dem(bounds, "test_dem.tif", interpolation="cubic", resolution=50)
 
 
-def test_dem_invalid_resample2(tmpdir):
+def test_dem_invalid_resample2():
     with pytest.raises(ValueError):
         bounds = [1046891, 704778, 1055345, 709629]
-        out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="bilinear")
+        bcdata.get_dem(bounds, "test_dem.tif", interpolation="bilinear")
