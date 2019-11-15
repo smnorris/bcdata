@@ -36,6 +36,8 @@ For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airp
 - id/package name: `bc-airports`
 - object name: `WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW`
 
+Note that some packages [may have more than one layer](https://catalogue.data.gov.bc.ca/dataset/forest-development-units) - if you request a package like this, `bcdata` will prompt you with a list of valid object/table names to use instead of the package name.
+
 ### Python module
 
     >>> import bcdata
