@@ -8,7 +8,12 @@ log = logging.getLogger(__name__)
 
 
 def get_dem(
-    bounds, out_file="dem.tif", src_crs="EPSG:3005", dst_crs="EPSG:3005", resolution=25, interpolation=None
+    bounds,
+    out_file="dem.tif",
+    src_crs="EPSG:3005",
+    dst_crs="EPSG:3005",
+    resolution=25,
+    interpolation=None,
 ):
     """Get TRIM DEM for provided bounds, write to GeoTIFF.
     """
@@ -26,13 +31,19 @@ def get_dem(
     # if specifying interpolation method, there has to actually be a
     # resampling requested - resolution can't be the native 25m
     if interpolation and resolution == 25:
-        raise ValueError("Requested coverage at native resolution, no resampling required, interpolation {} invalid")
+        raise ValueError(
+            "Requested coverage at native resolution, no resampling required, interpolation {} invalid"
+        )
 
     # make sure interpolation is valid
     if interpolation:
         valid_interpolations = ["nearest", "bilinear", "bicubic"]
         if interpolation not in valid_interpolations:
-            raise ValueError("Interpolation {} invalid. Valid keys are: {}".format(interpolation, ",".join(valid_interpolations)))
+            raise ValueError(
+                "Interpolation {} invalid. Valid keys are: {}".format(
+                    interpolation, ",".join(valid_interpolations)
+                )
+            )
 
     # build request
     payload = {
@@ -45,7 +56,7 @@ def get_dem(
         "CRS": src_crs,
         "RESPONSE_CRS": dst_crs,
         "resx": str(resolution),
-        "resy": str(resolution)
+        "resy": str(resolution),
     }
 
     if interpolation:
@@ -62,5 +73,7 @@ def get_dem(
         return out_file
     else:
         raise RuntimeError(
-            "WCS request {} failed with status code {}".format(r.url, str(r.status_code))
+            "WCS request {} failed with status code {}".format(
+                r.url, str(r.status_code)
+            )
         )

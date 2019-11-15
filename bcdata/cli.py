@@ -120,11 +120,15 @@ def list(refresh):
 @click.option(
     "--name", "meta_member", flag_value="name", help="Print the datasource's name."
 )
-def info(dataset, indent, meta_member):
+@verbose_opt
+@quiet_opt
+def info(dataset, indent, meta_member, verbose, quiet):
     """Print basic metadata about a DataBC WFS layer as JSON.
 
     Optionally print a single metadata item as a string.
     """
+    verbosity = verbose - quiet
+    configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     info = {}
@@ -145,10 +149,16 @@ def info(dataset, indent, meta_member):
     "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
 )
 @click.option("--resolution", "-r", type=int, default=25)
-@click.option("--interpolation", "-i", type=click.Choice(["nearest", "bilinear", "bicubic"], case_sensitive=False))
+@click.option(
+    "--interpolation",
+    "-i",
+    type=click.Choice(["nearest", "bilinear", "bicubic"], case_sensitive=False),
+)
 @verbose_opt
 @quiet_opt
-def dem(bounds, bounds_crs, dst_crs, out_file, resolution, interpolation, verbose, quiet):
+def dem(
+    bounds, bounds_crs, dst_crs, out_file, resolution, interpolation, verbose, quiet
+):
     """Dump BC DEM to TIFF
     """
     verbosity = verbose - quiet
@@ -161,7 +171,7 @@ def dem(bounds, bounds_crs, dst_crs, out_file, resolution, interpolation, verbos
         src_crs=bounds_crs,
         dst_crs=dst_crs,
         resolution=resolution,
-        interpolation=interpolation
+        interpolation=interpolation,
     )
 
 
@@ -222,7 +232,19 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 )
 @verbose_opt
 @quiet_opt
-def cat(dataset, query, bounds, bounds_crs, indent, compact, dst_crs, pagesize, sortby, verbose, quiet):
+def cat(
+    dataset,
+    query,
+    bounds,
+    bounds_crs,
+    indent,
+    compact,
+    dst_crs,
+    pagesize,
+    sortby,
+    verbose,
+    quiet,
+):
     """Write DataBC features to stdout as GeoJSON feature objects.
     """
     # Note that cat does not concatenate!
@@ -276,7 +298,19 @@ def cat(dataset, query, bounds, bounds_crs, indent, compact, dst_crs, pagesize, 
 @click.option("--fid", default=None, help="Primary key of dataset")
 @verbose_opt
 @quiet_opt
-def bc2pg(dataset, db_url, table, schema, query, pagesize, max_workers, dim, fid, verbose, quiet):
+def bc2pg(
+    dataset,
+    db_url,
+    table,
+    schema,
+    query,
+    pagesize,
+    max_workers,
+    dim,
+    fid,
+    verbose,
+    quiet,
+):
     """Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
      \b

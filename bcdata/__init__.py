@@ -1,4 +1,4 @@
-from .wfs import bcdc_package_show
+from .wfs import get_table_name
 from .wfs import get_data
 from .wfs import get_features
 from .wfs import get_count
@@ -7,7 +7,7 @@ from .wfs import validate_name
 from .wfs import define_request
 from .wcs import get_dem
 
-__version__ = "0.3.6dev0"
+__version__ = "0.4.0dev0"
 
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"

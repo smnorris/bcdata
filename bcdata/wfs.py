@@ -5,6 +5,7 @@ import logging
 import math
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 import sys
 import warnings
 import xml.etree.ElementTree as ET
@@ -57,14 +58,27 @@ def check_cache(path):
             return False
 
 
-def bcdc_package_show(package):
-    """Query DataBC Catalogue API about given package
+def get_table_name(package):
+    """Query DataBC API to find WFS table/layer name for given package
     """
     params = {"id": package}
     r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
     if r.status_code != 200:
         raise ValueError("{d} is not present in DataBC API list".format(d=package))
-    return r.json()["result"]
+    result = r.json()["result"]
+    # Because the object_name in the result json is not a 100% reliable key
+    # for WFS requests, parse URL in WMS resource(s).
+    # Also, some packages may have >1 WFS layer - if this is the case, bail
+    # and provide user with a list of layers
+    layer_urls = [r["url"] for r in result["resources"] if r["format"] == "wms"]
+    layer_names = [urlparse(l).path.split("/")[3] for l in layer_urls]
+    if len(layer_names) > 1:
+        raise ValueError(
+            "Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
+                package, "\n".join(layer_names)
+            )
+        )
+    return layer_names[0]
 
 
 def validate_name(dataset):
@@ -73,7 +87,7 @@ def validate_name(dataset):
     if dataset in list_tables():
         return dataset
     else:
-        return bcdc_package_show(dataset)["object_name"]
+        return get_table_name(dataset)
 
 
 def list_tables(refresh=False, cache_file=None):

@@ -6,18 +6,32 @@ import pytest
 import bcdata
 
 
-AIRPORTS_KEY = 'bc-airports'
-UTMZONES_KEY = 'utm-zones-of-british-columbia'
-BEC_KEY = 'biogeoclimatic-ecosystem-classification-bec-map'
+AIRPORTS_PACKAGE = "bc-airports"
+AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
+UTMZONES_KEY = "utm-zones-of-british-columbia"
+BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
 
 
-def test_bcdc_package_show():
-    package_info = bcdata.bcdc_package_show(AIRPORTS_KEY)
-    assert package_info['object_name'] == 'WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW'
+def test_get_table_name():
+    table = bcdata.get_table_name(AIRPORTS_PACKAGE)
+    assert table == AIRPORTS_TABLE
+
+
+def test_get_table_name_urlparse():
+    # bcdc api query result["object_name"] is not correct WFS layer name,
+    # use WFS resource url
+    table = bcdata.get_table_name("natural-resource-nr-district")
+    assert table == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
+
+
+def test_get_table_name_multiresource():
+    # this package has several WFS layers
+    with pytest.raises(ValueError):
+        bcdata.get_table_name("forest-development-units")
 
 
 def test_get_count():
-    table = bcdata.bcdc_package_show(UTMZONES_KEY)['object_name']
+    table = bcdata.get_table_name(UTMZONES_KEY)
     assert bcdata.get_count(table) == 6
 
 
@@ -26,35 +40,48 @@ def test_get_count_filtered():
 
 
 def test_get_data_small():
-    data = bcdata.get_data(AIRPORTS_KEY)
-    assert data['type'] == 'FeatureCollection'
+    data = bcdata.get_data(AIRPORTS_TABLE)
+    assert data["type"] == "FeatureCollection"
 
 
 def test_get_features():
-    data = [f for f in bcdata.get_features(AIRPORTS_KEY)]
+    data = [f for f in bcdata.get_features(AIRPORTS_TABLE)]
     assert len(data) == 455
 
 
 def test_get_data_paged():
-    data = bcdata.get_data(AIRPORTS_KEY, pagesize=250)
-    assert len(data['features']) == 455
+    data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250)
+    assert len(data["features"]) == 455
 
 
 def test_cql_filter():
-    data = bcdata.get_data(AIRPORTS_KEY, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'")
-    assert len(data['features']) == 1
-    assert data['features'][0]['properties']['AIRPORT_NAME'] == 'Terrace (Northwest Regional) Airport'
+    data = bcdata.get_data(
+        AIRPORTS_TABLE, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
+    )
+    assert len(data["features"]) == 1
+    assert (
+        data["features"][0]["properties"]["AIRPORT_NAME"]
+        == "Terrace (Northwest Regional) Airport"
+    )
 
 
 def test_bounds_filter():
-    data = bcdata.get_data(AIRPORTS_KEY, bounds=[1188000, 377051, 1207437, 390361])
-    assert len(data['features']) == 8
+    data = bcdata.get_data(AIRPORTS_TABLE, bounds=[1188000, 377051, 1207437, 390361])
+    assert len(data["features"]) == 8
 
 
 def test_cql_bounds_filter():
-    data = bcdata.get_data(AIRPORTS_KEY, query="AIRPORT_NAME='Victoria International Airport'", bounds=[1167680.0, 367958.0, 1205720.0, 432374.0], bounds_crs="EPSG:3005")
-    assert len(data['features']) == 1
-    assert data['features'][0]['properties']['AIRPORT_NAME'] == "Victoria International Airport"
+    data = bcdata.get_data(
+        AIRPORTS_TABLE,
+        query="AIRPORT_NAME='Victoria International Airport'",
+        bounds=[1167680.0, 367958.0, 1205720.0, 432374.0],
+        bounds_crs="EPSG:3005",
+    )
+    assert len(data["features"]) == 1
+    assert (
+        data["features"][0]["properties"]["AIRPORT_NAME"]
+        == "Victoria International Airport"
+    )
 
 
 def test_dem(tmpdir):
@@ -62,15 +89,15 @@ def test_dem(tmpdir):
     out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"))
     assert os.path.exists(out_file)
     with rasterio.open(out_file) as src:
-        stats = [{'min': float(b.min()),
-                  'max': float(b.max()),
-                  'mean': float(b.mean())
-                  } for b in src.read()]
-    assert stats[0]['max'] == 3982
+        stats = [
+            {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())}
+            for b in src.read()
+        ]
+    assert stats[0]["max"] == 3982
 
 
 # interpolation takes a while to run, comment out for for faster tests
-#def test_dem_resample(tmpdir):
+# def test_dem_resample(tmpdir):
 #    bounds = [1046891, 704778, 1055345, 709629]
 #    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="bilinear", resolution=50)
 #    assert os.path.exists(out_file)
