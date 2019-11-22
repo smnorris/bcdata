@@ -4,7 +4,7 @@ import rasterio
 import pytest
 
 import bcdata
-
+from geopandas.geodataframe import GeoDataFrame
 
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
@@ -37,6 +37,11 @@ def test_get_count():
 
 def test_get_count_filtered():
     assert bcdata.get_count(UTMZONES_KEY, query="UTM_ZONE=10") == 1
+
+
+def test_get_data_asgdf():
+    gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True)
+    assert type(gdf) == GeoDataFrame
 
 
 def test_get_data_small():

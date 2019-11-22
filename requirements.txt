@@ -4,3 +4,4 @@ cligj
 owslib
 pgdata
 rasterio
+geopandas

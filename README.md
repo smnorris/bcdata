@@ -12,7 +12,7 @@ but direct file download urls are not available and the syntax to accesss WFS vi
 This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with existing Python GIS tools like `fiona` and `rasterio`.
 
 
-**Note**
+## Disclaimer
 
 - it is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
 - this is not specifically endorsed by the Province of Britsh Columbia or DataBC
@@ -40,10 +40,27 @@ Note that some packages [may have more than one layer](https://catalogue.data.go
 
 ### Python module
 
-    >>> import bcdata
-    >>> geojson = bcdata.get_data('bc-airports', query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'")
-    >>> geojson
-    {'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'id': 'WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW.fid-f0cdbe4_16811fe142b_-6f34', 'geometry': {'type': 'Point', ...
+```python
+import bcdata
+
+# get a feature as geojson
+geojson = bcdata.get_data(
+    'bc-airports',
+    query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
+)
+geojson
+{'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'id': 'WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW.fid-f0cdbe4_16811fe142b_-6f34', 'geometry': {'type': 'Point', ...
+
+# optionally, load data as a geopandas GeoDataFrame
+gdf = bcdata.get_data(
+    'bc-airports',
+    query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
+    as_gdf=True
+)
+gdf.head()
+AERODROME_STATUS AIRCRAFT_ACCESS_IND                          AIRPORT_NAME                ...                TC_LID_CODE WEBSITE_URL                          geometry
+0        Certified                   Y  Terrace (Northwest Regional) Airport                ...                       None        None  POINT (-128.5783333 54.46861111)
+```
 
 ### CLI
 

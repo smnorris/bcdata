@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from owslib.wfs import WebFeatureService
 import requests
-
+import geopandas as gpd
 
 import bcdata
 
@@ -216,8 +216,9 @@ def get_data(
     sortby=None,
     pagesize=10000,
     max_workers=5,
+    as_gdf=False,
 ):
-    """Get GeoJSON featurecollection from DataBC WFS
+    """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS
     """
     param_dicts = define_request(
         dataset,
@@ -234,7 +235,12 @@ def get_data(
     outjson = dict(type="FeatureCollection", features=[])
     for result in results:
         outjson["features"] += result
-    return outjson
+    if not as_gdf:
+        return outjson
+    else:
+        gdf = gpd.GeoDataFrame.from_features(outjson)
+        gdf.crs = {"init": crs}
+        return gdf
 
 
 def get_features(

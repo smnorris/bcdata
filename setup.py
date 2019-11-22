@@ -27,6 +27,7 @@ requirements = [
     "requests",
     "owslib",
     "rasterio",
+    "geopandas",
 ]
 
 
