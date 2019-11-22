@@ -1,6 +1,7 @@
 import logging
 
 import requests
+import rasterio
 
 import bcdata
 
@@ -14,6 +15,7 @@ def get_dem(
     dst_crs="EPSG:3005",
     resolution=25,
     interpolation=None,
+    as_rasterio=False
 ):
     """Get TRIM DEM for provided bounds, write to GeoTIFF.
     """
@@ -70,10 +72,14 @@ def get_dem(
     if r.status_code == 200:
         with open(out_file, "wb") as file:
             file.write(r.content)
-        return out_file
     else:
         raise RuntimeError(
             "WCS request {} failed with status code {}".format(
                 r.url, str(r.status_code)
             )
         )
+
+    if as_rasterio:
+        return rasterio.open(out_file, "r")
+    else:
+        return out_file

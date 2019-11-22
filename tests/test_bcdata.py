@@ -101,6 +101,15 @@ def test_dem(tmpdir):
     assert stats[0]["max"] == 3982
 
 
+def test_dem_rasterio(tmpdir):
+    bounds = [1046891, 704778, 1055345, 709629]
+    src = bcdata.get_dem(bounds, as_rasterio=True)
+    stats = [
+        {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())}
+        for b in src.read()
+    ]
+    assert stats[0]["max"] == 3982
+
 # interpolation takes a while to run, comment out for for faster tests
 # def test_dem_resample(tmpdir):
 #    bounds = [1046891, 704778, 1055345, 709629]
