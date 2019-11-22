@@ -206,8 +206,8 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
     table = bcdata.validate_name(dataset)
     data = bcdata.get_data(table, query=query, bounds=bounds, bounds_crs=bounds_crs)
     if out_file:
-        with open(out_file, "w") as f:
-            json.dump(data.json(), f)
+        with open(out_file, "w") as sink:
+            sink.write(json.dumps(data))
     else:
         sink = click.get_text_stream("stdout")
         sink.write(json.dumps(data))
