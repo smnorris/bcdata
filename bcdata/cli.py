@@ -352,8 +352,12 @@ def bc2pg(
     payload = urlencode(param_dicts[0], doseq=True)
     url = bcdata.WFS_URL + "?" + payload
     db = parse_db_url(db_url)
-    db_string = "PG:host={h} user={u} dbname={db} password={pwd}".format(
-        h=db["host"], u=db["user"], db=db["database"], pwd=db["password"]
+    db_string = "PG:host={h} user={u} dbname={db} password={pwd} port={port}".format(
+        h=db["host"],
+        u=db["user"],
+        db=db["database"],
+        pwd=db["password"],
+        port=db["port"],
     )
 
     # create the table
