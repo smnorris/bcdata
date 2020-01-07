@@ -1,10 +1,14 @@
 Changes
 =======
 
-0.3.6 ()
+0.3.6 (2020-01-xx)
 ------------------
 - WxS requests made via https (#59)
-- add --verbose / --quiet options to CLI (#62)
+- add options --verbose / --quiet to CLI (#62)
+- add option --interpolation to dem command (#63)
+- add option as_gdf to get_data function to load directly to a geopandas
+  dataframe (#67)
+- fix bc2pg to actually use port specified in --db_url (#69)
 
 0.3.5 (2019-10-08)
 ------------------
