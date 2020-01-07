@@ -24,12 +24,6 @@ def test_get_table_name_urlparse():
     assert table == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
 
 
-def test_get_table_name_multiresource():
-    # this package has several WFS layers
-    with pytest.raises(ValueError):
-        bcdata.get_table_name("forest-development-units")
-
-
 def test_get_count():
     table = bcdata.get_table_name(UTMZONES_KEY)
     assert bcdata.get_count(table) == 6
