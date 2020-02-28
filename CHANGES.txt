@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.3.6 (2020-01-xx)
+0.3.6 (2020-02-27)
 ------------------
 - WxS requests made via https (#59)
 - add options --verbose / --quiet to CLI (#62)
@@ -9,6 +9,8 @@ Changes
 - add option as_gdf to get_data function to load directly to a geopandas
   dataframe (#67)
 - fix bc2pg to actually use port specified in --db_url (#69)
+- regenerate data list cache daily (#70)
+- fix bc2pg to only use a password when provided in --db_url (#72)
 
 0.3.5 (2019-10-08)
 ------------------
