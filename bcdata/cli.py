@@ -356,7 +356,7 @@ def bc2pg(
         h=db["host"], u=db["user"], db=db["database"], port=db["port"],
     )
     if db["password"]:
-        db_string = db_string + "password={pwd}".format(pwd=db["password"])
+        db_string = db_string + " password={pwd}".format(pwd=db["password"])
     # create the table
     command = [
         "ogr2ogr",
