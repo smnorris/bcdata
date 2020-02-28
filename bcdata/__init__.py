@@ -7,7 +7,7 @@ from .wfs import validate_name
 from .wfs import define_request
 from .wcs import get_dem
 
-__version__ = "0.4.0"
+__version__ = "0.4.1dev0"
 
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
