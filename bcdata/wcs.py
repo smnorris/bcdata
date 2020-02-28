@@ -15,7 +15,7 @@ def get_dem(
     dst_crs="EPSG:3005",
     resolution=25,
     interpolation=None,
-    as_rasterio=False
+    as_rasterio=False,
 ):
     """Get TRIM DEM for provided bounds, write to GeoTIFF.
     """

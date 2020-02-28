@@ -34,9 +34,9 @@ def parse_db_url(db_url):
     db = {}
     db["database"] = u.path[1:]
     db["user"] = u.username
-    db["password"] = u.password
     db["host"] = u.hostname
     db["port"] = u.port
+    db["password"] = u.password
     return db
 
 
@@ -352,14 +352,11 @@ def bc2pg(
     payload = urlencode(param_dicts[0], doseq=True)
     url = bcdata.WFS_URL + "?" + payload
     db = parse_db_url(db_url)
-    db_string = "PG:host={h} user={u} dbname={db} password={pwd} port={port}".format(
-        h=db["host"],
-        u=db["user"],
-        db=db["database"],
-        pwd=db["password"],
-        port=db["port"],
+    db_string = "PG:host={h} user={u} dbname={db} port={port}".format(
+        h=db["host"], u=db["user"], db=db["database"], port=db["port"],
     )
-
+    if db["password"]:
+        db_string = db_string + "password={pwd}".format(pwd=db["password"])
     # create the table
     command = [
         "ogr2ogr",

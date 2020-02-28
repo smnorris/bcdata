@@ -45,14 +45,15 @@ def get_sortkey(table):
 
 def check_cache(path):
     """Return true if the cache file holding list of all datasets
-    does not exist or is older than 30 days
+    does not exist or is more than a day old
+    (this is not very long, but checking daily seems to be a good strategy)
     """
     if not os.path.exists(path):
         return True
     else:
         # check the age
         mod_date = datetime.fromtimestamp(os.path.getmtime(path))
-        if mod_date < (datetime.now() - timedelta(days=30)):
+        if mod_date < (datetime.now() - timedelta(days=1)):
             return True
         else:
             return False
@@ -101,7 +102,7 @@ def list_tables(refresh=False, cache_file=None):
     # regenerate the cache if:
     # - the cache file doesn't exist
     # - we force a refresh
-    # - the cache is older than 1 month
+    # - the cache is older than 1 day
     if refresh or check_cache(cache_file):
         wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
         bcdata_objects = [i.strip("pub:") for i in list(wfs.contents)]
