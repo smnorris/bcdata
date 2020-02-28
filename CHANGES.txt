@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.3.6 (2020-02-27)
+0.4.0 (2020-02-27)
 ------------------
 - WxS requests made via https (#59)
 - add options --verbose / --quiet to CLI (#62)
