@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.4.1 (2020-02-28)
+------------------
+- fix bc2pg connection string (#74)
+
 0.4.0 (2020-02-27)
 ------------------
 - WxS requests made via https (#59)
