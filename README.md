@@ -209,6 +209,7 @@ There are several commands available:
       --dim TEXT                 Force the coordinate dimension to val (valid
                                  values are XY, XYZ)
       --fid TEXT                 Primary key of dataset
+      --append                   Append data to existing table
       -v, --verbose              Increase verbosity.
       -q, --quiet                Decrease verbosity.
       --help                     Show this message and exit.

@@ -296,6 +296,7 @@ def cat(
     help="Force the coordinate dimension to val (valid values are XY, XYZ)",
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
+@click.option("--append", is_flag=True, help="Append data to existing table")
 @verbose_opt
 @quiet_opt
 def bc2pg(
@@ -308,6 +309,7 @@ def bc2pg(
     max_workers,
     dim,
     fid,
+    append,
     verbose,
     quiet,
 ):
@@ -343,6 +345,11 @@ def bc2pg(
         click.echo("Schema {} does not exist, creating it".format(schema))
         conn.create_schema(schema)
 
+    # if table does not exist already, remove the -append flag
+    if schema + "." + table not in conn.tables and append:
+        append = False
+        click.echo("Table does not exist, creating")
+
     # build parameters for each required request
     param_dicts = bcdata.define_request(
         dataset, query=query, sortby=fid, pagesize=pagesize
@@ -360,27 +367,25 @@ def bc2pg(
     # create the table
     command = [
         "ogr2ogr",
-        "-lco",
-        "OVERWRITE=YES",
-        "-lco",
-        "SCHEMA={}".format(schema),
-        "-lco",
-        "GEOMETRY_NAME=geom",
         "-f",
         "PostgreSQL",
         db_string,
         "-t_srs",
         "EPSG:3005",
         "-nln",
-        table,
+        schema + "." + table,
         url,
     ]
+    if append:
+        command = command + ["-append"]
+    else:
+        command = command + ["-overwrite", "-lco", "GEOMETRY_NAME=geom"]
     if dim:
         command = command + ["-dim", dim]
-    if fid:
+    if fid and not append:
         command = command + ["-lco", "FID={}".format(fid)]
     # for speed with big loads - unlogged, no spatial index
-    if len(param_dicts) > 1:
+    if not append:
         command = command + ["-lco", "UNLOGGED=ON"]
         command = command + ["-lco", "SPATIAL_INDEX=NONE"]
     log.info(" ".join(command))
@@ -435,9 +440,6 @@ def bc2pg(
             conn.execute(sql)
             sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
             conn.execute(sql)
-        conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
-        log.info("Indexing geometry")
-        conn[schema + "." + table].create_index_geom()
         # deal with primary key - becaue loading to many tables,
         # ogc_fid is not unique
         if not fid:
@@ -447,6 +449,10 @@ def bc2pg(
                 schema, table
             )
             conn.execute(sql)
+    if not append:
+        conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
+        log.info("Indexing geometry")
+        conn.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
 
     log.info(
         "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
