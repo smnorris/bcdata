@@ -286,6 +286,9 @@ def cat(
 )
 @bounds_opt
 @click.option(
+    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+)
+@click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option(
@@ -307,6 +310,7 @@ def bc2pg(
     schema,
     query,
     bounds,
+    bounds_crs,
     pagesize,
     max_workers,
     dim,
@@ -354,7 +358,12 @@ def bc2pg(
 
     # build parameters for each required request
     param_dicts = bcdata.define_request(
-        dataset, query=query, sortby=fid, pagesize=pagesize, bounds=bounds
+        dataset,
+        query=query,
+        sortby=fid,
+        pagesize=pagesize,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
     )
 
     # run the first request / load
