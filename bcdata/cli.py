@@ -284,6 +284,7 @@ def cat(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
 )
+@bounds_opt
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
@@ -305,6 +306,7 @@ def bc2pg(
     table,
     schema,
     query,
+    bounds,
     pagesize,
     max_workers,
     dim,
@@ -352,7 +354,7 @@ def bc2pg(
 
     # build parameters for each required request
     param_dicts = bcdata.define_request(
-        dataset, query=query, sortby=fid, pagesize=pagesize
+        dataset, query=query, sortby=fid, pagesize=pagesize, bounds=bounds
     )
 
     # run the first request / load

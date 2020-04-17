@@ -204,6 +204,9 @@ There are several commands available:
       --query TEXT               A valid `CQL` or `ECQL` query (https://docs.geose
                                  rver.org/stable/en/user/tutorials/cql/cql_tutoria
                                  l.html)
+      --bounds TEXT              Bounds: "left bottom right top" or "[left,
+                                 bottom, right, top]". Coordinates are BC Albers
+                                 (default) or --bounds_crs
       -p, --pagesize INTEGER     Max number of records to request
       -w, --max_workers INTEGER  Max number of concurrent requests
       --dim TEXT                 Force the coordinate dimension to val (valid
