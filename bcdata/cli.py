@@ -403,7 +403,7 @@ def bc2pg(
     subprocess.run(command)
 
     # write to additional separate tables if data is larger than 10k recs
-    if len(param_dicts) > 1:
+    if len(param_dicts) > 1 and max_workers > 1:
         commands = []
         for n, paramdict in enumerate(param_dicts[1:]):
             # create table to load to (so types are identical)
@@ -460,6 +460,32 @@ def bc2pg(
                 schema, table
             )
             conn.execute(sql)
+
+    # if using only one worker, loop through the necessary requests
+    elif len(param_dicts) > 1 and max_workers == 1:
+        for n, paramdict in enumerate(param_dicts[1:]):
+            payload = urlencode(paramdict, doseq=True)
+            url = bcdata.WFS_URL + "?" + payload
+            command = [
+                "ogr2ogr",
+                "-update",
+                "-append",
+                "-f",
+                "PostgreSQL",
+                db_string + " active_schema=" + schema,
+                "-t_srs",
+                "EPSG:3005",
+                "-nln",
+                table,
+                url,
+            ]
+            if dim:
+                command = command + ["-dim", dim]
+            log.debug(" ".join(command))
+            subprocess.run(command)
+
+
+
     if not append:
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
         log.info("Indexing geometry")
