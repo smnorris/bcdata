@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.4.2 ()
+------------------
+- bc2pg - don't use intermediate tables if only using a single connection (#77)
+- bc2pg - for large requests, default max_workers to 2 rather than 5 (#75)
+
 0.4.1 (2020-02-28)
 ------------------
 - fix bc2pg connection string (#74)

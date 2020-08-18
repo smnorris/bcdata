@@ -292,7 +292,7 @@ def cat(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option(
-    "--max_workers", "-w", default=5, help="Max number of concurrent requests"
+    "--max_workers", "-w", default=2, help="Max number of concurrent requests"
 )
 @click.option(
     "--dim",
@@ -483,8 +483,6 @@ def bc2pg(
                 command = command + ["-dim", dim]
             log.debug(" ".join(command))
             subprocess.run(command)
-
-
 
     if not append:
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
