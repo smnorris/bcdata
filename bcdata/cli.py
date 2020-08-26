@@ -460,12 +460,30 @@ def bc2pg(
     # if provided with a fid to use as pk, assign it
     if fid:
         sql = "ALTER TABLE {}.{} ADD PRIMARY KEY ({})".format(schema, table, fid)
+        conn.execute(sql)
+        # make fid auto-increment in case we want to add records
+        sql = """
+            CREATE SEQUENCE {schema}.{table}_{fid}_seq
+            OWNED BY {schema}.{table}.{fid};
+
+            SELECT
+              setval('{schema}.{table}_{fid}_seq',
+              coalesce(max({fid}), 0) + 1, false)
+            FROM {schema}.{table};
+
+            ALTER TABLE {schema}.{table}
+            ALTER COLUMN {fid}
+            SET DEFAULT nextval('{schema}.{table}_{fid}_seq');
+        """.format(
+            schema=schema, table=table, fid=fid
+        )
+        conn.execute(sql)
     # otherwise, create a new serial ogc_fid
     else:
         sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(
             schema, table
         )
-    conn.execute(sql)
+        conn.execute(sql)
 
     if not append:
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
