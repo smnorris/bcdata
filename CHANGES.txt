@@ -1,7 +1,10 @@
 Changes
 =======
 
-0.4.2 ()
+0.4.3 ()
+------------------
+
+0.4.2 (2020-08-26)
 ------------------
 - bc2pg - fix bug that populated incorrect primary key values for multi-page requests (#78)
 - bc2pg - for large requests, default max_workers to 2 rather than 5 (#75)
