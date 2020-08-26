@@ -401,7 +401,7 @@ def bc2pg(
     subprocess.run(command)
 
     # write to additional separate tables if data is larger than 10k recs
-    if len(param_dicts) > 1: # and max_workers > 1:
+    if len(param_dicts) > 1:
         commands = []
         for n, paramdict in enumerate(param_dicts[1:]):
             # create table to load to (so types are identical)
@@ -453,7 +453,7 @@ def bc2pg(
             conn.execute(sql)
 
     # Deal with primary key
-    # First, drop ogc_fid - becaue we loadto many tables, it is not unique
+    # First, drop ogc_fid - becaue we load to many tables, it is not unique
     sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid CASCADE".format(schema, table)
     conn.execute(sql)
 
