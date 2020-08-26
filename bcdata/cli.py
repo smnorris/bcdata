@@ -393,8 +393,6 @@ def bc2pg(
         command = command + ["-overwrite", "-lco", "GEOMETRY_NAME=geom"]
     if dim:
         command = command + ["-dim", dim]
-    if fid and not append:
-        command = command + ["-lco", "FID={}".format(fid)]
     # for speed with big loads - unlogged, no spatial index
     if not append:
         command = command + ["-lco", "UNLOGGED=ON"]
@@ -403,7 +401,7 @@ def bc2pg(
     subprocess.run(command)
 
     # write to additional separate tables if data is larger than 10k recs
-    if len(param_dicts) > 1 and max_workers > 1:
+    if len(param_dicts) > 1: # and max_workers > 1:
         commands = []
         for n, paramdict in enumerate(param_dicts[1:]):
             # create table to load to (so types are identical)
@@ -433,7 +431,9 @@ def bc2pg(
             if dim:
                 command = command + ["-dim", dim]
             commands.append(command)
-
+        # log all requests, not just the first one
+        for c in commands:
+            log.info(c)
         # https://stackoverflow.com/questions/14533458
         pool = Pool(max_workers)
         with click.progressbar(
@@ -451,38 +451,21 @@ def bc2pg(
             conn.execute(sql)
             sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
             conn.execute(sql)
-        # deal with primary key - becaue loading to many tables,
-        # ogc_fid is not unique
-        if not fid:
-            sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid".format(schema, table)
-            conn.execute(sql)
-            sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(
-                schema, table
-            )
-            conn.execute(sql)
 
-    # if using only one worker, loop through the necessary requests
-    elif len(param_dicts) > 1 and max_workers == 1:
-        for n, paramdict in enumerate(param_dicts[1:]):
-            payload = urlencode(paramdict, doseq=True)
-            url = bcdata.WFS_URL + "?" + payload
-            command = [
-                "ogr2ogr",
-                "-update",
-                "-append",
-                "-f",
-                "PostgreSQL",
-                db_string + " active_schema=" + schema,
-                "-t_srs",
-                "EPSG:3005",
-                "-nln",
-                table,
-                url,
-            ]
-            if dim:
-                command = command + ["-dim", dim]
-            log.debug(" ".join(command))
-            subprocess.run(command)
+    # Deal with primary key
+    # First, drop ogc_fid - becaue we loadto many tables, it is not unique
+    sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid CASCADE".format(schema, table)
+    conn.execute(sql)
+
+    # if provided with a fid to use as pk, assign it
+    if fid:
+        sql = "ALTER TABLE {}.{} ADD PRIMARY KEY ({})".format(schema, table, fid)
+    # otherwise, create a new serial ogc_fid
+    else:
+        sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(
+            schema, table
+        )
+    conn.execute(sql)
 
     if not append:
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
