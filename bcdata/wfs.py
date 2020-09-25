@@ -62,6 +62,7 @@ def check_cache(path):
 def get_table_name(package):
     """Query DataBC API to find WFS table/layer name for given package
     """
+    package = package.lower() # package names are lowercase
     params = {"id": package}
     r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
     if r.status_code != 200:
@@ -216,7 +217,7 @@ def get_data(
     bounds_crs="epsg:3005",
     sortby=None,
     pagesize=10000,
-    max_workers=5,
+    max_workers=2,
     as_gdf=False,
 ):
     """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS
@@ -252,7 +253,7 @@ def get_features(
     bounds_crs="epsg:3005",
     sortby=None,
     pagesize=10000,
-    max_workers=5,
+    max_workers=2,
 ):
     """Yield features from DataBC WFS
     """
