@@ -94,6 +94,7 @@ dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS.")
 
 
 @click.group()
+@click.version_option(version=bcdata.__version__, message="%(version)s")
 def cli():
     pass
 
