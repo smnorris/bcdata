@@ -3,6 +3,8 @@ Changes
 
 0.4.3 ()
 ------------------
+- make dataset name arguments case insensitive
+- default max_workers to 2 in functions outside of CLI
 
 0.4.2 (2020-08-26)
 ------------------

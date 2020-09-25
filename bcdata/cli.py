@@ -129,7 +129,6 @@ def info(dataset, indent, meta_member, verbose, quiet):
     """
     verbosity = verbose - quiet
     configure_logging(verbosity)
-    dataset = dataset.upper()
     table = bcdata.validate_name(dataset)
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     info = {}
@@ -204,7 +203,6 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
     """
     verbosity = verbose - quiet
     configure_logging(verbosity)
-    dataset = dataset.upper()
     table = bcdata.validate_name(dataset)
     data = bcdata.get_data(table, query=query, bounds=bounds, bounds_crs=bounds_crs)
     if out_file:
@@ -252,7 +250,6 @@ def cat(
     # Note that cat does not concatenate!
     verbosity = verbose - quiet
     configure_logging(verbosity)
-    dataset = dataset.upper()
     dump_kwds = {"sort_keys": True}
     if sortby:
         sortby = sortby.upper()
@@ -337,7 +334,6 @@ def bc2pg(
     log_level = max(10, 20 - 10 * verbosity)
     logging.basicConfig(stream=sys.stderr, level=log_level)
     log = logging.getLogger(__name__)
-    dataset = dataset.upper()
     src = bcdata.validate_name(dataset)
     src_schema, src_table = [i.lower() for i in src.split(".")]
     if not schema:

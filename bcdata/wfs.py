@@ -86,10 +86,10 @@ def get_table_name(package):
 def validate_name(dataset):
     """Check wfs/cache and the bcdc api to see if dataset name is valid
     """
-    if dataset in list_tables():
-        return dataset
+    if dataset.upper() in list_tables():
+        return dataset.upper()
     else:
-        return get_table_name(dataset)
+        return get_table_name(dataset.upper())
 
 
 def list_tables(refresh=False, cache_file=None):
