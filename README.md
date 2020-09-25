@@ -70,7 +70,8 @@ There are several commands available:
     Usage: bcdata [OPTIONS] COMMAND [ARGS]...
 
     Options:
-      --help  Show this message and exit.
+      --version  Show the version and exit.
+      --help     Show this message and exit.
 
     Commands:
       bc2pg  Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
