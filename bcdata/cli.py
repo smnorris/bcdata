@@ -301,6 +301,7 @@ def cat(
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
 @click.option("--append", is_flag=True, help="Append data to existing table")
+@click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
 @verbose_opt
 @quiet_opt
 def bc2pg(
@@ -316,6 +317,7 @@ def bc2pg(
     dim,
     fid,
     append,
+    promote_to_multi,
     verbose,
     quiet,
 ):
@@ -396,6 +398,8 @@ def bc2pg(
     if not append:
         command = command + ["-lco", "UNLOGGED=ON"]
         command = command + ["-lco", "SPATIAL_INDEX=NONE"]
+    if promote_to_multi:
+        command = command + ["-nlt", "PROMOTE_TO_MULTI"]
     log.info(" ".join(command))
     subprocess.run(command)
 
@@ -429,6 +433,8 @@ def bc2pg(
             ]
             if dim:
                 command = command + ["-dim", dim]
+            if promote_to_multi:
+                command = command + ["-nlt", "PROMOTE_TO_MULTI"]
             commands.append(command)
         # log all requests, not just the first one
         for c in commands:
