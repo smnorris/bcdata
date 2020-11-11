@@ -5,6 +5,9 @@ Changes
 ------------------
 - make dataset name arguments case insensitive
 - default max_workers to 2 in functions outside of CLI
+- bc2pg - add option --promote_to_multi to invoke ogr2ogr's -nlt PROMOTE_TO_MULTI and support
+  layers with mixed single/multipart types
+- add optional crs object to geojson output of bcdata.get_data() (#82)
 
 0.4.2 (2020-08-26)
 ------------------

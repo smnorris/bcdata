@@ -53,6 +53,11 @@ def test_get_data_small():
     assert data["type"] == "FeatureCollection"
 
 
+def test_get_data_crs():
+    data = bcdata.get_data(AIRPORTS_TABLE, crs="EPSG:3005")
+    assert data["crs"] == '''{"type":"name","properties":{"name":"urn:ogc:def:crs:EPSG::3005"}}'''
+
+
 def test_get_features():
     data = [f for f in bcdata.get_features(AIRPORTS_TABLE)]
     assert len(data) == 455
