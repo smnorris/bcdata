@@ -235,14 +235,14 @@ def get_data(
         results = executor.map(make_request, param_dicts)
 
     outjson = dict(type="FeatureCollection", features=[])
-    # If output crs is specified, include the crs object in the json
-    # But as default, we prefer to default to 4326 and RFC7946 (no crs)
-    if crs.lower() != "epsg:4326":
-        crs_int = crs.split(":")[1]
-        outjson["crs"] = f'''{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}'''
     for result in results:
         outjson["features"] += result
     if not as_gdf:
+        # If output crs is specified, include the crs object in the json
+        # But as default, we prefer to default to 4326 and RFC7946 (no crs)
+        if crs.lower() != "epsg:4326":
+            crs_int = crs.split(":")[1]
+            outjson["crs"] = f'''{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}'''
         return outjson
     else:
         gdf = gpd.GeoDataFrame.from_features(outjson)
