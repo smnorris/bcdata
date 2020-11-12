@@ -292,11 +292,9 @@ Load a couple of layer to postgres and run a query:
                                airport_name
     ------------------------------------------------------------------
      Victoria Harbour (Camel Point) Heliport
-     Victoria Inner Harbour AirportÂ (Victoria Harbour Water Airport)
+     Victoria Inner Harbour Airport (Victoria Harbour Water Airport)
      Victoria Harbour (Shoal Point) Heliport
     (3 rows)
-
-Note that the `Â` shown in the harbour airport name is present in the source data, this is not a bcdata or encoding issue.
 
 
 ## Projections / CRS
