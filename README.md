@@ -21,11 +21,35 @@ This Python module and CLI attempts to simplify downloads of BC geographic data 
 
 ## Installation
 
+### Linux / MacOS:
+
     $ pip install bcdata
 
 To enable autocomplete of dataset names (full object names only) with the command line tools, add this line to your `.bashrc` as per this [guide](https://click.palletsprojects.com/en/7.x/bashcomplete/?highlight=autocomplete#activation).
 
     eval "$(_BCDATA_COMPLETE=source bcdata)"
+
+### Windows
+
+`bcdata` requires `geopandas` and `rasterio`, these are not easily installable on Windows via `pip`.
+Installing via the ['conda' package manager](https://conda.io/en/latest/) is recommended - see the `geopandas` [installation guide](https://geopandas.org/install.html#installing-with-anaconda-conda) for more information.  Once `conda` is available at the command line, this sequence of commands will create a conda environment, activate it, and install `bcdata` and its requirements:
+
+    conda create -n geo_env
+    conda activate geo_env
+    conda config --env --add channels conda-forge
+    conda config --env --set channel_priority strict
+    conda install geopandas
+    conda install rasterio
+    pip install bcdata
+
+### Default PostgreSQL database
+
+The default target database connection (used by `bc2pg`) can be set via the `DATABASE_URL` environment variable (the password parameter should not be required if using a [.pgpass file](https://www.postgresql.org/docs/current/libpq-pgpass.html))
+
+Linux/Mac: `export DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port}/{database}`
+
+Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port}/{database}`
+
 
 ## Usage
 
