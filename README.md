@@ -31,16 +31,12 @@ To enable autocomplete of dataset names (full object names only) with the comman
 
 ### Windows
 
-`bcdata` requires `geopandas` and `rasterio`, these are not easily installable on Windows via `pip`.
-Installing via the [conda package manager](https://conda.io/en/latest/) is recommended - see the `geopandas` [installation guide](https://geopandas.org/install.html#installing-with-anaconda-conda) for more information.  Once `conda` is available at the command line, this sequence of commands will create a conda environment, activate it, and install `bcdata` and its requirements:
+`bcdata` has several dependencies not easily installable on Windows via `pip`.
+Installing via `miniconda`, the [conda package manager](https://conda.io/en/latest/miniconda.html) is recommended.  Once `conda` is installed, download the provided `environment.yml` file to your system, open the `Anaconda Prompt` command line from the start menu, navigate to the folder where you saved `environment.yml` and create/actvate the environment.
 
-    conda create -n geo_env
-    conda activate geo_env
-    conda config --env --add channels conda-forge
-    conda config --env --set channel_priority strict
-    conda install geopandas
-    conda install rasterio
-    pip install bcdata
+    conda env create -f environment.yml
+    conda activate bcdata
+
 
 ### Default PostgreSQL database
 

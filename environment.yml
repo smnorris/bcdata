@@ -1,0 +1,16 @@
+name: bcdata
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - gdal
+  - requests
+  - click
+  - cligj
+  - owslib
+  - rasterio
+  - geopandas
+  - pip
+  - pip:
+    - pgdata
+    - bcdata
