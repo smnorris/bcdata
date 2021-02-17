@@ -207,8 +207,11 @@ There are several commands available:
 
 #### `bc2pg`
 
+Note that `bc2pg` creates `public.bcdata` as a meta table tracking the most recent download date for each layer downloaded.
+Disable with the switch `--no_timestamp` if you do not wish to create this table or do not have access to `public` schema.
+
     $ bcdata bc2pg --help
-    Usage: bcdata bc2pg [OPTIONS] DATASET
+      Usage: bcdata bc2pg [OPTIONS] DATASET
 
       Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
 
@@ -225,20 +228,36 @@ There are several commands available:
       --query TEXT                    A valid `CQL` or `ECQL` query (https://docs.
                                       geoserver.org/stable/en/user/tutorials/cql/c
                                       ql_tutorial.html)
+
       --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                       bottom, right, top]". Coordinates are BC
                                       Albers (default) or --bounds_crs
+
       --bounds-crs, --bounds_crs TEXT
                                       CRS of provided bounds
       -p, --pagesize INTEGER          Max number of records to request
       -w, --max_workers INTEGER       Max number of concurrent requests
       --dim TEXT                      Force the coordinate dimension to val (valid
                                       values are XY, XYZ)
+
       --fid TEXT                      Primary key of dataset
       --append                        Append data to existing table
+      --promote_to_multi              Promote features to multipart
+      --no_timestamp                  Do not add download timestamp to bcdata meta
+                                      table
+
       -v, --verbose                   Increase verbosity.
       -q, --quiet                     Decrease verbosity.
       --help                          Show this message and exit.
+
+When was a table last downloaded?
+
+```
+mydb=# select * from bcdata;
+                 table_name                  |        date_downloaded
+---------------------------------------------+-------------------------------
+ whse_imagery_and_base_maps.gsr_airports_svw | 2021-02-17 11:50:34.044481-08
+```
 
 
 #### CLI examples

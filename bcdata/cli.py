@@ -302,6 +302,7 @@ def cat(
 @click.option("--fid", default=None, help="Primary key of dataset")
 @click.option("--append", is_flag=True, help="Append data to existing table")
 @click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
+@click.option("--no_timestamp", is_flag=True, help="Do not add download timestamp to bcdata meta table")
 @verbose_opt
 @quiet_opt
 def bc2pg(
@@ -318,6 +319,7 @@ def bc2pg(
     fid,
     append,
     promote_to_multi,
+    no_timestamp,
     verbose,
     quiet,
 ):
@@ -494,6 +496,14 @@ def bc2pg(
         conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
         log.info("Indexing geometry")
         conn.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
+
+    # once complete, note date/time of completion in public.bcdata
+    if not no_timestamp:
+        conn.execute("CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);")
+        conn.execute("""INSERT INTO public.bcdata (table_name, date_downloaded)
+                        SELECT %s as table_name, NOW() as date_downloaded
+                        ON CONFLICT (table_name) DO UPDATE SET date_downloaded = NOW();
+                     """, (schema+'.'+table,))
 
     log.info(
         "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
