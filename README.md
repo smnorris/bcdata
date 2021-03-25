@@ -2,7 +2,6 @@
 
 Python and command line tools for quick access to DataBC geo-data available via WFS/WCS.
 
-[![Build Status](https://travis-ci.org/smnorris/bcdata.svg?branch=master)](https://travis-ci.org/smnorris/bcdata)
 [![Coverage Status](https://coveralls.io/repos/github/smnorris/bcdata/badge.svg?branch=master)](https://coveralls.io/github/smnorris/bcdata?branch=master)
 
 There is a [wealth of British Columbia geographic information available as open
