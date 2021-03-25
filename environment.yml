@@ -1,4 +1,4 @@
-name: designatedlands
+name: bcdataenv
 channels:
   - conda-forge
   - defaults
