@@ -1,16 +1,18 @@
-name: bcdata
+name: designatedlands
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - gdal
-  - requests
-  - click
-  - cligj
-  - owslib
-  - rasterio
-  - geopandas
-  - pip
+  - python=3.9
+  - pip=21.0.*
+  - gdal=3.1.*
+  - requests=2.25.*
+  - owslib=0.23.*
+  - rasterio=1.2.*
+  - geopandas=0.9.*
+  - sqlalchemy=1.4.*
+  - geoalchemy2=0.6.*
+  - sqlalchemy-utils=0.36.*
+  - alembic=1.5.*
   - pip:
-    - pgdata
-    - bcdata
+      - pgdata==0.0.12
