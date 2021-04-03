@@ -445,7 +445,7 @@ def bc2pg(
                 temp_table = table+"_"+str(n)
                 dbq = sql.SQL(
                     """
-                    INSERT INT {schema}.{table} SELECT * FROM {schema}.{temp_table}
+                    INSERT INTO {schema}.{table} SELECT * FROM {schema}.{temp_table}
                     """
                 ).format(
                     schema=sql.Identifier(schema),
