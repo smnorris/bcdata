@@ -389,72 +389,83 @@ def bc2pg(
     subprocess.run(command)
 
     # write to additional separate tables if data is larger than 10k recs
-    if len(param_dicts) > 1:
-        commands = []
-        for n, paramdict in enumerate(param_dicts[1:]):
-            # create table to load to (so types are identical)
-            dbq = sql.SQL(
-                """
-                CREATE TABLE {schema}.{table_new}
-                (LIKE {schema}.{table}
-                INCLUDING ALL)
-                """
-            ).format(
-                schema=sql.Identifier(schema),
-                table_new=sql.Identifier(table+"_"+str(n)),
-                table=sql.Identifier(table)
-            )
-            db.execute(dbq)
-            payload = urlencode(paramdict, doseq=True)
-            url = bcdata.WFS_URL + "?" + payload
-            command = [
-                "ogr2ogr",
-                "-update",
-                "-append",
-                "-f",
-                "PostgreSQL",
-                db.ogr_string + " active_schema=" + schema,
-                "-t_srs",
-                "EPSG:3005",
-                "-nln",
-                table + "_" + str(n),
-                url,
-            ]
-            if dim:
-                command = command + ["-dim", dim]
-            if promote_to_multi:
-                command = command + ["-nlt", "PROMOTE_TO_MULTI"]
-            commands.append(command)
-        # log all requests, not just the first one
-        for c in commands:
-            log.info(c)
-        # https://stackoverflow.com/questions/14533458
-        pool = Pool(max_workers)
-        with click.progressbar(
-            pool.imap(partial(call), commands), length=len(param_dicts)
-        ) as bar:
-            for returncode in bar:
-                if returncode != 0:
-                    click.echo("Command failed: {}".format(returncode))
+    temp_tables = [table+"_"+str(n) for n, paramdict in enumerate(param_dicts[1:])]
 
-        # once loaded, combine & drop
-        for n, _x in enumerate(param_dicts[1:]):
-            temp_table = table+"_"+str(n)
-            dbq = sql.SQL(
-                """
-                INSERT INTO {schema}.{table} SELECT * FROM {schema}.{temp_table}
-                """
-            ).format(
+    try:
+        if len(param_dicts) > 1:
+            commands = []
+            for n, paramdict in enumerate(param_dicts[1:]):
+                # create table to load to (so types are identical)
+                dbq = sql.SQL(
+                    """
+                    CREATE TABLE {schema}.{table_new}
+                    (LIKE {schema}.{table}
+                    INCLUDING ALL)
+                    """
+                ).format(
+                    schema=sql.Identifier(schema),
+                    table_new=sql.Identifier(table+"_"+str(n)),
+                    table=sql.Identifier(table)
+                )
+                db.execute(dbq)
+                payload = urlencode(paramdict, doseq=True)
+                url = bcdata.WFS_URL + "?" + payload
+                command = [
+                    "ogr2ogr",
+                    "-update",
+                    "-append",
+                    "-f",
+                    "PostgreSQL",
+                    db.ogr_string + " active_schema=" + schema,
+                    "-t_srs",
+                    "EPSG:3005",
+                    "-nln",
+                    table + "_" + str(n),
+                    url,
+                ]
+                if dim:
+                    command = command + ["-dim", dim]
+                if promote_to_multi:
+                    command = command + ["-nlt", "PROMOTE_TO_MULTI"]
+                commands.append(command)
+            # log all requests, not just the first one
+            for c in commands:
+                log.info(c)
+            # https://stackoverflow.com/questions/14533458
+            pool = Pool(max_workers)
+            with click.progressbar(
+                pool.imap(partial(call), commands), length=len(param_dicts)
+            ) as bar:
+                for returncode in bar:
+                    if returncode != 0:
+                        click.echo("Command failed: {}".format(returncode))
+
+            # once loaded, combine & drop
+            for n, _x in enumerate(param_dicts[1:]):
+                temp_table = table+"_"+str(n)
+                dbq = sql.SQL(
+                    """
+                    INSERT INT {schema}.{table} SELECT * FROM {schema}.{temp_table}
+                    """
+                ).format(
+                    schema=sql.Identifier(schema),
+                    table=sql.Identifier(table),
+                    temp_table=sql.Identifier(temp_table)
+                )
+                db.execute(dbq)
+                dbq = sql.SQL("DROP TABLE {schema}.{temp_table}").format(
+                    schema=sql.Identifier(schema),
+                    temp_table=sql.Identifier(temp_table)
+                )
+                db.execute(dbq)
+    except:
+        # if above fails for any reason, try and delete the temp tables
+        for t in temp_tables:
+            db.execute(sql.SQL("DROP TABLE IF EXISTS {schema}.{table}").format(
                 schema=sql.Identifier(schema),
-                table=sql.Identifier(table),
-                temp_table=sql.Identifier(temp_table)
+                table=sql.Identifier(t))
             )
-            db.execute(dbq)
-            dbq = sql.SQL("DROP TABLE {schema}.{temp_table}").format(
-                schema=sql.Identifier(schema),
-                temp_table=sql.Identifier(temp_table)
-            )
-            db.execute(dbq)
+        raise RuntimeError("Loading to or from temp tables failed")
 
     # Deal with primary key
     # First, drop ogc_fid - becaue we load to many tables, it is not unique
