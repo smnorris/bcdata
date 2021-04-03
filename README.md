@@ -2,8 +2,6 @@
 
 Python and command line tools for quick access to DataBC geo-data available via WFS/WCS.
 
-[![Coverage Status](https://coveralls.io/repos/github/smnorris/bcdata/badge.svg?branch=master)](https://coveralls.io/github/smnorris/bcdata?branch=master)
-
 There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
 but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl/wget` can be awkward.
