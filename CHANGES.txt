@@ -1,9 +1,11 @@
 Changes
 =======
 
-0.4.4 (2021-)
+0.4.4 (2021-04-03)
 ------------------
-- track most recent date a table is downloaded to postgres via bc2pg with `public.bcdata`
+- track most recent date a table is downloaded to postgres via bc2pg with `public.bcdata` (#86)
+- cleanup temp tables on bail (#73)
+- remove pgdata dependency and use psycopg2 built in string methods (#87)
 
 0.4.3 (2020-11-10)
 ------------------
