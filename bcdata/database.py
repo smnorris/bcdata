@@ -1,7 +1,11 @@
 import os
 from urllib.parse import urlparse
+import logging
 
 import psycopg2
+
+
+log = logging.getLogger(__name__)
 
 
 class Database(object):
@@ -26,6 +30,12 @@ class Database(object):
         if self.password:
             self.ogr_string = self.ogr_string + f" password={password}"
         self.conn = psycopg2.connect(url)
+        # make sure postgis is available
+        try:
+            self.query("SELECT postgis_full_version()")
+        except psycopg2.errors.UndefinedFunction:
+            log.error("Cannot find PostGIS, is extension added to database %s ?", url)
+            raise psycopg2.errors.UndefinedFunction
 
     @property
     def schemas(self):

@@ -339,7 +339,8 @@ def bc2pg(
     db = Database(db_url)
     if schema not in db.schemas:
         click.echo("Schema {} does not exist, creating it".format(schema))
-        db.execute("CREATE SCHEMA %s", (schema,))
+        dbq = sql.SQL("CREATE SCHEMA {schema}").format(schema=sql.Identifier(schema))
+        db.execute(dbq)
 
     # if table does not exist already, remove the -append flag
     if schema + "." + table not in db.tables and append:
@@ -392,7 +393,7 @@ def bc2pg(
         commands = []
         for n, paramdict in enumerate(param_dicts[1:]):
             # create table to load to (so types are identical)
-            query = sql.SQL(
+            dbq = sql.SQL(
                 """
                 CREATE TABLE {schema}.{table_new}
                 (LIKE {schema}.{table}
@@ -403,7 +404,7 @@ def bc2pg(
                 table_new=sql.Identifier(table+"_"+str(n)),
                 table=sql.Identifier(table)
             )
-            db.execute(query)
+            db.execute(dbq)
             payload = urlencode(paramdict, doseq=True)
             url = bcdata.WFS_URL + "?" + payload
             command = [
@@ -439,7 +440,7 @@ def bc2pg(
         # once loaded, combine & drop
         for n, _x in enumerate(param_dicts[1:]):
             temp_table = table+"_"+str(n)
-            query = sql.SQL(
+            dbq = sql.SQL(
                 """
                 INSERT INTO {schema}.{table} SELECT * FROM {schema}.{temp_table}
                 """
@@ -448,39 +449,39 @@ def bc2pg(
                 table=sql.Identifier(table),
                 temp_table=sql.Identifier(temp_table)
             )
-            db.execute(query)
-            query = sql.SQL("DROP TABLE {schema}.{temp_table}").format(
+            db.execute(dbq)
+            dbq = sql.SQL("DROP TABLE {schema}.{temp_table}").format(
                 schema=sql.Identifier(schema),
                 temp_table=sql.Identifier(temp_table)
             )
-            db.execute(query)
+            db.execute(dbq)
 
     # Deal with primary key
     # First, drop ogc_fid - becaue we load to many tables, it is not unique
-    query = sql.SQL("ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE").format(
+    dbq = sql.SQL("ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE").format(
         schema=sql.Identifier(schema),
         table=sql.Identifier(table)
     )
-    db.execute(query)
+    db.execute(dbq)
 
     # if provided with a fid to use as pk, assign it
     if fid:
-        query = sql.SQL("ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({fid})").format(
+        dbq = sql.SQL("ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({fid})").format(
             schema=sql.Identifier(schema),
             table=sql.Identifier(table),
             fid=sql.Identifier(fid.lower())
         )
-        db.execute(query)
+        db.execute(dbq)
     # otherwise, create a new serial ogc_fid
     else:
-        query = sql.SQL("""
+        dbq = sql.SQL("""
             ALTER TABLE {schema}.{table}
             ADD COLUMN ogc_fid SERIAL PRIMARY KEY
             """).format(
             schema=sql.Identifier(schema),
             table=sql.Identifier(table)
         )
-        db.execute(query)
+        db.execute(dbq)
 
     if not append:
         db.execute(sql.SQL("ALTER TABLE {}.{} SET LOGGED").format(sql.Identifier(schema), sql.Identifier(table)))
