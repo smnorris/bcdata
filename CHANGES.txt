@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.4.5 ()
+------------------
+
 0.4.4 (2021-04-03)
 ------------------
 - track most recent date a table is downloaded to postgres via bc2pg with `public.bcdata` (#86)
