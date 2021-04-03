@@ -17,7 +17,7 @@ from cligj import verbose_opt, quiet_opt
 
 from owslib.wfs import WebFeatureService
 
-import pgdata
+from bcdata.database import Database
 
 import bcdata
 
@@ -349,13 +349,13 @@ def bc2pg(
     if fid:
         fid = fid.upper()
     # create schema if it does not exist
-    conn = pgdata.connect(db_url)
-    if schema not in conn.schemas:
+    db = Database(db_url)
+    if schema not in db.schemas:
         click.echo("Schema {} does not exist, creating it".format(schema))
-        conn.create_schema(schema)
+        db.execute("CREATE SCHEMA %s", (schema,))
 
     # if table does not exist already, remove the -append flag
-    if schema + "." + table not in conn.tables and append:
+    if schema + "." + table not in db.tables and append:
         append = False
         click.echo("Table does not exist, creating")
 
@@ -372,18 +372,13 @@ def bc2pg(
     # run the first request / load
     payload = urlencode(param_dicts[0], doseq=True)
     url = bcdata.WFS_URL + "?" + payload
-    db = parse_db_url(db_url)
-    db_string = "PG:host={h} user={u} dbname={db} port={port}".format(
-        h=db["host"], u=db["user"], db=db["database"], port=db["port"],
-    )
-    if db["password"]:
-        db_string = db_string + " password={pwd}".format(pwd=db["password"])
+
     # create the table
     command = [
         "ogr2ogr",
         "-f",
         "PostgreSQL",
-        db_string,
+        db.ogr_string,
         "-t_srs",
         "EPSG:3005",
         "-nln",
@@ -417,7 +412,7 @@ def bc2pg(
             """.format(
                 schema=schema, table=table, n=str(n)
             )
-            conn.execute(sql)
+            db.execute(sql)
             payload = urlencode(paramdict, doseq=True)
             url = bcdata.WFS_URL + "?" + payload
             command = [
@@ -426,7 +421,7 @@ def bc2pg(
                 "-append",
                 "-f",
                 "PostgreSQL",
-                db_string + " active_schema=" + schema,
+                db.ogr_string + " active_schema=" + schema,
                 "-t_srs",
                 "EPSG:3005",
                 "-nln",
@@ -455,19 +450,19 @@ def bc2pg(
             sql = """INSERT INTO {schema}.{table} SELECT * FROM {schema}.{table}_{n}""".format(
                 schema=schema, table=table, n=str(n)
             )
-            conn.execute(sql)
+            db.execute(sql)
             sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
-            conn.execute(sql)
+            db.execute(sql)
 
     # Deal with primary key
     # First, drop ogc_fid - becaue we load to many tables, it is not unique
     sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid CASCADE".format(schema, table)
-    conn.execute(sql)
+    db.execute(sql)
 
     # if provided with a fid to use as pk, assign it
     if fid:
         sql = "ALTER TABLE {}.{} ADD PRIMARY KEY ({})".format(schema, table, fid)
-        conn.execute(sql)
+        db.execute(sql)
         # make fid auto-increment in case we want to add records
         sql = """
             CREATE SEQUENCE {schema}.{table}_{fid}_seq
@@ -484,23 +479,23 @@ def bc2pg(
         """.format(
             schema=schema, table=table, fid=fid
         )
-        conn.execute(sql)
+        db.execute(sql)
     # otherwise, create a new serial ogc_fid
     else:
         sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(
             schema, table
         )
-        conn.execute(sql)
+        db.execute(sql)
 
     if not append:
-        conn.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
+        db.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
         log.info("Indexing geometry")
-        conn.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
+        db.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
 
     # once complete, note date/time of completion in public.bcdata
     if not no_timestamp:
-        conn.execute("CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);")
-        conn.execute("""INSERT INTO public.bcdata (table_name, date_downloaded)
+        db.execute("CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);")
+        db.execute("""INSERT INTO public.bcdata (table_name, date_downloaded)
                         SELECT %s as table_name, NOW() as date_downloaded
                         ON CONFLICT (table_name) DO UPDATE SET date_downloaded = NOW();
                      """, (schema+'.'+table,))

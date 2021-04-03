@@ -2,6 +2,6 @@ requests
 click
 cligj
 owslib
-pgdata
+psycopg2
 rasterio
 geopandas
