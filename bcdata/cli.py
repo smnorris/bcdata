@@ -5,7 +5,6 @@ import os
 import re
 import subprocess
 from urllib.parse import urlencode
-from urllib.parse import urlparse
 from functools import partial
 from multiprocessing.dummy import Pool
 from subprocess import call
@@ -16,6 +15,7 @@ from cligj import compact_opt
 from cligj import verbose_opt, quiet_opt
 
 from owslib.wfs import WebFeatureService
+from psycopg2 import sql
 
 from bcdata.database import Database
 
@@ -25,19 +25,6 @@ import bcdata
 def configure_logging(verbosity):
     log_level = max(10, 30 - 10 * verbosity)
     logging.basicConfig(stream=sys.stderr, level=log_level)
-
-
-def parse_db_url(db_url):
-    """provided a db url, return a dict with connection properties
-    """
-    u = urlparse(db_url)
-    db = {}
-    db["database"] = u.path[1:]
-    db["user"] = u.username
-    db["host"] = u.hostname
-    db["port"] = u.port
-    db["password"] = u.password
-    return db
 
 
 def get_objects(ctx, args, incomplete):
@@ -405,14 +392,18 @@ def bc2pg(
         commands = []
         for n, paramdict in enumerate(param_dicts[1:]):
             # create table to load to (so types are identical)
-            sql = """
-            CREATE TABLE {schema}.{table}_{n}
-            (LIKE {schema}.{table}
-            INCLUDING ALL)
-            """.format(
-                schema=schema, table=table, n=str(n)
+            query = sql.SQL(
+                """
+                CREATE TABLE {schema}.{table_new}
+                (LIKE {schema}.{table}
+                INCLUDING ALL)
+                """
+            ).format(
+                schema=sql.Identifier(schema),
+                table_new=sql.Identifier(table+"_"+str(n)),
+                table=sql.Identifier(table)
             )
-            db.execute(sql)
+            db.execute(query)
             payload = urlencode(paramdict, doseq=True)
             url = bcdata.WFS_URL + "?" + payload
             command = [
@@ -447,48 +438,52 @@ def bc2pg(
 
         # once loaded, combine & drop
         for n, _x in enumerate(param_dicts[1:]):
-            sql = """INSERT INTO {schema}.{table} SELECT * FROM {schema}.{table}_{n}""".format(
-                schema=schema, table=table, n=str(n)
+            temp_table = table+"_"+str(n)
+            query = sql.SQL(
+                """
+                INSERT INTO {schema}.{table} SELECT * FROM {schema}.{temp_table}
+                """
+            ).format(
+                schema=sql.Identifier(schema),
+                table=sql.Identifier(table),
+                temp_table=sql.Identifier(temp_table)
             )
-            db.execute(sql)
-            sql = "DROP TABLE {}.{}_{}".format(schema, table, n)
-            db.execute(sql)
+            db.execute(query)
+            query = sql.SQL("DROP TABLE {schema}.{temp_table}").format(
+                schema=sql.Identifier(schema),
+                temp_table=sql.Identifier(temp_table)
+            )
+            db.execute(query)
 
     # Deal with primary key
     # First, drop ogc_fid - becaue we load to many tables, it is not unique
-    sql = "ALTER TABLE {}.{} DROP COLUMN ogc_fid CASCADE".format(schema, table)
-    db.execute(sql)
+    query = sql.SQL("ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE").format(
+        schema=sql.Identifier(schema),
+        table=sql.Identifier(table)
+    )
+    db.execute(query)
 
     # if provided with a fid to use as pk, assign it
     if fid:
-        sql = "ALTER TABLE {}.{} ADD PRIMARY KEY ({})".format(schema, table, fid)
-        db.execute(sql)
-        # make fid auto-increment in case we want to add records
-        sql = """
-            CREATE SEQUENCE {schema}.{table}_{fid}_seq
-            OWNED BY {schema}.{table}.{fid};
-
-            SELECT
-              setval('{schema}.{table}_{fid}_seq',
-              coalesce(max({fid}), 0) + 1, false)
-            FROM {schema}.{table};
-
-            ALTER TABLE {schema}.{table}
-            ALTER COLUMN {fid}
-            SET DEFAULT nextval('{schema}.{table}_{fid}_seq');
-        """.format(
-            schema=schema, table=table, fid=fid
+        query = sql.SQL("ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({fid})").format(
+            schema=sql.Identifier(schema),
+            table=sql.Identifier(table),
+            fid=sql.Identifier(fid.lower())
         )
-        db.execute(sql)
+        db.execute(query)
     # otherwise, create a new serial ogc_fid
     else:
-        sql = "ALTER TABLE {}.{} ADD COLUMN ogc_fid SERIAL PRIMARY KEY".format(
-            schema, table
+        query = sql.SQL("""
+            ALTER TABLE {schema}.{table}
+            ADD COLUMN ogc_fid SERIAL PRIMARY KEY
+            """).format(
+            schema=sql.Identifier(schema),
+            table=sql.Identifier(table)
         )
-        db.execute(sql)
+        db.execute(query)
 
     if not append:
-        db.execute("ALTER TABLE {}.{} SET LOGGED".format(schema, table))
+        db.execute(sql.SQL("ALTER TABLE {}.{} SET LOGGED").format(sql.Identifier(schema), sql.Identifier(table)))
         log.info("Indexing geometry")
         db.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
 
