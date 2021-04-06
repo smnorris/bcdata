@@ -20,17 +20,6 @@ with open("bcdata/__init__.py", "r") as f:
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
-requirements = [
-    "click>=7.0,<8",
-    "cligj>=0.5",
-    "pgdata>=0.0.12",
-    "requests",
-    "owslib",
-    "rasterio",
-    "geopandas",
-]
-
-
 setup(
     name="bcdata",
     version=version,
@@ -55,7 +44,7 @@ setup(
     packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
     include_package_data=True,
     zip_safe=False,
-    install_requires=requirements,
+    install_requires=read('requirements.txt').splitlines(),
     extras_require={"test": ["pytest>=3", "rasterio"]},
     entry_points="""
       [console_scripts]
