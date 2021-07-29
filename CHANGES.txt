@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.5.0 (2021-)
+------------------
+- add option to validate on load (#91)
+
 0.4.5 (2021-04-06)
 ------------------
 - fix outdated setup.py (#88)

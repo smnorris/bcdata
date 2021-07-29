@@ -290,6 +290,7 @@ def cat(
 @click.option("--append", is_flag=True, help="Append data to existing table")
 @click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
 @click.option("--no_timestamp", is_flag=True, help="Do not add download timestamp to bcdata meta table")
+@click.option("--makevalid", is_flag=True, help="run OGR's MakeValid() to ensure geometries are valid simple features")
 @verbose_opt
 @quiet_opt
 def bc2pg(
@@ -306,6 +307,7 @@ def bc2pg(
     fid,
     append,
     promote_to_multi,
+    makevalid,
     no_timestamp,
     verbose,
     quiet,
@@ -342,7 +344,8 @@ def bc2pg(
         dbq = sql.SQL("CREATE SCHEMA {schema}").format(schema=sql.Identifier(schema))
         db.execute(dbq)
 
-    # if table does not exist already, remove the -append flag
+    # if --append option provided, make sure table actually exists
+    # if it does not exist, remove the -append option from ogr command
     if schema + "." + table not in db.tables and append:
         append = False
         click.echo("Table does not exist, creating")
@@ -385,6 +388,8 @@ def bc2pg(
         command = command + ["-lco", "SPATIAL_INDEX=NONE"]
     if promote_to_multi:
         command = command + ["-nlt", "PROMOTE_TO_MULTI"]
+    if makevalid:
+        command = command + ["-makevalid"]
     log.info(" ".join(command))
     subprocess.run(command)
 
