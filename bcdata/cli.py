@@ -253,6 +253,7 @@ def cat(
         bounds_crs=bounds_crs,
         sortby=sortby,
         crs=dst_crs,
+        pagesize=pagesize
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 

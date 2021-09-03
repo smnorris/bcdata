@@ -5,6 +5,7 @@ from .wfs import get_count
 from .wfs import list_tables
 from .wfs import validate_name
 from .wfs import define_request
+from .wfs import get_type
 from .wcs import get_dem
 
 __version__ = "0.5.0dev0"

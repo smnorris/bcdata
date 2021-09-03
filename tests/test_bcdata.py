@@ -58,6 +58,11 @@ def test_get_data_crs():
     assert data["crs"] == '''{"type":"name","properties":{"name":"urn:ogc:def:crs:EPSG::3005"}}'''
 
 
+def test_get_type():
+    data = bcdata.get_type(AIRPORTS_TABLE)
+    assert data == 'Point'
+
+
 def test_get_features():
     data = [f for f in bcdata.get_features(AIRPORTS_TABLE)]
     assert len(data) == 455

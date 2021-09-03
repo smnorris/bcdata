@@ -276,3 +276,22 @@ def get_features(
         for result in executor.map(make_request, param_dicts):
             for feature in result:
                 yield feature
+
+
+def get_type(dataset):
+    """Request a single feature and return geometry type
+    """
+    # validate the table name
+    table = validate_name(dataset)
+    parameters = {
+        "service": "WFS",
+        "version": "2.0.0",
+        "request": "GetFeature",
+        "typeName": table,
+        "outputFormat": "json",
+        "count": 1,
+    }
+    r = requests.get(bcdata.WFS_URL, params=parameters)
+    log.debug(r.url)
+    # return the feature type
+    return r.json()['features'][0]['geometry']['type']
