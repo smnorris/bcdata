@@ -225,24 +225,22 @@ Disable with the switch `--no_timestamp` if you do not wish to create this table
       --query TEXT                    A valid `CQL` or `ECQL` query (https://docs.
                                       geoserver.org/stable/en/user/tutorials/cql/c
                                       ql_tutorial.html)
-
       --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                       bottom, right, top]". Coordinates are BC
                                       Albers (default) or --bounds_crs
-
       --bounds-crs, --bounds_crs TEXT
                                       CRS of provided bounds
       -p, --pagesize INTEGER          Max number of records to request
       -w, --max_workers INTEGER       Max number of concurrent requests
       --dim TEXT                      Force the coordinate dimension to val (valid
                                       values are XY, XYZ)
-
       --fid TEXT                      Primary key of dataset
       --append                        Append data to existing table
       --nlt TEXT                      Define the geometry type for output table
       --no_timestamp                  Do not add download timestamp to bcdata meta
                                       table
-
+      --makevalid                     run OGR's MakeValid() to ensure geometries
+                                      are valid simple features
       -v, --verbose                   Increase verbosity.
       -q, --quiet                     Decrease verbosity.
       --help                          Show this message and exit.
