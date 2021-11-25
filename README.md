@@ -239,7 +239,7 @@ Disable with the switch `--no_timestamp` if you do not wish to create this table
 
       --fid TEXT                      Primary key of dataset
       --append                        Append data to existing table
-      --promote_to_multi              Promote features to multipart
+      --nlt TEXT                      Define the geometry type for output table
       --no_timestamp                  Do not add download timestamp to bcdata meta
                                       table
 
