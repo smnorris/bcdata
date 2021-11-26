@@ -289,7 +289,7 @@ def cat(
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
 @click.option("--append", is_flag=True, help="Append data to existing table")
-@click.option("--nlt", help="Define the geometry type for output table")
+@click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
 @click.option("--no_timestamp", is_flag=True, help="Do not add download timestamp to bcdata meta table")
 @click.option("--makevalid", is_flag=True, help="run OGR's MakeValid() to ensure geometries are valid simple features")
 @verbose_opt
@@ -307,7 +307,7 @@ def bc2pg(
     dim,
     fid,
     append,
-    nlt,
+    promote_to_multi,
     makevalid,
     no_timestamp,
     verbose,
@@ -351,21 +351,6 @@ def bc2pg(
         append = False
         click.echo("Table does not exist, creating")
 
-    # if not provided, find geometry type of table
-    if not nlt:
-        geometry_type = bcdata.get_type(src)
-
-        # Because WFS can provide mixed singlepart/multipart responses, just
-        # cast everything to multipart.
-        # If this is a problem, either provide -nlt to the command or do an
-        # ALTER TABLE to adjust the geom type after download.
-        if geometry_type.upper() in ["POINT", "MULTIPOINT"]:
-            nlt = "MULTIPOINT"
-        elif geometry_type.upper() in ["LINESTRING", "MULTILINESTRING"]:
-            nlt = "MULTILINESTRING"
-        elif geometry_type.upper() in ["POLYGON", "MULTIPOLYGON"]:
-            nlt = "MULTIPOLYGON"
-
     # build parameters for each required request
     param_dicts = bcdata.define_request(
         src,
@@ -391,8 +376,6 @@ def bc2pg(
         "-nln",
         schema + "." + table,
         url,
-        "-nlt",
-        nlt
     ]
     if append:
         command = command + ["-append"]
@@ -404,6 +387,8 @@ def bc2pg(
     if not append:
         command = command + ["-lco", "UNLOGGED=ON"]
         command = command + ["-lco", "SPATIAL_INDEX=NONE"]
+    if promote_to_multi:
+        command = command + ["-nlt", "PROMOTE_TO_MULTI"]
     if makevalid:
         command = command + ["-makevalid"]
     log.info(" ".join(command))
@@ -446,6 +431,8 @@ def bc2pg(
                 ]
                 if dim:
                     command = command + ["-dim", dim]
+                if promote_to_multi:
+                    command = command + ["-nlt", "PROMOTE_TO_MULTI"]
                 commands.append(command)
             # log all requests, not just the first one
             for c in commands:

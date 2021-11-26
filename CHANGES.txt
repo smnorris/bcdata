@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.5.1 (2021-11-25)
+------------------
+- bc2pg - remove non-functional option to specify geom type on load, revert to --promote_to_multi (#92)
+
 0.5.0 (2021-11-25)
 ------------------
 - bc2pg - add option to validate on load (#91)

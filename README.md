@@ -236,7 +236,7 @@ Disable with the switch `--no_timestamp` if you do not wish to create this table
                                       values are XY, XYZ)
       --fid TEXT                      Primary key of dataset
       --append                        Append data to existing table
-      --nlt TEXT                      Define the geometry type for output table
+      --promote_to_multi              Promote features to multipart
       --no_timestamp                  Do not add download timestamp to bcdata meta
                                       table
       --makevalid                     run OGR's MakeValid() to ensure geometries
