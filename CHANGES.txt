@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.6.0 ()
+------------------
+- dem - add option to align downloaded tiff to BC default (#97)
+
 0.5.1 (2021-11-25)
 ------------------
 - bc2pg - remove non-functional option to specify geom type on load, revert to --promote_to_multi (#92)

@@ -1,4 +1,5 @@
 import logging
+from math import trunc
 
 import requests
 import rasterio
@@ -7,6 +8,14 @@ import bcdata
 
 log = logging.getLogger(__name__)
 
+def align_bounds(bounds):
+    """
+    Adjust input bounds to align with Hectares BC raster
+    (round bounds to nearest 100m, then shift by 12.5m)
+    """
+    ll = [((trunc(b / 100) * 100) - 12.5) for b in bounds[:2]]
+    ur = [(((trunc(b / 100) + 1) * 100) + 87.5) for b in bounds[2:]]
+    return (ll[0], ll[1], ur[0], ur[1])
 
 def get_dem(
     bounds,
@@ -14,11 +23,19 @@ def get_dem(
     src_crs="EPSG:3005",
     dst_crs="EPSG:3005",
     resolution=25,
+    align=False,
     interpolation=None,
     as_rasterio=False,
 ):
     """Get TRIM DEM for provided bounds, write to GeoTIFF.
     """
+    # align bounds if specified (and bounds are BC Albers CRS)
+    if align:
+        if src_crs == "EPSG:3005" and dst_crs == "EPSG:3005":
+            bounds = align_bounds(bounds)
+        else:
+            raise ValueError("Align is only valid for BC Albers based requests")
+
     bbox = ",".join([str(b) for b in bounds])
 
     # do not upsample

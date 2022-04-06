@@ -2,6 +2,7 @@ import os
 
 import rasterio
 import pytest
+from rasterio.coords import BoundingBox
 
 import bcdata
 from geopandas.geodataframe import GeoDataFrame
@@ -114,6 +115,14 @@ def test_dem(tmpdir):
         ]
     assert stats[0]["max"] == 3982
 
+def test_dem_align(tmpdir):
+    bounds = [1046891, 704778, 1055345, 709629]
+    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem_align.tif"), align=True)
+    assert os.path.exists(out_file)
+    with rasterio.open(out_file) as src:
+        bounds = src.bounds
+    bbox = BoundingBox(1046787.5, 704687.5, 1055487.5, 709787.5)
+    assert bounds == bbox
 
 def test_dem_rasterio(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
