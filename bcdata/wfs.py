@@ -25,8 +25,7 @@ log = logging.getLogger(__name__)
 
 
 def get_sortkey(table):
-    """Check data for unique columns available for sorting paged requests
-    """
+    """Check data for unique columns available for sorting paged requests"""
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     columns = list(wfs.get_schema("pub:" + table)["properties"].keys())
     # use OBJECTID as default sort key, if present
@@ -60,9 +59,8 @@ def check_cache(path):
 
 
 def get_table_name(package):
-    """Query DataBC API to find WFS table/layer name for given package
-    """
-    package = package.lower() # package names are lowercase
+    """Query DataBC API to find WFS table/layer name for given package"""
+    package = package.lower()  # package names are lowercase
     params = {"id": package}
     r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
     if r.status_code != 200:
@@ -84,8 +82,7 @@ def get_table_name(package):
 
 
 def validate_name(dataset):
-    """Check wfs/cache and the bcdc api to see if dataset name is valid
-    """
+    """Check wfs/cache and the bcdc api to see if dataset name is valid"""
     if dataset.upper() in list_tables():
         return dataset.upper()
     else:
@@ -93,8 +90,7 @@ def validate_name(dataset):
 
 
 def list_tables(refresh=False, cache_file=None):
-    """Return a list of all datasets available via WFS
-    """
+    """Return a list of all datasets available via WFS"""
     # default cache listing all objects available is
     # ~/.bcdata
     if not cache_file:
@@ -117,8 +113,7 @@ def list_tables(refresh=False, cache_file=None):
 
 
 def get_count(dataset, query=None):
-    """Ask DataBC WFS how many features there are in a table/query
-    """
+    """Ask DataBC WFS how many features there are in a table/query"""
     # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
     table = validate_name(dataset)
     payload = {
@@ -136,8 +131,7 @@ def get_count(dataset, query=None):
 
 
 def make_request(parameters):
-    """Submit a getfeature request to DataBC WFS and return features
-    """
+    """Submit a getfeature request to DataBC WFS and return features"""
     r = requests.get(bcdata.WFS_URL, params=parameters)
     log.debug(r.url)
     return r.json()["features"]
@@ -220,8 +214,7 @@ def get_data(
     max_workers=2,
     as_gdf=False,
 ):
-    """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS
-    """
+    """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS"""
     param_dicts = define_request(
         dataset,
         query=query,
@@ -242,7 +235,9 @@ def get_data(
         # But as default, we prefer to default to 4326 and RFC7946 (no crs)
         if crs.lower() != "epsg:4326":
             crs_int = crs.split(":")[1]
-            outjson["crs"] = f'''{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}'''
+            outjson[
+                "crs"
+            ] = f"""{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}"""
         return outjson
     else:
         gdf = gpd.GeoDataFrame.from_features(outjson)
@@ -260,8 +255,7 @@ def get_features(
     pagesize=10000,
     max_workers=2,
 ):
-    """Yield features from DataBC WFS
-    """
+    """Yield features from DataBC WFS"""
     param_dicts = define_request(
         dataset,
         query=query,
@@ -279,8 +273,7 @@ def get_features(
 
 
 def get_type(dataset):
-    """Request a single feature and return geometry type
-    """
+    """Request a single feature and return geometry type"""
     # validate the table name
     table = validate_name(dataset)
     parameters = {
@@ -294,4 +287,4 @@ def get_type(dataset):
     r = requests.get(bcdata.WFS_URL, params=parameters)
     log.debug(r.url)
     # return the feature type
-    return r.json()['features'][0]['geometry']['type']
+    return r.json()["features"][0]["geometry"]["type"]

@@ -61,6 +61,7 @@ def bounds_handler(ctx, param, value):
     else:  # pragma: no cover
         return retval
 
+
 bounds_opt = click.option(
     "--bounds",
     default=None,
@@ -88,8 +89,7 @@ def cli():
 @cli.command()
 @click.option("--refresh", "-r", is_flag=True, help="Refresh the cached list")
 def list(refresh):
-    """List DataBC layers available via WFS
-    """
+    """List DataBC layers available via WFS"""
     # This works too, but is much slower:
     # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
     for table in bcdata.list_tables(refresh):
@@ -147,10 +147,17 @@ def info(dataset, indent, meta_member, verbose, quiet):
 @verbose_opt
 @quiet_opt
 def dem(
-    bounds, bounds_crs, align, dst_crs, out_file, resolution, interpolation, verbose, quiet
+    bounds,
+    bounds_crs,
+    align,
+    dst_crs,
+    out_file,
+    resolution,
+    interpolation,
+    verbose,
+    quiet,
 ):
-    """Dump BC DEM to TIFF
-    """
+    """Dump BC DEM to TIFF"""
     verbosity = verbose - quiet
     configure_logging(verbosity)
     if not dst_crs:
@@ -236,8 +243,7 @@ def cat(
     verbose,
     quiet,
 ):
-    """Write DataBC features to stdout as GeoJSON feature objects.
-    """
+    """Write DataBC features to stdout as GeoJSON feature objects."""
     # Note that cat does not concatenate!
     verbosity = verbose - quiet
     configure_logging(verbosity)
@@ -256,7 +262,7 @@ def cat(
         bounds_crs=bounds_crs,
         sortby=sortby,
         crs=dst_crs,
-        pagesize=pagesize
+        pagesize=pagesize,
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 
@@ -293,8 +299,16 @@ def cat(
 @click.option("--fid", default=None, help="Primary key of dataset")
 @click.option("--append", is_flag=True, help="Append data to existing table")
 @click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
-@click.option("--no_timestamp", is_flag=True, help="Do not add download timestamp to bcdata meta table")
-@click.option("--makevalid", is_flag=True, help="run OGR's MakeValid() to ensure geometries are valid simple features")
+@click.option(
+    "--no_timestamp",
+    is_flag=True,
+    help="Do not add download timestamp to bcdata meta table",
+)
+@click.option(
+    "--makevalid",
+    is_flag=True,
+    help="run OGR's MakeValid() to ensure geometries are valid simple features",
+)
 @verbose_opt
 @quiet_opt
 def bc2pg(
@@ -398,7 +412,7 @@ def bc2pg(
     subprocess.run(command)
 
     # write to additional separate tables if data is larger than 10k recs
-    temp_tables = [table+"_"+str(n) for n, paramdict in enumerate(param_dicts[1:])]
+    temp_tables = [table + "_" + str(n) for n, paramdict in enumerate(param_dicts[1:])]
 
     try:
         if len(param_dicts) > 1:
@@ -413,8 +427,8 @@ def bc2pg(
                     """
                 ).format(
                     schema=sql.Identifier(schema),
-                    table_new=sql.Identifier(table+"_"+str(n)),
-                    table=sql.Identifier(table)
+                    table_new=sql.Identifier(table + "_" + str(n)),
+                    table=sql.Identifier(table),
                 )
                 db.execute(dbq)
                 payload = urlencode(paramdict, doseq=True)
@@ -451,7 +465,7 @@ def bc2pg(
 
             # once loaded, combine & drop
             for n, _x in enumerate(param_dicts[1:]):
-                temp_table = table+"_"+str(n)
+                temp_table = table + "_" + str(n)
                 dbq = sql.SQL(
                     """
                     INSERT INTO {schema}.{table} SELECT * FROM {schema}.{temp_table}
@@ -459,28 +473,27 @@ def bc2pg(
                 ).format(
                     schema=sql.Identifier(schema),
                     table=sql.Identifier(table),
-                    temp_table=sql.Identifier(temp_table)
+                    temp_table=sql.Identifier(temp_table),
                 )
                 db.execute(dbq)
                 dbq = sql.SQL("DROP TABLE {schema}.{temp_table}").format(
-                    schema=sql.Identifier(schema),
-                    temp_table=sql.Identifier(temp_table)
+                    schema=sql.Identifier(schema), temp_table=sql.Identifier(temp_table)
                 )
                 db.execute(dbq)
     except:
         # if above fails for any reason, try and delete the temp tables
         for t in temp_tables:
-            db.execute(sql.SQL("DROP TABLE IF EXISTS {schema}.{table}").format(
-                schema=sql.Identifier(schema),
-                table=sql.Identifier(t))
+            db.execute(
+                sql.SQL("DROP TABLE IF EXISTS {schema}.{table}").format(
+                    schema=sql.Identifier(schema), table=sql.Identifier(t)
+                )
             )
         raise RuntimeError("Loading to or from temp tables failed")
 
     # Deal with primary key
     # First, drop ogc_fid - becaue we load to many tables, it is not unique
     dbq = sql.SQL("ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE").format(
-        schema=sql.Identifier(schema),
-        table=sql.Identifier(table)
+        schema=sql.Identifier(schema), table=sql.Identifier(table)
     )
     db.execute(dbq)
 
@@ -489,32 +502,40 @@ def bc2pg(
         dbq = sql.SQL("ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({fid})").format(
             schema=sql.Identifier(schema),
             table=sql.Identifier(table),
-            fid=sql.Identifier(fid.lower())
+            fid=sql.Identifier(fid.lower()),
         )
         db.execute(dbq)
     # otherwise, create a new serial ogc_fid
     else:
-        dbq = sql.SQL("""
+        dbq = sql.SQL(
+            """
             ALTER TABLE {schema}.{table}
             ADD COLUMN ogc_fid SERIAL PRIMARY KEY
-            """).format(
-            schema=sql.Identifier(schema),
-            table=sql.Identifier(table)
-        )
+            """
+        ).format(schema=sql.Identifier(schema), table=sql.Identifier(table))
         db.execute(dbq)
 
     if not append:
-        db.execute(sql.SQL("ALTER TABLE {}.{} SET LOGGED").format(sql.Identifier(schema), sql.Identifier(table)))
+        db.execute(
+            sql.SQL("ALTER TABLE {}.{} SET LOGGED").format(
+                sql.Identifier(schema), sql.Identifier(table)
+            )
+        )
         log.info("Indexing geometry")
         db.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
 
     # once complete, note date/time of completion in public.bcdata
     if not no_timestamp:
-        db.execute("CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);")
-        db.execute("""INSERT INTO public.bcdata (table_name, date_downloaded)
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);"
+        )
+        db.execute(
+            """INSERT INTO public.bcdata (table_name, date_downloaded)
                         SELECT %s as table_name, NOW() as date_downloaded
                         ON CONFLICT (table_name) DO UPDATE SET date_downloaded = NOW();
-                     """, (schema+'.'+table,))
+                     """,
+            (schema + "." + table,),
+        )
 
     log.info(
         "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
