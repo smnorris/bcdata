@@ -1,8 +1,9 @@
 Changes
 =======
 
-0.6.1 ()
+0.6.1 (2022-04-26)
 ------------------
+- enable configuration of cache file location via $BCDATA_CACHE environment variable (#99)
 
 0.6.0 (2022-04-26)
 ------------------
