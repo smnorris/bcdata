@@ -27,10 +27,6 @@ def configure_logging(verbosity):
     logging.basicConfig(stream=sys.stderr, level=log_level)
 
 
-def get_objects(ctx, args, incomplete):
-    return [k for k in bcdata.list_tables() if incomplete.upper() in k]
-
-
 # bounds handling direct from rasterio
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/options.py
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/clip.py
@@ -97,7 +93,7 @@ def list(refresh):
 
 
 @cli.command()
-@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
+@click.argument("dataset", type=click.STRING)
 @indent_opt
 # Options to pick out a single metadata item and print it as
 # a string.
@@ -174,7 +170,7 @@ def dem(
 
 
 @cli.command()
-@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
+@click.argument("dataset", type=click.STRING)
 @click.option(
     "--query",
     help="A valid CQL or ECQL query, quote enclosed (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
@@ -212,7 +208,7 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 
 
 @cli.command()
-@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
+@click.argument("dataset", type=click.STRING)
 @click.option(
     "--query",
     help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
@@ -268,7 +264,7 @@ def cat(
 
 
 @cli.command()
-@click.argument("dataset", type=click.STRING, autocompletion=get_objects)
+@click.argument("dataset", type=click.STRING)
 @click.option(
     "--db_url",
     "-db",

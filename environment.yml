@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - python
-  - click<8.1
+  - click>=8.0
   - pip
   - gdal
   - requests
