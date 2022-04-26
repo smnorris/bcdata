@@ -1,6 +1,9 @@
 Changes
 =======
 
+0.6.1 ()
+------------------
+
 0.6.0 (2022-04-26)
 ------------------
 - dem - add option to align downloaded tiff to BC default (#97)
