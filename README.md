@@ -22,10 +22,6 @@ This Python module and CLI attempts to simplify downloads of BC geographic data 
 
     $ pip install bcdata
 
-To enable autocomplete of dataset names (full object names only) with the command line tools, add this line to your `.bashrc` as per this [guide](https://click.palletsprojects.com/en/7.x/bashcomplete/?highlight=autocomplete#activation).
-
-    eval "$(_BCDATA_COMPLETE=source bcdata)"
-
 ### Windows
 
 `bcdata` has several dependencies not easily installable on Windows via `pip`.
@@ -35,7 +31,9 @@ Installing via `miniconda`, the [conda package manager](https://conda.io/en/late
     conda activate bcdata
 
 
-### Default PostgreSQL database
+### Configuration
+
+#### Default PostgreSQL database
 
 The default target database connection (used by `bc2pg`) can be set via the `DATABASE_URL` environment variable (the password parameter should not be required if using a [.pgpass file](https://www.postgresql.org/docs/current/libpq-pgpass.html))
 
@@ -43,6 +41,13 @@ Linux/Mac: `export DATABASE_URL=postgresql://{username}:{password}@{hostname}:{p
 
 Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port}/{database}`
 
+
+#### Layer list cache file
+
+A list of DataBC layers is cached to file to speed request validation. The cache is automatically refreshed if it is more than a day old.
+The cache file location defaults to `~/.bcdata`, but can be configured by setting the a `$BCDATA_CACHE` environment variable.
+
+`export BCDATA_CACHE=/path/to/bcdata_cache`
 
 ## Usage
 
@@ -54,6 +59,7 @@ For example, for [BC Airports]( https://catalogue.data.gov.bc.ca/dataset/bc-airp
 - object name: `WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW`
 
 Note that some packages [may have more than one layer](https://catalogue.data.gov.bc.ca/dataset/forest-development-units) - if you request a package like this, `bcdata` will prompt you with a list of valid object/table names to use instead of the package name.
+
 
 ### Python module
 

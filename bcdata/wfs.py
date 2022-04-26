@@ -94,7 +94,10 @@ def list_tables(refresh=False, cache_file=None):
     # default cache listing all objects available is
     # ~/.bcdata
     if not cache_file:
-        cache_file = os.path.join(str(Path.home()), ".bcdata")
+        if "BCDATA_CACHE" in os.environ:
+            cache_file = os.environ["BCDATA_CACHE"]
+        else:
+            cache_file = os.path.join(str(Path.home()), ".bcdata")
 
     # regenerate the cache if:
     # - the cache file doesn't exist

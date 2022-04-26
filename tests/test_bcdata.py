@@ -28,6 +28,11 @@ def test_validate_table_lowercase():
     assert table == AIRPORTS_TABLE
 
 
+def test_cache_file(tmp_path):
+    bcdata.list_tables(refresh=True, cache_file=tmp_path / ".bcdata_test")
+    assert os.path.exists(tmp_path / ".bcdata_test")
+
+
 def test_get_table_name_urlparse():
     # bcdc api query result["object_name"] is not correct WFS layer name,
     # use WFS resource url
