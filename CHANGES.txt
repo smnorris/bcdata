@@ -1,9 +1,10 @@
 Changes
 =======
 
-0.6.0 ()
+0.6.0 (2022-04-26)
 ------------------
 - dem - add option to align downloaded tiff to BC default (#97)
+- remove bcgw object name shell completion (#98)
 
 0.5.1 (2021-11-25)
 ------------------
