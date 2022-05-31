@@ -9,9 +9,8 @@ but direct file download urls are not available and the syntax to accesss WFS vi
 This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with existing Python GIS tools like `geopandas`, `fiona` and `rasterio`.
 
 
-**Disclaimer**
-
-It is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
+**Disclaimer**  
+*It is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)*
 
 ## Installation
 
