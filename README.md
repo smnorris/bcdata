@@ -9,23 +9,20 @@ but direct file download urls are not available and the syntax to accesss WFS vi
 This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with existing Python GIS tools like `geopandas`, `fiona` and `rasterio`.
 
 
-## Disclaimer
+**Disclaimer**
 
-- it is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
-- this is not specifically endorsed by the Province of Britsh Columbia or DataBC
-- use with care, please don't overload the service
-
+It is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)
 
 ## Installation
 
-### Linux / MacOS:
+### pip
 
     $ pip install bcdata
 
-### Windows
+### conda
 
-`bcdata` has several dependencies not easily installable on Windows via `pip`.
-Installing via `miniconda`, the [conda package manager](https://conda.io/en/latest/miniconda.html) is recommended.  Once `conda` is installed, download the provided `environment.yml` file to your system, open the `Anaconda Prompt` command line from the start menu, navigate to the folder where you saved `environment.yml` and create/actvate the environment.
+`bcdata` has several dependencies that may not easily be installed via `pip` (`gdal`, `fiona`, `geopandas`, `rasterio`)
+Installing via `miniconda`, the [conda package manager](https://conda.io/en/latest/miniconda.html) is recommended on Windows or if do not wish to install these dependencies yourself.  Once `conda` is installed, download the provided `environment.yml` file to your system, open the `Anaconda Prompt` command line from the start menu, navigate to the folder where you saved `environment.yml` and create/actvate the environment.
 
     conda env create -f environment.yml
     conda activate bcdata
@@ -367,6 +364,7 @@ Load a couple of layer to postgres and run a query:
 ## Other implementations
 - [bcdata R package](https://github.com/bcgov/bcdata)
 - [OWSLib](https://github.com/geopython/OWSLib) has basic WFS capabilities
+- [pgsql-ogr-fdw](https://github.com/pramsey/pgsql-ogr-fdw) - read WFS data with postgres foreign data wrapper
 - GDAL / curl / wget:
 
         # list all layers
