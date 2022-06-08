@@ -408,7 +408,6 @@ def bc2pg(
         command = command + ["-lco", "FID="+fid]
     # if appending to existing table, remove existing primary key constraint
     if fid and append:
-        click.echo('append and fid')
         db.drop_pk(schema.lower(), table.lower(), fid.lower())
     # for speed with big loads - unlogged, no spatial index
     if not append:
