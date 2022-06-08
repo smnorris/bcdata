@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.6.3 (2022-06-08)
+------------------
+- add --max_workers option to bcdata cat
+- improve logging with bcdata cat
+
 0.6.2 (2022-06-08)
 ------------------
 - fix bc2pg append mode and primary key handling (#104)
