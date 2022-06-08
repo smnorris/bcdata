@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 import logging
 
 import psycopg2
-
+from psycopg2 import sql
 
 log = logging.getLogger(__name__)
 
@@ -80,3 +80,28 @@ class Database(object):
         with self.conn:
             with self.conn.cursor() as curs:
                 curs.executemany(sql, params)
+
+    def drop_pk(self, schema, table, column):
+        """drop primary key constraint for given table"""
+        dbq = sql.SQL(
+            """
+            ALTER TABLE {schema}.{table}
+            ALTER COLUMN {column} DROP DEFAULT
+            """
+        ).format(
+            schema=sql.Identifier(schema),
+            table=sql.Identifier(table),
+            column=sql.Identifier(column),
+        )
+        self.execute(dbq)
+        dbq = sql.SQL(
+            """
+            ALTER TABLE {schema}.{table}
+            DROP CONSTRAINT IF EXISTS {constraint}
+            """
+        ).format(
+            schema=sql.Identifier(schema),
+            table=sql.Identifier(table),
+            constraint=sql.Identifier(table + "_pkey"),
+        )
+        self.execute(dbq)

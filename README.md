@@ -24,7 +24,7 @@ This Python module and CLI attempts to simplify downloads of BC geographic data 
 Installing via `miniconda`, the [conda package manager](https://conda.io/en/latest/miniconda.html) is recommended on Windows or if do not wish to install these dependencies yourself.  Once `conda` is installed, download the provided `environment.yml` file to your system, open the `Anaconda Prompt` command line from the start menu, navigate to the folder where you saved `environment.yml` and create/actvate the environment.
 
     conda env create -f environment.yml
-    conda activate bcdata
+    conda activate bcdataenv
 
 
 ### Configuration
@@ -350,6 +350,13 @@ Load a couple of layer to postgres and run a query:
 
 
 ## Development and testing
+
+`bc2pg` tests require database `postgresql://postgres@localhost:5432/test_bcdata` exists and has PostGIS installed:
+
+    psql -c "create database test_bcdata"
+    psql test_bcdata -c "create extension postgis"
+
+Create virtualenv and install `bcdata` in development mode:
 
     $ mkdir bcdata_env
     $ virtualenv bcdata_env

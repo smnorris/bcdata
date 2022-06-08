@@ -1,8 +1,12 @@
 Changes
 =======
 
-0.6.2 ()
+0.6.2 (2022-06-08)
 ------------------
+- fix bc2pg append mode and primary key handling (#104)
+- bc2pg --append now requires --fid
+- add bc2pg tests (#43)
+- require local test database for running tests
 
 0.6.1 (2022-04-26)
 ------------------

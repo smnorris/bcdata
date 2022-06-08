@@ -293,7 +293,11 @@ def cat(
     help="Force the coordinate dimension to val (valid values are XY, XYZ)",
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
-@click.option("--append", is_flag=True, help="Append data to existing table")
+@click.option(
+    "--append",
+    is_flag=True,
+    help="Append data to existing table (--fid must be specified)",
+)
 @click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
 @click.option(
     "--no_timestamp",
@@ -342,6 +346,11 @@ def bc2pg(
     log_level = max(10, 20 - 10 * verbosity)
     logging.basicConfig(stream=sys.stderr, level=log_level)
     log = logging.getLogger(__name__)
+    # if using --append option, --fid is required
+    # (we are managing the primary keys ourselves, so we want to be sure it is
+    # the correct column, not simply relying on the best guess from bcdata.get_sortkey()
+    if append and not fid:
+        raise click.BadParameter("--fid must be provided when using --append")
     src = bcdata.validate_name(dataset)
     src_schema, src_table = [i.lower() for i in src.split(".")]
     if not schema:
@@ -396,6 +405,12 @@ def bc2pg(
         command = command + ["-overwrite", "-lco", "GEOMETRY_NAME=geom"]
     if dim:
         command = command + ["-dim", dim]
+    # if provided fid, assign it on layer creation
+    if fid and not append:
+        command = command + ["-lco", "FID=" + fid]
+    # if appending to existing table, remove existing primary key constraint
+    if fid and append:
+        db.drop_pk(schema.lower(), table.lower(), fid.lower())
     # for speed with big loads - unlogged, no spatial index
     if not append:
         command = command + ["-lco", "UNLOGGED=ON"]
@@ -406,6 +421,11 @@ def bc2pg(
         command = command + ["-makevalid"]
     log.info(" ".join(command))
     subprocess.run(command)
+
+    # after initial load, drop the ogr created fid constraints if fid specified
+    # (ogr fids create problems with updates and concurrent loads)
+    if fid and not append:
+        db.drop_pk(schema.lower(), table.lower(), fid.lower())
 
     # write to additional separate tables if data is larger than 10k recs
     temp_tables = [table + "_" + str(n) for n, paramdict in enumerate(param_dicts[1:])]
@@ -486,23 +506,16 @@ def bc2pg(
             )
         raise RuntimeError("Loading to or from temp tables failed")
 
-    # Deal with primary key
-    # First, drop ogc_fid - becaue we load to many tables, it is not unique
-    dbq = sql.SQL("ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE").format(
-        schema=sql.Identifier(schema), table=sql.Identifier(table)
-    )
-    db.execute(dbq)
-
-    # if provided with a fid to use as pk, assign it
-    if fid:
-        dbq = sql.SQL("ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({fid})").format(
-            schema=sql.Identifier(schema),
-            table=sql.Identifier(table),
-            fid=sql.Identifier(fid.lower()),
-        )
+    # when data loaded to multiple tables concurrently, the ogr generated
+    # pk will not be unique when putting the data back together. Drop the
+    # autognerated column and recreate a unique column
+    if len(param_dicts) > 1 and not append and not fid:
+        # drop existing non-unique ogc_fid
+        dbq = sql.SQL(
+            "ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE"
+        ).format(schema=sql.Identifier(schema), table=sql.Identifier(table))
         db.execute(dbq)
-    # otherwise, create a new serial ogc_fid
-    else:
+        # create new column
         dbq = sql.SQL(
             """
             ALTER TABLE {schema}.{table}
@@ -511,6 +524,7 @@ def bc2pg(
         ).format(schema=sql.Identifier(schema), table=sql.Identifier(table))
         db.execute(dbq)
 
+    # once complete, set the table to logged and index geom
     if not append:
         db.execute(
             sql.SQL("ALTER TABLE {}.{} SET LOGGED").format(
@@ -519,6 +533,15 @@ def bc2pg(
         )
         log.info("Indexing geometry")
         db.execute("CREATE INDEX ON {}.{} USING GIST (geom)".format(schema, table))
+
+    # if provided with a fid to use as pk, assign it here when closing out
+    if fid:
+        dbq = sql.SQL("ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({fid})").format(
+            schema=sql.Identifier(schema),
+            table=sql.Identifier(table),
+            fid=sql.Identifier(fid.lower()),
+        )
+        db.execute(dbq)
 
     # once complete, note date/time of completion in public.bcdata
     if not no_timestamp:
