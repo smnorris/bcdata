@@ -6,7 +6,7 @@ from bcdata.cli import cli
 from bcdata.database import Database
 
 
-DB_URL = "postgresql://postgres@localhost:5432/bcdata"
+DB_URL = "postgresql://postgres@localhost:5432/test_bcdata"
 DB_CONNECTION = Database(url=DB_URL)
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"

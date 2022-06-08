@@ -351,6 +351,13 @@ Load a couple of layer to postgres and run a query:
 
 ## Development and testing
 
+`bc2pg` tests require database `postgresql://postgres@localhost:5432/test_bcdata` exists and has PostGIS installed:
+
+    psql -c "create database test_bcdata"
+    psql test_bcdata -c "create extension postgis"
+
+Create virtualenv and install `bcdata` in development mode:
+
     $ mkdir bcdata_env
     $ virtualenv bcdata_env
     $ source bcdata_env/bin/activate
