@@ -97,7 +97,7 @@ class Database(object):
         dbq = sql.SQL(
             """
             ALTER TABLE {schema}.{table}
-            DROP CONSTRAINT {constraint}
+            DROP CONSTRAINT IF EXISTS {constraint}
             """
         ).format(
             schema=sql.Identifier(schema),
