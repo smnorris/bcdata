@@ -293,7 +293,11 @@ def cat(
     help="Force the coordinate dimension to val (valid values are XY, XYZ)",
 )
 @click.option("--fid", default=None, help="Primary key of dataset")
-@click.option("--append", is_flag=True, help="Append data to existing table (--fid must be specified)")
+@click.option(
+    "--append",
+    is_flag=True,
+    help="Append data to existing table (--fid must be specified)",
+)
 @click.option("--promote_to_multi", is_flag=True, help="Promote features to multipart")
 @click.option(
     "--no_timestamp",
@@ -346,9 +350,7 @@ def bc2pg(
     # (we are managing the primary keys ourselves, so we want to be sure it is
     # the correct column, not simply relying on the best guess from bcdata.get_sortkey()
     if append and not fid:
-        raise click.BadParameter(
-                "--fid must be provided when using --append"
-            )
+        raise click.BadParameter("--fid must be provided when using --append")
     src = bcdata.validate_name(dataset)
     src_schema, src_table = [i.lower() for i in src.split(".")]
     if not schema:
@@ -405,7 +407,7 @@ def bc2pg(
         command = command + ["-dim", dim]
     # if provided fid, assign it on layer creation
     if fid and not append:
-        command = command + ["-lco", "FID="+fid]
+        command = command + ["-lco", "FID=" + fid]
     # if appending to existing table, remove existing primary key constraint
     if fid and append:
         db.drop_pk(schema.lower(), table.lower(), fid.lower())
@@ -509,9 +511,9 @@ def bc2pg(
     # autognerated column and recreate a unique column
     if len(param_dicts) > 1 and not append and not fid:
         # drop existing non-unique ogc_fid
-        dbq = sql.SQL("ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE").format(
-            schema=sql.Identifier(schema), table=sql.Identifier(table)
-        )
+        dbq = sql.SQL(
+            "ALTER TABLE {schema}.{table} DROP COLUMN ogc_fid CASCADE"
+        ).format(schema=sql.Identifier(schema), table=sql.Identifier(table))
         db.execute(dbq)
         # create new column
         dbq = sql.SQL(

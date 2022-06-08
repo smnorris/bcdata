@@ -102,6 +102,6 @@ class Database(object):
         ).format(
             schema=sql.Identifier(schema),
             table=sql.Identifier(table),
-            constraint=sql.Identifier(table+"_pkey"),
+            constraint=sql.Identifier(table + "_pkey"),
         )
         self.execute(dbq)

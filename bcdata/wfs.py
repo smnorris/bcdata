@@ -138,11 +138,11 @@ def make_request(parameters):
     try:
         r = requests.get(bcdata.WFS_URL, params=parameters)
         log.debug(r.url)
-        r.raise_for_status()                     # check status code is 200
-    except requests.exceptions.HTTPError as err: # fail if not 200
+        r.raise_for_status()  # check status code is 200
+    except requests.exceptions.HTTPError as err:  # fail if not 200
         raise SystemExit(err)
     log.debug(r.headers)
-    return r.json()["features"]                  # return features if status code is 200
+    return r.json()["features"]  # return features if status code is 200
 
 
 def define_request(
