@@ -164,6 +164,7 @@ def define_request(
     # validate the table name and find out how many features it holds
     table = validate_name(dataset)
     n = bcdata.get_count(table, query=query)
+    log.info(f"Total features requested: {n}")
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     geom_column = wfs.get_schema("pub:" + table)["geometry_column"]
 
@@ -273,7 +274,6 @@ def get_features(
         sortby=sortby,
         pagesize=pagesize,
     )
-
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for result in executor.map(make_request, param_dicts):
             for feature in result:
