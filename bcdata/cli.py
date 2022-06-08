@@ -224,6 +224,9 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 @click.option(
     "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
 )
+@click.option(
+    "--max_workers", "-w", default=2, help="Max number of concurrent requests"
+)
 @verbose_opt
 @quiet_opt
 def cat(
@@ -236,6 +239,7 @@ def cat(
     dst_crs,
     pagesize,
     sortby,
+    max_workers,
     verbose,
     quiet,
 ):
@@ -259,6 +263,7 @@ def cat(
         sortby=sortby,
         crs=dst_crs,
         pagesize=pagesize,
+        max_workers=max_workers
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 

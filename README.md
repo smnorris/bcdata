@@ -178,6 +178,7 @@ There are several commands available:
       -s, --sortby TEXT               Name of sort field
       --bounds-crs, --bounds_crs TEXT
                                       CRS of provided bounds
+      -w, --max_workers INTEGER       Max number of concurrent requests
       -v, --verbose                   Increase verbosity.
       -q, --quiet                     Decrease verbosity.
       --help                          Show this message and exit.
