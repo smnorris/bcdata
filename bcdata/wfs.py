@@ -137,7 +137,7 @@ def make_request(parameters):
     """Submit a getfeature request to DataBC WFS and return features"""
     try:
         r = requests.get(bcdata.WFS_URL, params=parameters)
-        log.debug(r.url)
+        log.info(r.url)
         r.raise_for_status()  # check status code is 200
     except requests.exceptions.HTTPError as err:  # fail if not 200
         raise SystemExit(err)
