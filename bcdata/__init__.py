@@ -1,4 +1,4 @@
-from .wfs import get_table_name
+from .bcdc import get_table_name
 from .wfs import get_data
 from .wfs import get_features
 from .wfs import get_count

@@ -58,35 +58,12 @@ def check_cache(path):
             return False
 
 
-def get_table_name(package):
-    """Query DataBC API to find WFS table/layer name for given package"""
-    package = package.lower()  # package names are lowercase
-    params = {"id": package}
-    r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
-    if r.status_code != 200:
-        raise ValueError("{d} is not present in DataBC API list".format(d=package))
-    result = r.json()["result"]
-    # Because the object_name in the result json is not a 100% reliable key
-    # for WFS requests, parse URL in WMS resource(s).
-    # Also, some packages may have >1 WFS layer - if this is the case, bail
-    # and provide user with a list of layers
-    layer_urls = [r["url"] for r in result["resources"] if r["format"] == "wms"]
-    layer_names = [urlparse(l).path.split("/")[3] for l in layer_urls]
-    if len(layer_names) > 1:
-        raise ValueError(
-            "Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
-                package, "\n".join(layer_names)
-            )
-        )
-    return layer_names[0]
-
-
 def validate_name(dataset):
     """Check wfs/cache and the bcdc api to see if dataset name is valid"""
     if dataset.upper() in list_tables():
         return dataset.upper()
     else:
-        return get_table_name(dataset.upper())
+        return bcdata.get_table_name(dataset.upper())
 
 
 def list_tables(refresh=False, cache_file=None):
