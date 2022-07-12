@@ -13,16 +13,6 @@ UTMZONES_KEY = "utm-zones-of-british-columbia"
 BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
 
 
-def test_get_table_name():
-    table = bcdata.get_table_name(AIRPORTS_PACKAGE)
-    assert table == AIRPORTS_TABLE
-
-
-def test_table_name_uppercase():
-    table = bcdata.get_table_name(AIRPORTS_PACKAGE.upper())
-    assert table == AIRPORTS_TABLE
-
-
 def test_validate_table_lowercase():
     table = bcdata.validate_name(AIRPORTS_TABLE.lower())
     assert table == AIRPORTS_TABLE
