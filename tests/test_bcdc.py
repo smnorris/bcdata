@@ -19,5 +19,5 @@ def test_table_name_uppercase():
 
 def test_get_table_definition():
     table = bcdc.get_table_definition(AIRPORTS_TABLE)
-    assert table["comments"] == AIRPORTS_COMMENTS
-    assert table["schema"] == json.loads(AIRPORTS_SCHEMA)
+    assert table[0] == AIRPORTS_COMMENTS
+    assert table[1] == json.loads(AIRPORTS_SCHEMA)

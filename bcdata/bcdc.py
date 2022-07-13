@@ -39,7 +39,7 @@ def get_table_name(package):
 def get_table_definition(table_name):
     """
     Given a table/object name, search BCDC for the first package/resource with a
-    matching "object_name", return table description and schema of matched resource
+    matching "object_name", returns tuple (table comments, table schema)
     """
     # only allow searching for tables present in WFS list
     if table_name not in bcdata.list_tables():
@@ -74,4 +74,4 @@ def get_table_definition(table_name):
         # (presuming there is only one unique result, but this seems safe as we are
         # matching on the oracle table name)
         matched = list(set(matches))[0]
-        return {"comments": matched[0], "schema":json.loads(matched[1])}
+        return (matched[0], json.loads(matched[1]))
