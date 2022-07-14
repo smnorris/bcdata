@@ -72,7 +72,7 @@ bounds_opt_dem = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS.")
+dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS")
 
 
 @click.group()
@@ -272,20 +272,20 @@ def cat(
 @click.option(
     "--db_url",
     "-db",
-    help="Database url, defaults to $DATABASE_URL if set",
+    help="Target database url, defaults to $DATABASE_URL environment variable if set",
     default=os.environ.get("DATABASE_URL"),
 )
 @click.option("--table", help="Destination table name")
 @click.option("--schema", help="Destination schema name")
 @click.option(
     "--query",
-    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+    help="A valid `CQL` or `ECQL` query",
 )
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
-@click.option("--schema_only", "-s" is_flag=True, help="Dump only the object definitions (schema), not data.")
+@click.option("--schema_only", "-s", is_flag=True, help="Dump only the object definitions (schema), not data")
 @click.option(
     "--no_timestamp", "-t",
     is_flag=True,
@@ -310,10 +310,6 @@ def bc2pg(
 
      \b
       $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
-
-    The default target database can be specified by setting the $DATABASE_URL
-    environment variable.
-    https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
     """
     # for this command, default to INFO level logging
     verbosity = verbose - quiet

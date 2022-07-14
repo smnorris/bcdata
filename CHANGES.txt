@@ -7,6 +7,7 @@ Changes
     + general purpose loading tool
     + output table column types and comments are as specified in BC Data Catalogue API
     + data loads are via sqlalchemy/geopandas
+    + schema_only option included for creation of empty tables
     + all features are promoted to multipart
     + BC Albers only, no re-projection support
 - updated bc2pg command line tool

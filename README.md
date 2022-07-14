@@ -215,23 +215,18 @@ Disable with the switch `--no_timestamp` if you do not wish to create this table
 
       Download a DataBC WFS layer to postgres
 
-         $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
-
-      The default target database can be specified by setting the $DATABASE_URL
-      environment variable.
-      https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+       $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
 
     Options:
-      -db, --db_url TEXT      Database url, defaults to $DATABASE_URL if set
+      -db, --db_url TEXT      Target database url, defaults to $DATABASE_URL
+                              environment variable if set
       --table TEXT            Destination table name
       --schema TEXT           Destination schema name
-      --query TEXT            A valid `CQL` or `ECQL` query (https://docs.geoserve
-                              r.org/stable/en/user/tutorials/cql/cql_tutorial.html
-                              )
+      --query TEXT            A valid `CQL` or `ECQL` query
       -p, --pagesize INTEGER  Max number of records to request
-      --primary_key TEXT      Primary key of dataset
-      -s, --sortby TEXT       Name of sort field
-      --no_timestamp          Do not add download timestamp to bcdata meta table
+      -k, --primary_key TEXT  Primary key of dataset
+      -s, --schema_only       Dump only the object definitions (schema), not data
+      -t, --no_timestamp      Do not add download timestamp to bcdata meta table
       -v, --verbose           Increase verbosity.
       -q, --quiet             Decrease verbosity.
       --help                  Show this message and exit.
