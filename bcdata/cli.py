@@ -317,17 +317,16 @@ def bc2pg(
     logging.basicConfig(stream=sys.stderr, level=log_level)
     log = logging.getLogger(__name__)
 
-    bcdata.bc2pg(
+    out_table = bcdata.bc2pg(
         dataset,
         db_url,
         table=table,
         schema=schema,
         query=query,
-        sortby=sortby,
         primary_key=primary_key,
         pagesize=pagesize,
         timestamp=True,
     )
     log.info(
-        "Load of {} to {} in {} complete".format(src, schema + "." + table, db_url)
+        "Load of {} to {} in {} complete".format(dataset, out_table, db_url)
     )

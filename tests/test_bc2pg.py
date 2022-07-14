@@ -3,10 +3,10 @@ import click
 from click.testing import CliRunner
 
 import bcdata
-from bcdata.bc2pg import Database
+from bcdata.database import Database
 
 
-DB_URL = "postgresql://postgres@localhost:5432/test_bcdata"
+DB_URL = "postgresql://postgres@localhost:5432/bcdata_test"
 DB_CONNECTION = Database(url=DB_URL)
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "whse_imagery_and_base_maps.gsr_airports_svw"

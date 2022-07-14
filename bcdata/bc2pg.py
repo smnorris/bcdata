@@ -3,9 +3,8 @@ from urllib.parse import urlparse
 from urllib.parse import urlencode
 import logging
 
-import psycopg2
 from psycopg2 import sql
-from sqlalchemy import create_engine, MetaData, Table, Column
+from sqlalchemy import MetaData, Table, Column
 from geoalchemy2 import Geometry
 import geopandas as gpd
 from shapely.geometry.point import Point
@@ -16,79 +15,9 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 
 import bcdata
+from bcdata.database import Database
 
 log = logging.getLogger(__name__)
-
-
-class Database(object):
-    """A simple wrapper around a psycopg connection"""
-
-    def __init__(self, url=os.environ.get("DATABASE_URL")):
-        self.url = url
-        u = urlparse(url)
-        db, user, password, host, port = (
-            u.path[1:],
-            u.username,
-            u.password,
-            u.hostname,
-            u.port,
-        )
-        self.database = db
-        self.user = user
-        self.password = password
-        self.host = host
-        self.port = u.port
-        self.conn = psycopg2.connect(url)
-        # make sure postgis is available
-        try:
-            self.query("SELECT postgis_full_version()")
-        except psycopg2.errors.UndefinedFunction:
-            log.error("Cannot find PostGIS, is extension added to database %s ?", url)
-            raise psycopg2.errors.UndefinedFunction
-
-    @property
-    def schemas(self):
-        """List all non-system schemas in db"""
-        sql = """SELECT schema_name FROM information_schema.schemata
-                 ORDER BY schema_name"""
-        schemas = self.query(sql)
-        return [s[0] for s in schemas if s[0][:3] != "pg_"]
-
-    @property
-    def tables(self):
-        """List all non-system tables in the db"""
-        tables = []
-        for schema in self.schemas:
-            tables = tables + [schema + "." + t for t in self.tables_in_schema(schema)]
-        return tables
-
-    def tables_in_schema(self, schema):
-        """Get a listing of all tables in given schema"""
-        sql = """SELECT table_name
-                 FROM information_schema.tables
-                 WHERE table_schema = %s"""
-        return [t[0] for t in self.query(sql, (schema,))]
-
-    def query(self, sql, params=None):
-        """Execute sql and return all results"""
-        with self.conn:
-            with self.conn.cursor() as curs:
-                curs.execute(sql, params)
-                result = curs.fetchall()
-        return result
-
-    def execute(self, sql, params=None):
-        """Execute sql and return only whether the query was successful"""
-        with self.conn:
-            with self.conn.cursor() as curs:
-                result = curs.execute(sql, params)
-        return result
-
-    def execute_many(self, sql, params):
-        """Execute many sql"""
-        with self.conn:
-            with self.conn.cursor() as curs:
-                curs.executemany(sql, params)
 
 
 def bc2pg(
@@ -107,15 +36,18 @@ def bc2pg(
     dataset = bcdata.validate_name(dataset)
     schema_name, table_name = dataset.lower().split(".")
     if schema:
-        schema_name = schema
+        schema_name = schema.lower()
     if table:
-        table_name = table
+        table_name = table.lower()
     table_comments, table_details = bcdata.get_table_definition(dataset)
+
+    # define db connection and connect
+    db = Database(db_url)
 
     # remove columns of unsupported types
     # (this also strips the geometry column, this is added below)
     table_details = [
-        c for c in table_details if c["data_type"] in bcdata.DATABASE_TYPES.keys()
+        c for c in table_details if c["data_type"] in db.supported_types.keys()
     ]
 
     # remove redundant columns
@@ -148,7 +80,7 @@ def bc2pg(
     columns = []
     for i in range(len(table_details)):
         column_name = table_details[i]["column_name"].lower()
-        column_type = bcdata.DATABASE_TYPES[table_details[i]["data_type"]]
+        column_type = db.supported_types[table_details[i]["data_type"]]
         # append precision if varchar or numeric
         if table_details[i]["data_type"] in ["VARCHAR2", "NUMBER"]:
             column_type = column_type(int(table_details[i]["data_precision"]))
@@ -168,9 +100,6 @@ def bc2pg(
     # add geometry column
     columns.append(Column("geom", Geometry(geom_type, srid=3005)))
 
-    # create psycopg2 connection
-    db = Database(db_url)
-
     # create schema if it does not exist
     if schema_name not in db.schemas:
         logging.info(f"Schema {schema_name} does not exist, creating it")
@@ -180,21 +109,19 @@ def bc2pg(
         db.execute(dbq)
 
     # drop table if it exists
-    if dataset.lower() in db.tables:
+    if schema_name+"."+table_name in db.tables:
+        print("table exists")
         logging.info(f"Dropping existing table {schema_name}.{table_name}")
         dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
             schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
         )
         db.execute(dbq)
 
-    # create sqlalchemy connection
-    pgdb = create_engine(db_url)
-    post_meta = MetaData(bind=pgdb.engine)
-
     # create empty table
+    meta = MetaData(bind=db.engine)
     Table(
-        table_name.lower(),
-        post_meta,
+        table_name,
+        meta,
         *columns,
         comment=table_comments,
         schema=schema_name,
@@ -241,7 +168,7 @@ def bc2pg(
                 for feature in df["geom"]
             ]
             log.info(f"Writing {dataset} to database as {schema_name}.{table_name}")
-            df.to_postgis(table_name, pgdb, if_exists="append", schema=schema_name)
+            df.to_postgis(table_name, db.engine, if_exists="append", schema=schema_name)
             # note that geopandas automatically indexes the geometry
 
         # once load complete, note date/time of load completion in public.bcdata
@@ -268,3 +195,4 @@ def bc2pg(
             primary_key=sql.Identifier(primary_key.lower()),
         )
         db.execute(dbq)
+    return schema_name+"."+table_name

@@ -12,4 +12,7 @@ dependencies:
   - rasterio
   - geopandas
   - psycopg2
-
+  - sqlalchemy
+  - geoalchemy2
+variables:
+  DATABASE_URL: postgresql://postgres@localhost:5432/bcdata_test

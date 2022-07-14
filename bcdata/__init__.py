@@ -10,7 +10,6 @@ from .wfs import get_type
 from .bc2pg import bc2pg
 from .wcs import get_dem
 
-from sqlalchemy.dialects.postgresql import DATE, NUMERIC, VARCHAR
 
 __version__ = "0.7.0dev0"
 
@@ -19,9 +18,3 @@ WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
 WCS_URL = "https://openmaps.gov.bc.ca/om/wcs"
 
-# supported oracle/wfs to postgres types
-DATABASE_TYPES = {
-    "NUMBER": NUMERIC,
-    "VARCHAR2": VARCHAR,
-    "DATE": DATE
-}
