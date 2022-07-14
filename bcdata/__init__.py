@@ -12,7 +12,7 @@ from .wcs import get_dem
 
 from sqlalchemy.dialects.postgresql import DATE, NUMERIC, VARCHAR
 
-__version__ = "0.6.4dev0"
+__version__ = "0.7.0dev0"
 
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
