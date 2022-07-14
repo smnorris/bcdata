@@ -22,6 +22,7 @@ from bcdata.database import Database
 import bcdata
 
 
+
 def configure_logging(verbosity):
     log_level = max(10, 30 - 10 * verbosity)
     logging.basicConfig(stream=sys.stderr, level=log_level)

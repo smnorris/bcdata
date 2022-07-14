@@ -6,6 +6,7 @@ import math
 import os
 from pathlib import Path
 from urllib.parse import urlparse
+from urllib.parse import urlencode
 import sys
 import warnings
 import xml.etree.ElementTree as ET
@@ -14,9 +15,18 @@ from concurrent.futures import ThreadPoolExecutor
 from owslib.wfs import WebFeatureService
 import requests
 import geopandas as gpd
+from shapely.geometry.point import Point
+from shapely.geometry.multipoint import MultiPoint
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry.polygon import Polygon
+from shapely.geometry.multipolygon import MultiPolygon
+from sqlalchemy import create_engine, MetaData, Table, Column
+from geoalchemy2 import Geometry
+from psycopg2 import sql
 
 import bcdata
-
+from bcdata.database import Database
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -273,3 +283,149 @@ def get_type(dataset):
     log.debug(r.url)
     # return the feature type
     return r.json()["features"][0]["geometry"]["type"]
+
+
+def bc2pg(
+    dataset,
+    db_url,
+    table=None,
+    schema=None,
+    query=None,
+    sortby=None,
+    primary_key=None,
+    pagesize=10000,
+):
+    """Request table definition from bcdc and replicate in postgres"""
+    dataset = validate_name(dataset)
+    schema_name, table_name = dataset.lower().split(".")
+    if schema:
+        schema_name = schema
+    if table:
+        table_name = table
+    table_comments, table_details = bcdata.get_table_definition(dataset)
+
+    # remove columns of unsupported types (including geometry, we add this ourselves)
+    table_details = [
+        c for c in table_details if c["data_type"] in bcdata.DATABASE_TYPES.keys()
+    ]
+
+    # remove cruft
+    table_details = [
+        c
+        for c in table_details
+        if c["column_name"] not in ["FEATURE_AREA_SQM", "FEATURE_LENGTH_M"]
+    ]
+
+    # note column names
+    column_names = [c["column_name"].lower() for c in table_details]
+
+    # guess at geom type by requesting the first record in the collection
+    geom_type = bcdata.get_type(dataset)
+
+    # make everything multipart because some datasets have mixed singlepart/multipart geometries
+    if geom_type[:5] != "MULTI":
+        geom_type = "MULTI" + geom_type
+
+    # translate the oracle types to sqlalchemy provided postgres types
+    columns = []
+    for i in range(len(table_details)):
+        column_name = table_details[i]["column_name"].lower()
+        column_type = bcdata.DATABASE_TYPES[table_details[i]["data_type"]]
+        # append precision if varchar or numeric
+        if table_details[i]["data_type"] in ["VARCHAR2", "NUMBER"]:
+            column_type = column_type(int(table_details[i]["data_precision"]))
+        # check that comments are present
+        if "column_comments" in table_details[i].keys():
+            column_comments = table_details[i]["column_comments"]
+        else:
+            column_comments = None
+        columns.append(
+            Column(
+                column_name,
+                column_type,
+                comment=column_comments,
+            )
+        )
+
+    # add geometry column
+    columns.append(Column("geom", Geometry(geom_type, srid=3005)))
+
+    # create psycopg2 connection
+    db = Database(db_url)
+
+    # create schema if it does not exist
+    if schema_name not in db.schemas:
+        logging.info(f"Schema {schema_name} does not exist, creating it")
+        dbq = sql.SQL("CREATE SCHEMA {schema}").format(
+            schema=sql.Identifier(schema_name)
+        )
+        db.execute(dbq)
+
+    # drop table if it exists
+    if dataset.lower() in db.tables:
+        logging.info(f"Dropping existing table {schema_name}.{table_name}")
+        dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
+            schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
+        )
+        db.execute(dbq)
+
+    # create sqlalchemy connection
+    pgdb = create_engine(db_url)
+    post_meta = MetaData(bind=pgdb.engine)
+
+    # create empty table
+    Table(
+        table_name.lower(),
+        post_meta,
+        *columns,
+        comment=table_comments,
+        schema=schema_name,
+    ).create()
+
+    # define requests
+    param_dicts = bcdata.define_request(
+        dataset,
+        query=query,
+        sortby=sortby,
+        pagesize=pagesize,
+        crs="epsg:3005",
+    )
+
+    # loop through the requests
+    for n, paramdict in enumerate(param_dicts):
+        payload = urlencode(paramdict, doseq=True)
+        url = bcdata.WFS_URL + "?" + payload
+        df = gpd.read_file(url)
+        df = df.rename_geometry("geom")
+        df.columns = df.columns.str.lower()  # lowercasify
+        df = df[column_names + ["geom"]]  # retain only specified columns (and geom)
+
+        # cast to everything multipart becasue responses can have mixed types
+        # geopandas does not have a built in function:
+        # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
+        df["geom"] = [
+            MultiPoint([feature]) if isinstance(feature, Point) else feature
+            for feature in df["geom"]
+        ]
+        df["geom"] = [
+            MultiLineString([feature]) if isinstance(feature, LineString) else feature
+            for feature in df["geom"]
+        ]
+        df["geom"] = [
+            MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
+            for feature in df["geom"]
+        ]
+
+        df.to_postgis(table_name, pgdb, if_exists="append", schema=schema_name)
+
+    # geopandas automatically creates gist index on geometry
+    # optionally, create primary key
+    if primary_key:
+        dbq = sql.SQL(
+            "ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({primary_key})"
+        ).format(
+            schema=sql.Identifier(schema_name),
+            table=sql.Identifier(table_name),
+            primary_key=sql.Identifier(primary_key.lower()),
+        )
+        db.execute(dbq)
