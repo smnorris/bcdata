@@ -70,15 +70,28 @@ def get_table_definition(table_name):
                 # extract the metadata
                 if resource["format"] == "wms":
                     if urlparse(resource["url"]).path.split("/")[3] == table_name:
-                        if (
-                            "object_table_comments" in resource.keys()
-                            and "details" in resource.keys()
-                        ):
-                            matches.append(
-                                (resource["object_table_comments"], resource["details"])
-                            )
+                        if "object_table_comments" in resource.keys():
+                            table_comments = resource["object_table_comments"]
+                        else:
+                            log.info(f"No table comments found for {table_name}")
+                            table_comments = None
+                        if "details" in resource.keys():
+                            table_details = resource["details"]
+                        else:
+                            log.info(f"No details found for {table_name}")
+                            table_details = None
+                        matches.append(
+                            (table_comments, table_details)
+                        )
         # uniquify the result
         # (presuming there is only one unique result, but this seems safe as we are
         # matching on the oracle table name)
-        matched = list(set(matches))[0]
-        return (matched[0], json.loads(matched[1]))
+        if len(matches) > 0:
+            matched = list(set(matches))[0]
+            return (matched[0], json.loads(matched[1]))
+        else:
+            log.warning(
+                f"BCDC search for {table_name} does not return expected details"
+            )
+            return (None, None)
+

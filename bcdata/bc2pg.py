@@ -44,89 +44,93 @@ def bc2pg(
     # define db connection and connect
     db = Database(db_url)
 
-    # remove columns of unsupported types
-    # (this also strips the geometry column, this is added below)
-    table_details = [
-        c for c in table_details if c["data_type"] in db.supported_types.keys()
-    ]
+    if not table_details:
+        log.info("No table details found via BCDC, guessing types")
 
-    # remove redundant columns
-    table_details = [
-        c
-        for c in table_details
-        if c["column_name"] not in ["FEATURE_AREA_SQM", "FEATURE_LENGTH_M"]
-    ]
+    else:
+        # remove columns of unsupported types
+        # (this also strips the geometry column, this is added below)
+        table_details = [
+            c for c in table_details if c["data_type"] in db.supported_types.keys()
+        ]
 
-    # note resulting column names
-    column_names = [c["column_name"].lower() for c in table_details]
+        # remove redundant columns
+        table_details = [
+            c
+            for c in table_details
+            if c["column_name"] not in ["FEATURE_AREA_SQM", "FEATURE_LENGTH_M"]
+        ]
 
-    # check if column provided in sortby option is present in dataset
-    if sortby:
-        if sortby.lower() not in column_names:
-            raise ValueError(
-                "Specified sortby column {sortby} is not present in {dataset}"
+        # note resulting column names
+        column_names = [c["column_name"].lower() for c in table_details]
+
+        # check if column provided in sortby option is present in dataset
+        if sortby:
+            if sortby.lower() not in column_names:
+                raise ValueError(
+                    "Specified sortby column {sortby} is not present in {dataset}"
+                )
+            # column needs to be uppercase in request
+            sortby = sortby.upper()
+
+        # guess at geom type by requesting the first record in the collection
+        geom_type = bcdata.get_type(dataset)
+
+        # make everything multipart
+        # (some datasets have mixed singlepart/multipart geometries)
+        if geom_type[:5] != "MULTI":
+            geom_type = "MULTI" + geom_type
+
+        # translate the oracle types to sqlalchemy provided postgres types
+        columns = []
+        for i in range(len(table_details)):
+            column_name = table_details[i]["column_name"].lower()
+            column_type = db.supported_types[table_details[i]["data_type"]]
+            # append precision if varchar or numeric
+            if table_details[i]["data_type"] in ["VARCHAR2", "NUMBER"]:
+                column_type = column_type(int(table_details[i]["data_precision"]))
+            # check that comments are present
+            if "column_comments" in table_details[i].keys():
+                column_comments = table_details[i]["column_comments"]
+            else:
+                column_comments = None
+            columns.append(
+                Column(
+                    column_name,
+                    column_type,
+                    comment=column_comments,
+                )
             )
-        # column needs to be uppercase in request
-        sortby = sortby.upper()
 
-    # guess at geom type by requesting the first record in the collection
-    geom_type = bcdata.get_type(dataset)
+        # add geometry column
+        columns.append(Column("geom", Geometry(geom_type, srid=3005)))
 
-    # make everything multipart
-    # (some datasets have mixed singlepart/multipart geometries)
-    if geom_type[:5] != "MULTI":
-        geom_type = "MULTI" + geom_type
-
-    # translate the oracle types to sqlalchemy provided postgres types
-    columns = []
-    for i in range(len(table_details)):
-        column_name = table_details[i]["column_name"].lower()
-        column_type = db.supported_types[table_details[i]["data_type"]]
-        # append precision if varchar or numeric
-        if table_details[i]["data_type"] in ["VARCHAR2", "NUMBER"]:
-            column_type = column_type(int(table_details[i]["data_precision"]))
-        # check that comments are present
-        if "column_comments" in table_details[i].keys():
-            column_comments = table_details[i]["column_comments"]
-        else:
-            column_comments = None
-        columns.append(
-            Column(
-                column_name,
-                column_type,
-                comment=column_comments,
+        # create schema if it does not exist
+        if schema_name not in db.schemas:
+            logging.info(f"Schema {schema_name} does not exist, creating it")
+            dbq = sql.SQL("CREATE SCHEMA {schema}").format(
+                schema=sql.Identifier(schema_name)
             )
-        )
+            db.execute(dbq)
 
-    # add geometry column
-    columns.append(Column("geom", Geometry(geom_type, srid=3005)))
+        # drop table if it exists
+        if schema_name + "." + table_name in db.tables:
+            print("table exists")
+            logging.info(f"Dropping existing table {schema_name}.{table_name}")
+            dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
+                schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
+            )
+            db.execute(dbq)
 
-    # create schema if it does not exist
-    if schema_name not in db.schemas:
-        logging.info(f"Schema {schema_name} does not exist, creating it")
-        dbq = sql.SQL("CREATE SCHEMA {schema}").format(
-            schema=sql.Identifier(schema_name)
-        )
-        db.execute(dbq)
-
-    # drop table if it exists
-    if schema_name + "." + table_name in db.tables:
-        print("table exists")
-        logging.info(f"Dropping existing table {schema_name}.{table_name}")
-        dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
-            schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
-        )
-        db.execute(dbq)
-
-    # create empty table
-    meta = MetaData(bind=db.engine)
-    Table(
-        table_name,
-        meta,
-        *columns,
-        comment=table_comments,
-        schema=schema_name,
-    ).create()
+        # create empty table
+        meta = MetaData(bind=db.engine)
+        Table(
+            table_name,
+            meta,
+            *columns,
+            comment=table_comments,
+            schema=schema_name,
+        ).create()
 
     # define requests
     param_dicts = bcdata.define_request(
