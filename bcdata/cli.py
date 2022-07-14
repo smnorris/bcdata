@@ -20,7 +20,6 @@ from psycopg2 import sql
 import bcdata
 
 
-
 def configure_logging(verbosity):
     log_level = max(10, 30 - 10 * verbosity)
     logging.basicConfig(stream=sys.stderr, level=log_level)
@@ -262,7 +261,7 @@ def cat(
         sortby=sortby,
         crs=dst_crs,
         pagesize=pagesize,
-        max_workers=max_workers
+        max_workers=max_workers,
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 
@@ -285,9 +284,15 @@ def cat(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
-@click.option("--schema_only", "-s", is_flag=True, help="Dump only the object definitions (schema), not data")
 @click.option(
-    "--no_timestamp", "-t",
+    "--schema_only",
+    "-s",
+    is_flag=True,
+    help="Dump only the object definitions (schema), not data",
+)
+@click.option(
+    "--no_timestamp",
+    "-t",
     is_flag=True,
     help="Do not add download timestamp to bcdata meta table",
 )
@@ -308,8 +313,8 @@ def bc2pg(
 ):
     """Download a DataBC WFS layer to postgres
 
-     \b
-      $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
+    \b
+     $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
     """
     # for this command, default to INFO level logging
     verbosity = verbose - quiet
@@ -327,6 +332,4 @@ def bc2pg(
         pagesize=pagesize,
         timestamp=True,
     )
-    log.info(
-        "Load of {} to {} in {} complete".format(dataset, out_table, db_url)
-    )
+    log.info("Load of {} to {} in {} complete".format(dataset, out_table, db_url))

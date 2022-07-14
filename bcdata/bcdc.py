@@ -43,16 +43,22 @@ def get_table_definition(table_name):
     """
     # only allow searching for tables present in WFS list
     if table_name not in bcdata.list_tables():
-        raise ValueError("Only tables available via WFS are supported, {table_name} not found".format(d=package))
+        raise ValueError(
+            "Only tables available via WFS are supported, {table_name} not found".format(
+                d=package
+            )
+        )
     # search the api for the provided table
-    r = requests.get(bcdata.BCDC_API_URL + "package_search", params={"q":table_name})
+    r = requests.get(bcdata.BCDC_API_URL + "package_search", params={"q": table_name})
     # catch general api errors
     status_code = r.status_code
     if status_code != 200:
         raise ValueError(f"Error searching BC Data Catalogue API: {status_code}")
     # if there are no matching results, let the user know
     if r.json()["result"]["count"] == 0:
-        log.warning(f"BC Data Catalouge API search provides no results for: {table_name}")
+        log.warning(
+            f"BC Data Catalouge API search provides no results for: {table_name}"
+        )
         return []
     else:
         matches = []
@@ -64,11 +70,12 @@ def get_table_definition(table_name):
                 # extract the metadata
                 if resource["format"] == "wms":
                     if urlparse(resource["url"]).path.split("/")[3] == table_name:
-                        if "object_table_comments" in resource.keys() and "details" in resource.keys():
+                        if (
+                            "object_table_comments" in resource.keys()
+                            and "details" in resource.keys()
+                        ):
                             matches.append(
-                                (resource["object_table_comments"],
-                                 resource["details"]
-                                )
+                                (resource["object_table_comments"], resource["details"])
                             )
         # uniquify the result
         # (presuming there is only one unique result, but this seems safe as we are

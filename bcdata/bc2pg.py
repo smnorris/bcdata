@@ -63,10 +63,11 @@ def bc2pg(
     # check if column provided in sortby option is present in dataset
     if sortby:
         if sortby.lower() not in column_names:
-            raise ValueError("Specified sortby column {sortby} is not present in {dataset}")
+            raise ValueError(
+                "Specified sortby column {sortby} is not present in {dataset}"
+            )
         # column needs to be uppercase in request
         sortby = sortby.upper()
-
 
     # guess at geom type by requesting the first record in the collection
     geom_type = bcdata.get_type(dataset)
@@ -109,7 +110,7 @@ def bc2pg(
         db.execute(dbq)
 
     # drop table if it exists
-    if schema_name+"."+table_name in db.tables:
+    if schema_name + "." + table_name in db.tables:
         print("table exists")
         logging.info(f"Dropping existing table {schema_name}.{table_name}")
         dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
@@ -160,7 +161,9 @@ def bc2pg(
                 for feature in df["geom"]
             ]
             df["geom"] = [
-                MultiLineString([feature]) if isinstance(feature, LineString) else feature
+                MultiLineString([feature])
+                if isinstance(feature, LineString)
+                else feature
                 for feature in df["geom"]
             ]
             df["geom"] = [
@@ -195,4 +198,4 @@ def bc2pg(
             primary_key=sql.Identifier(primary_key.lower()),
         )
         db.execute(dbq)
-    return schema_name+"."+table_name
+    return schema_name + "." + table_name

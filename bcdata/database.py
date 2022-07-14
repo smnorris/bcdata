@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import DATE, NUMERIC, VARCHAR
 
 class Database(object):
     """Wrapper around psycopg2 and sqlachemy"""
+
     def __init__(self, url=os.environ.get("DATABASE_URL")):
         self.url = url
         self.engine = create_engine(url)
@@ -18,11 +19,7 @@ class Database(object):
             raise psycopg2.errors.UndefinedFunction
 
         # supported oracle/wfs to postgres types
-        self.supported_types = {
-            "NUMBER": NUMERIC,
-            "VARCHAR2": VARCHAR,
-            "DATE": DATE
-        }
+        self.supported_types = {"NUMBER": NUMERIC, "VARCHAR2": VARCHAR, "DATE": DATE}
 
     @property
     def schemas(self):
