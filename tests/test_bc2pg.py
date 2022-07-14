@@ -3,24 +3,21 @@ import click
 from click.testing import CliRunner
 
 import bcdata
-from bcdata.database import Database
+from bcdata.bc2pg import Database
 
 
 DB_URL = "postgresql://postgres@localhost:5432/test_bcdata"
 DB_CONNECTION = Database(url=DB_URL)
 AIRPORTS_PACKAGE = "bc-airports"
-AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
+AIRPORTS_TABLE = "whse_imagery_and_base_maps.gsr_airports_svw"
 TERRACE_QUERY = "AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
 VICTORIA_QUERY = "Victoria Harbour (Camel Point) Heliport"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 
-# Note that these tests depend on airport counts.
-# If airports are added to or removed from source layer, tests will fail
-
 
 def test_bc2pg():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL)
-    assert AIRPORTS_TABLE.lower() in DB_CONNECTION.tables
+    assert AIRPORTS_TABLE in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE.lower())
 
 def test_bc2pg_table():
@@ -38,3 +35,11 @@ def test_bc2pg_primary_key():
     assert ASSESSMENTS_TABLE in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
 
+def test_bc2pg_filter():
+    data = bcdata.bc2pg(
+        AIRPORTS_TABLE, DB_URL, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
+    )
+    assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
+    assert len(r) == 1
+    assert r[0][0] == "Terrace (Northwest Regional) Airport"

@@ -3,13 +3,14 @@ Changes
 
 0.7.0 (2022- )
 ------------------
-- new bc2pg Python function
-    + wfs to postgres function added to module, data loads are via geopandas
-    + postgres output table columns and comments are as specified in BC Data Catalogue API
-    + loads are single process only
-    + all features written to postgres are promoted to multipart
+- new bc2pg Python module/function
+    + general purpose loading tool
+    + output table column types and comments are as specified in BC Data Catalogue API
+    + data loads are via sqlalchemy/geopandas
+    + all features are promoted to multipart
+    + BC Albers only, no re-projection support
 - updated bc2pg command line tool
-    + uses new bc2pg function, no longer an ogr2ogr wrapper
+    + uses new bc2pg Python function (no longer an ogr2ogr wrapper)
     + fid option renamed to primary_key
     + options removed: bounds,bounds_crs,max_workers,dim,append,promote_to_multi,makevalid
 
