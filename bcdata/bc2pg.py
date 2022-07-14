@@ -101,6 +101,7 @@ def bc2pg(
     primary_key=None,
     pagesize=10000,
     timestamp=True,
+    schema_only=False,
 ):
     """Request table definition from bcdc and replicate in postgres"""
     dataset = bcdata.validate_name(dataset)
@@ -208,39 +209,54 @@ def bc2pg(
         crs="epsg:3005",
     )
 
-    # loop through the requests
-    for n, paramdict in enumerate(param_dicts):
-        payload = urlencode(paramdict, doseq=True)
-        url = bcdata.WFS_URL + "?" + payload
+    # load the data
+    if not schema_only:
+        # loop through the requests
+        for n, paramdict in enumerate(param_dicts):
+            payload = urlencode(paramdict, doseq=True)
+            url = bcdata.WFS_URL + "?" + payload
 
-        # download with geopandas, let geopandas handle errors
-        log.info(url)
-        df = gpd.read_file(url)
+            # download with geopandas, let geopandas handle errors
+            log.info(url)
+            df = gpd.read_file(url)
 
-        # tidy the result
-        df = df.rename_geometry("geom")
-        df.columns = df.columns.str.lower()  # lowercasify
-        df = df[column_names + ["geom"]]  # retain only specified columns (and geom)
+            # tidy the result
+            df = df.rename_geometry("geom")
+            df.columns = df.columns.str.lower()  # lowercasify
+            df = df[column_names + ["geom"]]  # retain only specified columns (and geom)
 
-        # cast to everything multipart because responses can have mixed types
-        # geopandas does not have a built in function:
-        # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
-        df["geom"] = [
-            MultiPoint([feature]) if isinstance(feature, Point) else feature
-            for feature in df["geom"]
-        ]
-        df["geom"] = [
-            MultiLineString([feature]) if isinstance(feature, LineString) else feature
-            for feature in df["geom"]
-        ]
-        df["geom"] = [
-            MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
-            for feature in df["geom"]
-        ]
-        log.info(f"Writing {dataset} to database as {schema_name}.{table_name}")
-        df.to_postgis(table_name, pgdb, if_exists="append", schema=schema_name)
+            # cast to everything multipart because responses can have mixed types
+            # geopandas does not have a built in function:
+            # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
+            df["geom"] = [
+                MultiPoint([feature]) if isinstance(feature, Point) else feature
+                for feature in df["geom"]
+            ]
+            df["geom"] = [
+                MultiLineString([feature]) if isinstance(feature, LineString) else feature
+                for feature in df["geom"]
+            ]
+            df["geom"] = [
+                MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
+                for feature in df["geom"]
+            ]
+            log.info(f"Writing {dataset} to database as {schema_name}.{table_name}")
+            df.to_postgis(table_name, pgdb, if_exists="append", schema=schema_name)
+            # note that geopandas automatically indexes the geometry
 
-    # geopandas automatically indexes the geometry
+        # once load complete, note date/time of load completion in public.bcdata
+        if timestamp:
+            log.info("Logging download date to public.bcdata")
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);"
+            )
+            db.execute(
+                """INSERT INTO public.bcdata (table_name, date_downloaded)
+                            SELECT %s as table_name, NOW() as date_downloaded
+                            ON CONFLICT (table_name) DO UPDATE SET date_downloaded = NOW();
+                         """,
+                (schema_name + "." + table_name,),
+            )
     # optionally, create primary key
     if primary_key:
         log.info(f"Adding primary key {primary_key} to {schema_name}.{table_name}")
@@ -252,17 +268,3 @@ def bc2pg(
             primary_key=sql.Identifier(primary_key.lower()),
         )
         db.execute(dbq)
-
-    # once complete, note date/time of completion in public.bcdata
-    if timestamp:
-        log.info("Logging download date to public.bcdata")
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS public.bcdata (table_name text PRIMARY KEY, date_downloaded timestamp WITH TIME ZONE);"
-        )
-        db.execute(
-            """INSERT INTO public.bcdata (table_name, date_downloaded)
-                        SELECT %s as table_name, NOW() as date_downloaded
-                        ON CONFLICT (table_name) DO UPDATE SET date_downloaded = NOW();
-                     """,
-            (schema_name + "." + table_name,),
-        )

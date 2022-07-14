@@ -18,7 +18,7 @@ ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 def test_bc2pg():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
-    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE.lower())
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 def test_bc2pg_table():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, table="testtable")
@@ -43,3 +43,11 @@ def test_bc2pg_filter():
     r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 1
     assert r[0][0] == "Terrace (Northwest Regional) Airport"
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+def test_bc2pg_schema_only():
+    data = bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True)
+    assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
+    assert len(r) == 0
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)

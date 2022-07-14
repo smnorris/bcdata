@@ -17,8 +17,6 @@ from cligj import verbose_opt, quiet_opt
 from owslib.wfs import WebFeatureService
 from psycopg2 import sql
 
-from bcdata.database import Database
-
 import bcdata
 
 
@@ -286,10 +284,10 @@ def cat(
 @click.option(
     "--pagesize", "-p", default=10000, help="Max number of records to request"
 )
-@click.option("--primary_key", default=None, help="Primary key of dataset")
-@click.option("--sortby", "-s", help="Name of sort field")
+@click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
+@click.option("--schema_only", "-s" is_flag=True, help="Dump only the object definitions (schema), not data.")
 @click.option(
-    "--no_timestamp",
+    "--no_timestamp", "-t",
     is_flag=True,
     help="Do not add download timestamp to bcdata meta table",
 )
@@ -303,8 +301,8 @@ def bc2pg(
     query,
     pagesize,
     primary_key,
-    sortby,
     no_timestamp,
+    schema_only,
     verbose,
     quiet,
 ):

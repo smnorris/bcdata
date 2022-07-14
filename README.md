@@ -211,9 +211,9 @@ Note that `bc2pg` creates `public.bcdata` as a meta table tracking the most rece
 Disable with the switch `--no_timestamp` if you do not wish to create this table or do not have access to `public` schema.
 
     $ bcdata bc2pg --help
-      Usage: bcdata bc2pg [OPTIONS] DATASET
+    Usage: bcdata bc2pg [OPTIONS] DATASET
 
-      Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
+      Download a DataBC WFS layer to postgres
 
          $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
 
@@ -222,31 +222,19 @@ Disable with the switch `--no_timestamp` if you do not wish to create this table
       https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
 
     Options:
-      -db, --db_url TEXT              SQLAlchemy database url
-      --table TEXT                    Destination table name
-      --schema TEXT                   Destination schema name
-      --query TEXT                    A valid `CQL` or `ECQL` query (https://docs.
-                                      geoserver.org/stable/en/user/tutorials/cql/c
-                                      ql_tutorial.html)
-      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
-                                      bottom, right, top]". Coordinates are BC
-                                      Albers (default) or --bounds_crs
-      --bounds-crs, --bounds_crs TEXT
-                                      CRS of provided bounds
-      -p, --pagesize INTEGER          Max number of records to request
-      -w, --max_workers INTEGER       Max number of concurrent requests
-      --dim TEXT                      Force the coordinate dimension to val (valid
-                                      values are XY, XYZ)
-      --fid TEXT                      Primary key of dataset
-      --append                        Append data to existing table
-      --promote_to_multi              Promote features to multipart
-      --no_timestamp                  Do not add download timestamp to bcdata meta
-                                      table
-      --makevalid                     run OGR's MakeValid() to ensure geometries
-                                      are valid simple features
-      -v, --verbose                   Increase verbosity.
-      -q, --quiet                     Decrease verbosity.
-      --help                          Show this message and exit.
+      -db, --db_url TEXT      Database url, defaults to $DATABASE_URL if set
+      --table TEXT            Destination table name
+      --schema TEXT           Destination schema name
+      --query TEXT            A valid `CQL` or `ECQL` query (https://docs.geoserve
+                              r.org/stable/en/user/tutorials/cql/cql_tutorial.html
+                              )
+      -p, --pagesize INTEGER  Max number of records to request
+      --primary_key TEXT      Primary key of dataset
+      -s, --sortby TEXT       Name of sort field
+      --no_timestamp          Do not add download timestamp to bcdata meta table
+      -v, --verbose           Increase verbosity.
+      -q, --quiet             Decrease verbosity.
+      --help                  Show this message and exit.
 
 When was a table last downloaded?
 
