@@ -44,10 +44,7 @@ def get_table_definition(table_name):
     # only allow searching for tables present in WFS list
     if table_name not in bcdata.list_tables():
         raise ValueError(
-            "Only tables available via WFS are supported, {table_name} not found".format(
-                d=package
-            )
-        )
+            f"Only tables available via WFS are supported, {table_name} not found")
     # search the api for the provided table
     r = requests.get(bcdata.BCDC_API_URL + "package_search", params={"q": table_name})
     # catch general api errors

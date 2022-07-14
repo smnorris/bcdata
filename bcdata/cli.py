@@ -99,7 +99,7 @@ def list(refresh):
     "--count", "meta_member", flag_value="count", help="Print the count of features."
 )
 @click.option(
-    "--name", "meta_member", flag_value="name", help="Print the datasource's name."
+    "--name", "meta_member", flag_value="name", help="Print the table name of the dateset."
 )
 @verbose_opt
 @quiet_opt
@@ -110,12 +110,12 @@ def info(dataset, indent, meta_member, verbose, quiet):
     """
     verbosity = verbose - quiet
     configure_logging(verbosity)
-    table = bcdata.validate_name(dataset)
+    dataset = bcdata.validate_name(dataset)
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     info = {}
-    info["name"] = table
-    info["count"] = bcdata.get_count(table)
-    info["schema"] = wfs.get_schema("pub:" + table)
+    info["name"] = dataset
+    info["count"] = bcdata.get_count(dataset)
+    info["description"], info["schema"] = bcdata.get_table_definition(dataset)
     if meta_member:
         click.echo(info[meta_member])
     else:
