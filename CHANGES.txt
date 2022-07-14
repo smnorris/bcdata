@@ -13,7 +13,7 @@ Changes
 - updated bc2pg command line tool
     + uses new bc2pg Python function (no longer an ogr2ogr wrapper)
     + fid option renamed to primary_key
-    + options removed: bounds,bounds_crs,max_workers,dim,append,promote_to_multi,makevalid
+    + options removed: bounds, bounds_crs, max_workers, dim, promote_to_multi, makevalid
 
 0.6.3 (2022-06-08)
 ------------------

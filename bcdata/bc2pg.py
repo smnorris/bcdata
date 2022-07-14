@@ -31,6 +31,7 @@ def bc2pg(
     pagesize=10000,
     timestamp=True,
     schema_only=False,
+    append=False,
 ):
     """Request table definition from bcdc and replicate in postgres"""
     dataset = bcdata.validate_name(dataset)
@@ -44,10 +45,21 @@ def bc2pg(
     # define db connection and connect
     db = Database(db_url)
 
-    if not table_details:
-        log.info("No table details found via BCDC, guessing types")
+    if schema_name + "." + table_name not in db.tables and append:
+        raise ValueError("Table does not exist, nothing to append to")
 
-    else:
+    # if schema is available via bcdc and we are not appending to existing table,
+    # build the table definition and create table
+    if table_details:
+
+        # drop table if it exists
+        if schema_name + "." + table_name in db.tables and not append:
+            logging.info(f"Dropping existing table {schema_name}.{table_name}")
+            dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
+                schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
+            )
+            db.execute(dbq)
+
         # remove columns of unsupported types
         # (this also strips the geometry column, this is added below)
         table_details = [
@@ -105,44 +117,39 @@ def bc2pg(
         # add geometry column
         columns.append(Column("geom", Geometry(geom_type, srid=3005)))
 
-        # create schema if it does not exist
-        if schema_name not in db.schemas:
-            logging.info(f"Schema {schema_name} does not exist, creating it")
-            dbq = sql.SQL("CREATE SCHEMA {schema}").format(
-                schema=sql.Identifier(schema_name)
-            )
-            db.execute(dbq)
+        if not append:
+            # create schema if it does not exist
+            if schema_name not in db.schemas:
+                logging.info(f"Schema {schema_name} does not exist, creating it")
+                dbq = sql.SQL("CREATE SCHEMA {schema}").format(
+                    schema=sql.Identifier(schema_name)
+                )
+                db.execute(dbq)
 
-        # drop table if it exists
-        if schema_name + "." + table_name in db.tables:
-            print("table exists")
-            logging.info(f"Dropping existing table {schema_name}.{table_name}")
-            dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
-                schema=sql.Identifier(schema_name), table=sql.Identifier(table_name)
-            )
-            db.execute(dbq)
+            # create empty table
+            meta = MetaData(bind=db.engine)
+            Table(
+                table_name,
+                meta,
+                *columns,
+                comment=table_comments,
+                schema=schema_name,
+            ).create()
 
-        # create empty table
-        meta = MetaData(bind=db.engine)
-        Table(
-            table_name,
-            meta,
-            *columns,
-            comment=table_comments,
-            schema=schema_name,
-        ).create()
-
-    # define requests
-    param_dicts = bcdata.define_request(
-        dataset,
-        query=query,
-        sortby=sortby,
-        pagesize=pagesize,
-        crs="epsg:3005",
-    )
+    # note if schema is not available from bcdc
+    if not table_details:
+        log.info("No table details found via BCDC, guessing types")
 
     # load the data
     if not schema_only:
+        # define requests
+        param_dicts = bcdata.define_request(
+            dataset,
+            query=query,
+            sortby=sortby,
+            pagesize=pagesize,
+            crs="epsg:3005",
+        )
         # loop through the requests
         for n, paramdict in enumerate(param_dicts):
             payload = urlencode(paramdict, doseq=True)
@@ -192,7 +199,7 @@ def bc2pg(
                 (schema_name + "." + table_name,),
             )
     # optionally, create primary key
-    if primary_key:
+    if primary_key and not append:
         log.info(f"Adding primary key {primary_key} to {schema_name}.{table_name}")
         dbq = sql.SQL(
             "ALTER TABLE {schema}.{table} ADD PRIMARY KEY ({primary_key})"

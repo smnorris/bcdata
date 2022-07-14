@@ -226,6 +226,7 @@ Disable with the switch `--no_timestamp` if you do not wish to create this table
       -p, --pagesize INTEGER  Max number of records to request
       -k, --primary_key TEXT  Primary key of dataset
       -s, --schema_only       Dump only the object definitions (schema), not data
+      -a, --append            Append to existing table
       -t, --no_timestamp      Do not add download timestamp to bcdata meta table
       -v, --verbose           Increase verbosity.
       -q, --quiet             Decrease verbosity.

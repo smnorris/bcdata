@@ -291,6 +291,12 @@ def cat(
     help="Dump only the object definitions (schema), not data",
 )
 @click.option(
+    "--append",
+    "-a",
+    is_flag=True,
+    help="Append to existing table",
+)
+@click.option(
     "--no_timestamp",
     "-t",
     is_flag=True,
@@ -308,6 +314,7 @@ def bc2pg(
     primary_key,
     no_timestamp,
     schema_only,
+    append,
     verbose,
     quiet,
 ):
@@ -328,8 +335,10 @@ def bc2pg(
         table=table,
         schema=schema,
         query=query,
-        primary_key=primary_key,
         pagesize=pagesize,
+        primary_key=primary_key,
         timestamp=True,
+        schema_only=schema_only,
+        append=append,
     )
     log.info("Load of {} to {} in {} complete".format(dataset, out_table, db_url))

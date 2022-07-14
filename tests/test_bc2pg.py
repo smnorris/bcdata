@@ -40,7 +40,7 @@ def test_bc2pg_primary_key():
 
 
 def test_bc2pg_filter():
-    data = bcdata.bc2pg(
+    bcdata.bc2pg(
         AIRPORTS_TABLE,
         DB_URL,
         query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
@@ -55,8 +55,26 @@ def test_bc2pg_filter():
 
 
 def test_bc2pg_schema_only():
-    data = bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True)
+    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
     r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 0
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+def test_bc2pg_append():
+    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True)
+    bcdata.bc2pg(
+        AIRPORTS_TABLE,
+        DB_URL,
+        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
+        append=True
+    )
+    bcdata.bc2pg(
+        AIRPORTS_TABLE,
+        DB_URL,
+        query="AIRPORT_NAME='Victoria International Airport'",
+        append=True
+    )
+    r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
+    assert len(r) == 2
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
