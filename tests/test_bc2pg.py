@@ -20,30 +20,39 @@ def test_bc2pg():
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
+
 def test_bc2pg_table():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, table="testtable")
     assert "whse_imagery_and_base_maps.testtable" in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop table whse_imagery_and_base_maps.testtable")
+
 
 def test_bc2pg_schema():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema="testschema")
     assert "testschema.gsr_airports_svw" in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop schema testschema cascade")
 
+
 def test_bc2pg_primary_key():
     bcdata.bc2pg(ASSESSMENTS_TABLE, DB_URL, primary_key="stream_crossing_id")
     assert ASSESSMENTS_TABLE in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
 
+
 def test_bc2pg_filter():
     data = bcdata.bc2pg(
-        AIRPORTS_TABLE, DB_URL, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
+        AIRPORTS_TABLE,
+        DB_URL,
+        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
     )
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
+    r = DB_CONNECTION.query(
+        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
+    )
     assert len(r) == 1
     assert r[0][0] == "Terrace (Northwest Regional) Airport"
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
 
 def test_bc2pg_schema_only():
     data = bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True)

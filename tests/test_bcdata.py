@@ -51,12 +51,15 @@ def test_get_data_small():
 
 def test_get_data_crs():
     data = bcdata.get_data(AIRPORTS_TABLE, crs="EPSG:3005")
-    assert data["crs"] == '''{"type":"name","properties":{"name":"urn:ogc:def:crs:EPSG::3005"}}'''
+    assert (
+        data["crs"]
+        == """{"type":"name","properties":{"name":"urn:ogc:def:crs:EPSG::3005"}}"""
+    )
 
 
 def test_get_type():
     data = bcdata.get_type(AIRPORTS_TABLE)
-    assert data == 'Point'
+    assert data == "Point"
 
 
 def test_get_features():
@@ -110,14 +113,18 @@ def test_dem(tmpdir):
         ]
     assert stats[0]["max"] == 3982
 
+
 def test_dem_align(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
-    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem_align.tif"), align=True)
+    out_file = bcdata.get_dem(
+        bounds, os.path.join(tmpdir, "test_dem_align.tif"), align=True
+    )
     assert os.path.exists(out_file)
     with rasterio.open(out_file) as src:
         bounds = src.bounds
     bbox = BoundingBox(1046787.5, 704687.5, 1055487.5, 709787.5)
     assert bounds == bbox
+
 
 def test_dem_rasterio(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
@@ -127,6 +134,7 @@ def test_dem_rasterio(tmpdir):
         for b in src.read()
     ]
     assert stats[0]["max"] == 3982
+
 
 # interpolation takes a while to run, comment out for for faster tests
 # def test_dem_resample(tmpdir):
