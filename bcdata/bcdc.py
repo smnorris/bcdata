@@ -28,8 +28,7 @@ def get_table_name(package):
     layer_urls = [r["url"] for r in result["resources"] if r["format"] == "wms"]
     layer_names = [urlparse(l).path.split("/")[3] for l in layer_urls]
     if len(layer_names) > 1:
-        raise ValueError(
-            "Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
+        raise ValueError("Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
                 package, "\n".join(layer_names)
             )
         )
