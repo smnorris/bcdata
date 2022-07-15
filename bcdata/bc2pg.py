@@ -26,6 +26,7 @@ def bc2pg(
     table=None,
     schema=None,
     query=None,
+    count=None,
     sortby=None,
     primary_key=None,
     pagesize=10000,
@@ -41,6 +42,12 @@ def bc2pg(
     if table:
         table_name = table.lower()
     table_comments, table_details = bcdata.get_table_definition(dataset)
+    # find geometry type(s) in first 10 records and take the first one
+    geom_type = bcdata.get_types(dataset, 10)[0]
+    # make everything multipart
+    # (some datasets have mixed singlepart/multipart geometries)
+    if geom_type in ["POINT", "LINE", "POLYGON"]:
+        geom_type = "MULTI" + geom_type
 
     # define db connection and connect
     db = Database(db_url)
@@ -84,14 +91,6 @@ def bc2pg(
                 )
             # column needs to be uppercase in request
             sortby = sortby.upper()
-
-        # guess at geom type by requesting the first record in the collection
-        geom_type = bcdata.get_type(dataset)
-
-        # make everything multipart
-        # (some datasets have mixed singlepart/multipart geometries)
-        if geom_type[:5] != "MULTI":
-            geom_type = "MULTI" + geom_type
 
         # translate the oracle types to sqlalchemy provided postgres types
         columns = []
@@ -146,6 +145,7 @@ def bc2pg(
         param_dicts = bcdata.define_request(
             dataset,
             query=query,
+            count=count,
             sortby=sortby,
             pagesize=pagesize,
             crs="epsg:3005",
@@ -163,7 +163,12 @@ def bc2pg(
             df = df.rename_geometry("geom")
             df.columns = df.columns.str.lower()  # lowercasify
             df = df[column_names + ["geom"]]  # retain only specified columns (and geom)
-
+            # df = df[df["geom"].isna() == False]  # remove rows with null geometry
+            # fill rows with null geometry
+            # df["geom"] = [
+            #    Geometry(geom_type, srid=3005) if feature is None else feature
+            #    for feature in df["geom"]
+            # ]
             # cast to everything multipart because responses can have mixed types
             # geopandas does not have a built in function:
             # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas

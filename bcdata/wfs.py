@@ -128,6 +128,7 @@ def define_request(
     crs="epsg:4326",
     bounds=None,
     bounds_crs="EPSG:3005",
+    count=None,
     sortby=None,
     pagesize=10000,
 ):
@@ -141,7 +142,11 @@ def define_request(
     # validate the table name and find out how many features it holds
     table = validate_name(dataset)
     n = bcdata.get_count(table, query=query)
-    log.info(f"Total features requested: {n}")
+    # if count not provided or if it is greater than n of total features,
+    # set count to number of features
+    if not count or count > n:
+        count = n
+    log.info(f"Total features requested: {count}")
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     geom_column = wfs.get_schema("pub:" + table)["geometry_column"]
 
@@ -151,7 +156,7 @@ def define_request(
     # But I do not see any next uri in the responses. Instead of following
     # the paged urls, for datasets with >10k records, just generate urls
     # based on number of features in the dataset.
-    chunks = math.ceil(n / pagesize)
+    chunks = math.ceil(count / pagesize)
 
     # if making several requests, we need to sort by something
     if chunks > 1 and not sortby:
@@ -181,10 +186,14 @@ def define_request(
                 request["CQL_FILTER"] = bnd_query
             else:
                 request["CQL_FILTER"] = query + " AND " + bnd_query
-
+        if chunks == 1:
+            request["count"] = count
         if chunks > 1:
             request["startIndex"] = i * pagesize
-            request["count"] = pagesize
+            if count < (request["startIndex"] + pagesize):
+                request["count"] = count - request["startIndex"]
+            else:
+                request["count"] = pagesize
         param_dicts.append(request)
     return param_dicts
 
@@ -195,6 +204,7 @@ def get_data(
     crs="epsg:4326",
     bounds=None,
     bounds_crs="epsg:3005",
+    count=None,
     sortby=None,
     pagesize=10000,
     max_workers=2,
@@ -207,6 +217,7 @@ def get_data(
         crs=crs,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        count=count,
         sortby=sortby,
         pagesize=pagesize,
     )
@@ -237,6 +248,7 @@ def get_features(
     crs="epsg:4326",
     bounds=None,
     bounds_crs="epsg:3005",
+    count=None,
     sortby=None,
     pagesize=10000,
     max_workers=2,
@@ -248,6 +260,7 @@ def get_features(
         crs=crs,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        count=count,
         sortby=sortby,
         pagesize=pagesize,
     )
@@ -257,19 +270,25 @@ def get_features(
                 yield feature
 
 
-def get_type(dataset):
-    """Request a single feature and return geometry type"""
+def get_types(dataset, count=10):
+    """Return distinct types within the first n features"""
     # validate the table name
     table = validate_name(dataset)
-    parameters = {
-        "service": "WFS",
-        "version": "2.0.0",
-        "request": "GetFeature",
-        "typeName": table,
-        "outputFormat": "json",
-        "count": 1,
-    }
-    r = requests.get(bcdata.WFS_URL, params=parameters)
-    log.debug(r.url)
-    # return the feature type
-    return r.json()["features"][0]["geometry"]["type"]
+    # get features and find distinct types where geom is not empty
+    geom_types = list(
+        set(
+            [
+                f["geometry"]["type"].upper()
+                for f in get_features(table, count=count)
+                if f["geometry"]
+            ]
+        )
+    )
+    if len(geom_types) > 1:
+        typestring = ",".join(geom_types)
+        log.warning(f"Dataset {dataset} has multiple geometry types: {typestring}")
+    # validate the type (shouldn't be necessary)
+    for geom_type in geom_types:
+        if geom_type not in ("POINT","LINESTRING","POLYGON","MULTIPOINT","MULTILINESTRING","MULTIPOLYGON"):
+            raise ValueError("Geometry type {geomtype} is not supported")
+    return geom_types

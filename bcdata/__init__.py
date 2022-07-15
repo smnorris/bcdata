@@ -6,7 +6,7 @@ from .wfs import get_count
 from .wfs import list_tables
 from .wfs import validate_name
 from .wfs import define_request
-from .wfs import get_type
+from .wfs import get_types
 from .bc2pg import bc2pg
 from .wcs import get_dem
 

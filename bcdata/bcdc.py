@@ -44,7 +44,8 @@ def get_table_definition(table_name):
     # only allow searching for tables present in WFS list
     if table_name not in bcdata.list_tables():
         raise ValueError(
-            f"Only tables available via WFS are supported, {table_name} not found")
+            f"Only tables available via WFS are supported, {table_name} not found"
+        )
     # search the api for the provided table
     r = requests.get(bcdata.BCDC_API_URL + "package_search", params={"q": table_name})
     # catch general api errors
@@ -77,9 +78,7 @@ def get_table_definition(table_name):
                         else:
                             log.info(f"No details found for {table_name}")
                             table_details = None
-                        matches.append(
-                            (table_comments, table_details)
-                        )
+                        matches.append((table_comments, table_details))
         # uniquify the result
         # (presuming there is only one unique result, but this seems safe as we are
         # matching on the oracle table name)
@@ -91,4 +90,3 @@ def get_table_definition(table_name):
                 f"BCDC search for {table_name} does not return expected details"
             )
             return (None, None)
-

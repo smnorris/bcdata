@@ -11,7 +11,8 @@ AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
 UTMZONES_KEY = "utm-zones-of-british-columbia"
 BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
-
+ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
+GLACIERS_TABLE = "whse_basemapping.fwa_glaciers_poly"
 
 def test_validate_table_lowercase():
     table = bcdata.validate_name(AIRPORTS_TABLE.lower())
@@ -57,9 +58,14 @@ def test_get_data_crs():
     )
 
 
-def test_get_type():
-    data = bcdata.get_type(AIRPORTS_TABLE)
-    assert data == "Point"
+def test_get_types():
+    data = bcdata.get_types(AIRPORTS_TABLE)
+    assert data[0] == "POINT"
+
+
+def test_get_mixed_types():
+    data = bcdata.get_types(GLACIERS_TABLE, 100)
+    assert len(data) == 2
 
 
 def test_get_features():
@@ -70,6 +76,16 @@ def test_get_features():
 def test_get_data_paged():
     data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250)
     assert len(data["features"]) == 455
+
+
+def test_get_data_count():
+    data = bcdata.get_data(AIRPORTS_TABLE, count=100)
+    assert len(data["features"]) == 100
+
+
+def test_get_data_paged_count():
+    data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250, count=300)
+    assert len(data["features"]) == 300
 
 
 def test_cql_filter():

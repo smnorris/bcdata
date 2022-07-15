@@ -99,7 +99,10 @@ def list(refresh):
     "--count", "meta_member", flag_value="count", help="Print the count of features."
 )
 @click.option(
-    "--name", "meta_member", flag_value="name", help="Print the table name of the dateset."
+    "--name",
+    "meta_member",
+    flag_value="name",
+    help="Print the table name of the dateset.",
 )
 @verbose_opt
 @quiet_opt
@@ -216,7 +219,7 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 @compact_opt
 @dst_crs_opt
 @click.option(
-    "--pagesize", "-p", default=10000, help="Max number of records to request"
+    "--pagesize", "-p", default=10000, help="Maximum request size"
 )
 @click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
@@ -281,7 +284,10 @@ def cat(
     help="A valid `CQL` or `ECQL` query",
 )
 @click.option(
-    "--pagesize", "-p", default=10000, help="Max number of records to request"
+    "--count", "-c", default=None, type=int, help="Total number of features to load"
+)
+@click.option(
+    "--pagesize", "-p", default=10000, help="Maximum request size"
 )
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
 @click.option(
@@ -310,6 +316,7 @@ def bc2pg(
     table,
     schema,
     query,
+    count,
     pagesize,
     primary_key,
     no_timestamp,
@@ -335,6 +342,7 @@ def bc2pg(
         table=table,
         schema=schema,
         query=query,
+        count=count,
         pagesize=pagesize,
         primary_key=primary_key,
         timestamp=True,
