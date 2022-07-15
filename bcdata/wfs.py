@@ -110,10 +110,10 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def make_request(parameters):
+def make_request(url):
     """Submit a getfeature request to DataBC WFS and return features"""
     try:
-        r = requests.get(bcdata.WFS_URL, params=parameters)
+        r = requests.get(url)
         log.info(r.url)
         r.raise_for_status()  # check status code is 200
     except requests.exceptions.HTTPError as err:  # fail if not 200
@@ -122,7 +122,7 @@ def make_request(parameters):
     return r.json()["features"]  # return features if status code is 200
 
 
-def define_request(
+def define_requests(
     dataset,
     query=None,
     crs="epsg:4326",
@@ -132,7 +132,8 @@ def define_request(
     sortby=None,
     pagesize=10000,
 ):
-    """Define the getfeature request parameters required to download a dataset
+    """Translate provided parameters into a list of WFS request URLs required
+    to download the dataset as specified
 
     References:
     - http://www.opengeospatial.org/standards/wfs
@@ -163,7 +164,7 @@ def define_request(
         sortby = get_sortkey(table)
 
     # build the request parameters for each chunk
-    param_dicts = []
+    urls = []
     for i in range(chunks):
         request = {
             "service": "WFS",
@@ -194,8 +195,8 @@ def define_request(
                 request["count"] = count - request["startIndex"]
             else:
                 request["count"] = pagesize
-        param_dicts.append(request)
-    return param_dicts
+        urls.append(bcdata.WFS_URL + "?" + urlencode(request, doseq=True))
+    return urls
 
 
 def get_data(
@@ -211,7 +212,7 @@ def get_data(
     as_gdf=False,
 ):
     """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS"""
-    param_dicts = define_request(
+    urls = define_requests(
         dataset,
         query=query,
         crs=crs,
@@ -222,7 +223,7 @@ def get_data(
         pagesize=pagesize,
     )
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        results = executor.map(make_request, param_dicts)
+        results = executor.map(make_request, urls)
 
     outjson = dict(type="FeatureCollection", features=[])
     for result in results:
@@ -254,7 +255,7 @@ def get_features(
     max_workers=2,
 ):
     """Yield features from DataBC WFS"""
-    param_dicts = define_request(
+    urls = define_requests(
         dataset,
         query=query,
         crs=crs,
@@ -265,7 +266,7 @@ def get_features(
         pagesize=pagesize,
     )
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for result in executor.map(make_request, param_dicts):
+        for result in executor.map(make_request, urls):
             for feature in result:
                 yield feature
 

@@ -71,7 +71,7 @@ bounds_opt_dem = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-dst_crs_opt = click.option("--dst-crs", "--dst_crs", help="Destination CRS")
+dst_crs_opt = click.option("--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS")
 
 
 @click.group()
@@ -174,7 +174,7 @@ def dem(
 @click.argument("dataset", type=click.STRING)
 @click.option(
     "--query",
-    help="A valid CQL or ECQL query, quote enclosed (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+    help="A valid CQL or ECQL query",
 )
 @click.option("--out_file", "-o", help="Output file")
 @bounds_opt
@@ -212,7 +212,7 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 @click.argument("dataset", type=click.STRING)
 @click.option(
     "--query",
-    help="A valid `CQL` or `ECQL` query (https://docs.geoserver.org/stable/en/user/tutorials/cql/cql_tutorial.html)",
+    help="A valid CQL or ECQL query)",
 )
 @bounds_opt
 @indent_opt
@@ -281,7 +281,7 @@ def cat(
 @click.option("--schema", help="Destination schema name")
 @click.option(
     "--query",
-    help="A valid `CQL` or `ECQL` query",
+    help="A valid CQL or ECQL query",
 )
 @click.option(
     "--count", "-c", default=None, type=int, help="Total number of features to load"

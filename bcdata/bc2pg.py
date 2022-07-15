@@ -1,12 +1,11 @@
 import os
-from urllib.parse import urlparse
-from urllib.parse import urlencode
 import logging
 
 from psycopg2 import sql
 from sqlalchemy import MetaData, Table, Column
 from geoalchemy2 import Geometry
 import geopandas as gpd
+import shapely
 from shapely.geometry.point import Point
 from shapely.geometry.multipoint import MultiPoint
 from shapely.geometry.linestring import LineString
@@ -142,7 +141,7 @@ def bc2pg(
     # load the data
     if not schema_only:
         # define requests
-        param_dicts = bcdata.define_request(
+        urls = bcdata.define_requests(
             dataset,
             query=query,
             count=count,
@@ -151,10 +150,7 @@ def bc2pg(
             crs="epsg:3005",
         )
         # loop through the requests
-        for n, paramdict in enumerate(param_dicts):
-            payload = urlencode(paramdict, doseq=True)
-            url = bcdata.WFS_URL + "?" + payload
-
+        for n, url in enumerate(urls):
             # download with geopandas, let geopandas handle errors
             log.info(url)
             df = gpd.read_file(url)
@@ -165,10 +161,21 @@ def bc2pg(
             df = df[column_names + ["geom"]]  # retain only specified columns (and geom)
             # df = df[df["geom"].isna() == False]  # remove rows with null geometry
             # fill rows with null geometry
-            # df["geom"] = [
-            #    Geometry(geom_type, srid=3005) if feature is None else feature
-            #    for feature in df["geom"]
-            # ]
+            if geom_type == "MULTIPOINT":
+                df["geom"] = [
+                   MultiPoint() if feature == None else feature
+                   for feature in df["geom"]
+                ]
+            if geom_type == "MULTILINESTRING":
+                df["geom"] = [
+                   MultiLineString() if feature == None else feature
+                   for feature in df["geom"]
+                ]
+            if geom_type == "MULTIPOLYGON":
+                df["geom"] = [
+                   MultiPolygon() if feature == None else feature
+                   for feature in df["geom"]
+                ]
             # cast to everything multipart because responses can have mixed types
             # geopandas does not have a built in function:
             # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas

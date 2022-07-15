@@ -13,7 +13,7 @@ AIRPORTS_TABLE = "whse_imagery_and_base_maps.gsr_airports_svw"
 TERRACE_QUERY = "AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
 VICTORIA_QUERY = "Victoria Harbour (Camel Point) Heliport"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
-
+TENURES_TABLE = "whse_tantalis.ta_crown_tenures_svw"
 
 def test_bc2pg():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL)
@@ -72,6 +72,16 @@ def test_bc2pg_filter():
     assert len(r) == 1
     assert r[0][0] == "Terrace (Northwest Regional) Airport"
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+
+def test_bc2pg_empty_geometry():
+    bcdata.bc2pg(
+        TENURES_TABLE,
+        DB_URL,
+        query="INTRID_SID=270626",
+    )
+    assert TENURES_TABLE in DB_CONNECTION.tables
+    DB_CONNECTION.execute("drop table " + TENURES_TABLE)
 
 
 def test_bc2pg_schema_only():
