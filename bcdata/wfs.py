@@ -275,6 +275,7 @@ def get_types(dataset, count=10):
     """Return distinct types within the first n features"""
     # validate the table name
     table = validate_name(dataset)
+    log.info("Getting feature goemetry type")
     # get features and find distinct types where geom is not empty
     geom_types = list(
         set(

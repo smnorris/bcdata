@@ -5,7 +5,6 @@ from psycopg2 import sql
 from sqlalchemy import MetaData, Table, Column
 from geoalchemy2 import Geometry
 import geopandas as gpd
-import shapely
 from shapely.geometry.point import Point
 from shapely.geometry.multipoint import MultiPoint
 from shapely.geometry.linestring import LineString
@@ -159,23 +158,8 @@ def bc2pg(
             df = df.rename_geometry("geom")
             df.columns = df.columns.str.lower()  # lowercasify
             df = df[column_names + ["geom"]]  # retain only specified columns (and geom)
-            # df = df[df["geom"].isna() == False]  # remove rows with null geometry
-            # fill rows with null geometry
-            if geom_type == "MULTIPOINT":
-                df["geom"] = [
-                   MultiPoint() if feature == None else feature
-                   for feature in df["geom"]
-                ]
-            if geom_type == "MULTILINESTRING":
-                df["geom"] = [
-                   MultiLineString() if feature == None else feature
-                   for feature in df["geom"]
-                ]
-            if geom_type == "MULTIPOLYGON":
-                df["geom"] = [
-                   MultiPolygon() if feature == None else feature
-                   for feature in df["geom"]
-                ]
+            df_nulls = df[df["geom"].isna()]     # extract features with no geometry
+            df = df[df["geom"].isna() == False]  # remove rows with null geometry from geodataframe
             # cast to everything multipart because responses can have mixed types
             # geopandas does not have a built in function:
             # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
@@ -194,8 +178,12 @@ def bc2pg(
                 for feature in df["geom"]
             ]
             log.info(f"Writing {dataset} to database as {schema_name}.{table_name}")
+            # load geometries
             df.to_postgis(table_name, db.engine, if_exists="append", schema=schema_name)
-            # note that geopandas automatically indexes the geometry
+
+            # load rows with no geom
+            df_nulls = df_nulls.drop(columns=['geom'])
+            df_nulls.to_sql(table_name, db.engine, if_exists="append", schema=schema_name, index=False)
 
         # once load complete, note date/time of load completion in public.bcdata
         if timestamp:

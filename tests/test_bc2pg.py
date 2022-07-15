@@ -81,6 +81,8 @@ def test_bc2pg_empty_geometry():
         query="INTRID_SID=270626",
     )
     assert TENURES_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query("select * from whse_tantalis.ta_crown_tenures_svw")
+    assert len(r) == 1
     DB_CONNECTION.execute("drop table " + TENURES_TABLE)
 
 
