@@ -1,6 +1,8 @@
 requests
 owslib
 psycopg2
+sqlalchemy
+geoalchemy2
 click>=8.0
 cligj>=0.5
 rasterio>=1.0
