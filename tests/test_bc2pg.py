@@ -1,7 +1,3 @@
-import pytest
-import click
-from click.testing import CliRunner
-
 import bcdata
 from bcdata.database import Database
 
@@ -14,6 +10,7 @@ TERRACE_QUERY = "AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
 VICTORIA_QUERY = "Victoria Harbour (Camel Point) Heliport"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 TENURES_TABLE = "whse_tantalis.ta_crown_tenures_svw"
+
 
 def test_bc2pg():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL)
@@ -46,7 +43,8 @@ def test_bc2pg_schema():
 def test_bc2pg_primary_key():
     bcdata.bc2pg(ASSESSMENTS_TABLE, DB_URL, primary_key="stream_crossing_id", count=100)
     assert ASSESSMENTS_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query("""
+    r = DB_CONNECTION.query(
+        """
         SELECT a.attname FROM pg_index i
         JOIN pg_class c ON c.oid = i.indrelid
         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = any(i.indkey)
@@ -54,8 +52,9 @@ def test_bc2pg_primary_key():
         WHERE relname = 'pscis_assessment_svw'
         AND nspname = 'whse_fish'
         AND indisprimary
-        """)
-    assert r[0][0] == 'stream_crossing_id'
+        """
+    )
+    assert r[0][0] == "stream_crossing_id"
     DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
 
 
@@ -100,13 +99,13 @@ def test_bc2pg_append():
         AIRPORTS_TABLE,
         DB_URL,
         query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
-        append=True
+        append=True,
     )
     bcdata.bc2pg(
         AIRPORTS_TABLE,
         DB_URL,
         query="AIRPORT_NAME='Victoria International Airport'",
-        append=True
+        append=True,
     )
     r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 2

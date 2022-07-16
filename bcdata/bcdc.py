@@ -1,11 +1,8 @@
 import json
 import logging
-import os
-from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
-import geopandas as gpd
 
 import bcdata
 
@@ -26,9 +23,10 @@ def get_table_name(package):
     # Also, some packages may have >1 WFS layer - if this is the case, bail
     # and provide user with a list of layers
     layer_urls = [r["url"] for r in result["resources"] if r["format"] == "wms"]
-    layer_names = [urlparse(l).path.split("/")[3] for l in layer_urls]
+    layer_names = [urlparse(url).path.split("/")[3] for url in layer_urls]
     if len(layer_names) > 1:
-        raise ValueError("Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
+        raise ValueError(
+            "Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
                 package, "\n".join(layer_names)
             )
         )
@@ -41,6 +39,7 @@ def get_table_definition(table_name):
     matching "object_name", returns tuple (table comments, table schema)
     """
     # only allow searching for tables present in WFS list
+    table_name = table_name.upper()
     if table_name not in bcdata.list_tables():
         raise ValueError(
             f"Only tables available via WFS are supported, {table_name} not found"

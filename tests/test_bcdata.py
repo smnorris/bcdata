@@ -14,6 +14,7 @@ BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 GLACIERS_TABLE = "whse_basemapping.fwa_glaciers_poly"
 
+
 def test_validate_table_lowercase():
     table = bcdata.validate_name(AIRPORTS_TABLE.lower())
     assert table == AIRPORTS_TABLE
@@ -90,7 +91,8 @@ def test_get_data_paged_count():
 
 def test_cql_filter():
     data = bcdata.get_data(
-        AIRPORTS_TABLE, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
+        AIRPORTS_TABLE,
+        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
     )
     assert len(data["features"]) == 1
     assert (
@@ -124,7 +126,11 @@ def test_dem(tmpdir):
     assert os.path.exists(out_file)
     with rasterio.open(out_file) as src:
         stats = [
-            {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())}
+            {
+                "min": float(b.min()),
+                "max": float(b.max()),
+                "mean": float(b.mean()),
+            }
             for b in src.read()
         ]
     assert stats[0]["max"] == 3982

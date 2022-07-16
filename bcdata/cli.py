@@ -3,19 +3,11 @@ import json
 import logging
 import os
 import re
-import subprocess
-from urllib.parse import urlencode
-from functools import partial
-from multiprocessing.dummy import Pool
-from subprocess import call
 
 import click
 from cligj import indent_opt
 from cligj import compact_opt
 from cligj import verbose_opt, quiet_opt
-
-from owslib.wfs import WebFeatureService
-from psycopg2 import sql
 
 import bcdata
 
@@ -71,7 +63,9 @@ bounds_opt_dem = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-dst_crs_opt = click.option("--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS")
+dst_crs_opt = click.option(
+    "--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS"
+)
 
 
 @click.group()
@@ -96,7 +90,10 @@ def list(refresh):
 # Options to pick out a single metadata item and print it as
 # a string.
 @click.option(
-    "--count", "meta_member", flag_value="count", help="Print the count of features."
+    "--count",
+    "meta_member",
+    flag_value="count",
+    help="Print the count of features.",
 )
 @click.option(
     "--name",
@@ -114,7 +111,6 @@ def info(dataset, indent, meta_member, verbose, quiet):
     verbosity = verbose - quiet
     configure_logging(verbosity)
     dataset = bcdata.validate_name(dataset)
-    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     info = {}
     info["name"] = dataset
     info["count"] = bcdata.get_count(dataset)
@@ -130,11 +126,17 @@ def info(dataset, indent, meta_member, verbose, quiet):
 @bounds_opt_dem
 @dst_crs_opt
 @click.option(
-    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+    "--bounds-crs",
+    "--bounds_crs",
+    help="CRS of provided bounds",
+    default="EPSG:3005",
 )
 @click.option("--resolution", "-r", type=int, default=25)
 @click.option(
-    "--align", "-a", is_flag=True, help="Align provided bounds to provincial standard"
+    "--align",
+    "-a",
+    is_flag=True,
+    help="Align provided bounds to provincial standard",
 )
 @click.option(
     "--interpolation",
@@ -179,7 +181,10 @@ def dem(
 @click.option("--out_file", "-o", help="Output file")
 @bounds_opt
 @click.option(
-    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+    "--bounds-crs",
+    "--bounds_crs",
+    help="CRS of provided bounds",
+    default="EPSG:3005",
 )
 @verbose_opt
 @quiet_opt
@@ -218,12 +223,13 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 @indent_opt
 @compact_opt
 @dst_crs_opt
-@click.option(
-    "--pagesize", "-p", default=10000, help="Maximum request size"
-)
+@click.option("--pagesize", "-p", default=10000, help="Maximum request size")
 @click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
-    "--bounds-crs", "--bounds_crs", help="CRS of provided bounds", default="EPSG:3005"
+    "--bounds-crs",
+    "--bounds_crs",
+    help="CRS of provided bounds",
+    default="EPSG:3005",
 )
 @click.option(
     "--max_workers", "-w", default=2, help="Max number of concurrent requests"
@@ -284,11 +290,13 @@ def cat(
     help="A valid CQL or ECQL query",
 )
 @click.option(
-    "--count", "-c", default=None, type=int, help="Total number of features to load"
+    "--count",
+    "-c",
+    default=None,
+    type=int,
+    help="Total number of features to load",
 )
-@click.option(
-    "--pagesize", "-p", default=10000, help="Maximum request size"
-)
+@click.option("--pagesize", "-p", default=10000, help="Maximum request size")
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
 @click.option(
     "--schema_only",

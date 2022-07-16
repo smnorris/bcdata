@@ -175,7 +175,7 @@ def define_requests(
             "SRSNAME": crs,
         }
         if sortby:
-            request["sortby"] = sortby
+            request["sortby"] = sortby.upper()
         # build the CQL based on query and bounds
         # (the bbox param shortcut is mutually exclusive with CQL_FILTER)
         if query and not bounds:
@@ -291,6 +291,13 @@ def get_types(dataset, count=10):
         log.warning(f"Dataset {dataset} has multiple geometry types: {typestring}")
     # validate the type (shouldn't be necessary)
     for geom_type in geom_types:
-        if geom_type not in ("POINT","LINESTRING","POLYGON","MULTIPOINT","MULTILINESTRING","MULTIPOLYGON"):
+        if geom_type not in (
+            "POINT",
+            "LINESTRING",
+            "POLYGON",
+            "MULTIPOINT",
+            "MULTILINESTRING",
+            "MULTIPOLYGON",
+        ):
             raise ValueError("Geometry type {geomtype} is not supported")
     return geom_types

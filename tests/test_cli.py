@@ -1,5 +1,3 @@
-import pytest
-import click
 from click.testing import CliRunner
 
 from bcdata.cli import cli
@@ -60,7 +58,15 @@ def test_cat_query():
 def test_cat_bounds_ll():
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["cat", AIRPORTS_TABLE, "--bounds", BBOX_LL, "--bounds_crs", "EPSG:4326"]
+        cli,
+        [
+            "cat",
+            AIRPORTS_TABLE,
+            "--bounds",
+            BBOX_LL,
+            "--bounds_crs",
+            "EPSG:4326",
+        ],
     )
     assert result.exit_code == 0
     assert len(result.output.split("\n")) == 4
