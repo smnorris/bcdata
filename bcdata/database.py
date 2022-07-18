@@ -159,12 +159,17 @@ class Database(object):
             schema=schema_name,
         )
 
-        # if append not noted, drop any existing table and create the new table
-        if not append:
-            if schema_name not in self.schemas:
-                self.create_schema(schema_name)
-            if schema_name + "." + table_name in self.tables:
-                self.drop_table(schema_name, table_name)
+        if schema_name not in self.schemas:
+            self.create_schema(schema_name)
+
+        # drop existing table if append is not flagged
+        if schema_name + "." + table_name in self.tables and not append:
+            log.info("Table {schema_name}.{table_name} exists, overwriting")
+            self.drop_table(schema_name, table_name)
+
+        # create the table
+        if schema_name + "." + table_name not in self.tables:
+            log.info("Creating table {schema_name}.{table_name}")
             table.create()
 
         return table

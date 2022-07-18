@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.7.0 (2022-07-)
+0.7.0 (2022-07-18)
 ------------------
 - bcdata.define_request function renamed to define_requests, returns list of
   parsed urls rather than a list of request parameter dictionaries  - this makes
