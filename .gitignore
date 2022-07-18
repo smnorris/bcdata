@@ -58,3 +58,7 @@ target/
 
 # ignore generated file that gets manually copied into README
 cli.md
+
+# ignore linting and pre-commit config
+.pre-commit-config.yaml
+.flake8
