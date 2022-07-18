@@ -48,6 +48,11 @@ def bounds_handler(ctx, param, value):
         return retval
 
 
+# tab completion object names not currently supported
+# def complete_object_names(ctx, param, incomplete):
+#    return [k for k in bcdata.list_tables() if k.startswith(incomplete.upper())]
+
+
 bounds_opt = click.option(
     "--bounds",
     default=None,

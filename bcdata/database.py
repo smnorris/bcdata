@@ -147,7 +147,7 @@ class Database(object):
 
         # make everything multipart
         # (some datasets have mixed singlepart/multipart geometries)
-        if geom_type in ["POINT", "LINE", "POLYGON"]:
+        if geom_type in ["POINT", "LINESTRING", "POLYGON"]:
             geom_type = "MULTI" + geom_type
         columns.append(Column("geom", Geometry(geom_type, srid=3005)))
         meta = MetaData(bind=self.engine)
