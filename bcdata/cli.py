@@ -217,7 +217,7 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 @click.argument("dataset", type=click.STRING)
 @click.option(
     "--query",
-    help="A valid CQL or ECQL query)",
+    help="A valid CQL or ECQL query",
 )
 @bounds_opt
 @indent_opt
