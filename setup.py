@@ -31,8 +31,9 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering :: GIS",
     ],
@@ -45,7 +46,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=read("requirements.txt").splitlines(),
-    extras_require={"test": ["pytest>=3", "pre-commit"]},
+    extras_require={"test": ["pytest>=3"]},
     entry_points="""
       [console_scripts]
       bcdata=bcdata.cli:cli
