@@ -6,7 +6,7 @@ There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
 but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl/wget` can be awkward.
 
-This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with existing Python GIS tools like `geopandas`, `fiona` and `rasterio`.
+This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with PostGIS and Python GIS tools like `geopandas`, `fiona` and `rasterio`.
 
 
 **Disclaimer**  
@@ -82,173 +82,176 @@ AERODROME_STATUS AIRCRAFT_ACCESS_IND                          AIRPORT_NAME      
 ```
 
 ### CLI
+Commands available via the bcdata command line interface are documented with the `--help` option:
 
-There are several commands available:
+```
 
-    $ bcdata --help
-    Usage: bcdata [OPTIONS] COMMAND [ARGS]...
+$ bcdata --help
 
-    Options:
-      --version  Show the version and exit.
-      --help     Show this message and exit.
+Usage: bcdata [OPTIONS] COMMAND [ARGS]...
 
-    Commands:
-      bc2pg  Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
-      cat    Write DataBC features to stdout as GeoJSON feature objects.
-      dem    Dump BC DEM to TIFF
-      dump   Write DataBC features to stdout as GeoJSON feature collection.
-      info   Print basic metadata about a DataBC WFS layer as JSON.
-      list   List DataBC layers available via WFS
+Options:
+  --version  Show the version and exit.
+  --help     Show this message and exit.
 
+Commands:
+  bc2pg  Download a DataBC WFS layer to postgres
+  cat    Write DataBC features to stdout as GeoJSON feature objects.
+  dem    Dump BC DEM to TIFF
+  dump   Write DataBC features to stdout as GeoJSON feature collection.
+  info   Print basic metadata about a DataBC WFS layer as JSON.
+  list   List DataBC layers available via WFS
+```
 
-#### `list`
+#### bc2pg
 
-    $ bcdata list --help
-    Usage: bcdata list [OPTIONS]
+```
+$ bcdata bc2pg --help
 
-      List DataBC layers available via WFS
+Usage: bcdata bc2pg [OPTIONS] DATASET
 
-    Options:
-      -r, --refresh  Refresh the cached list
-      --help         Show this message and exit.
+  Download a DataBC WFS layer to postgres
 
+   $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
 
-#### `info`
+Options:
+  -db, --db_url TEXT      Target database url, defaults to $DATABASE_URL
+                          environment variable if set
+  --table TEXT            Destination table name
+  --schema TEXT           Destination schema name
+  --query TEXT            A valid CQL or ECQL query
+  -c, --count INTEGER     Total number of features to load
+  -p, --pagesize INTEGER  Maximum request size
+  -k, --primary_key TEXT  Primary key of dataset
+  -s, --schema_only       Dump only the object definitions (schema), not data
+  -a, --append            Append to existing table
+  -t, --no_timestamp      Do not add download timestamp to bcdata meta table
+  -v, --verbose           Increase verbosity.
+  -q, --quiet             Decrease verbosity.
+  --help                  Show this message and exit.
+```
 
-    $ bcdata info --help
-    Usage: bcdata info [OPTIONS] DATASET
+#### cat
 
-      Print basic metadata about a DataBC WFS layer as JSON.
+```
+$ bcdata cat --help
 
-      Optionally print a single metadata item as a string.
+Usage: bcdata cat [OPTIONS] DATASET
 
-    Options:
-      --indent INTEGER  Indentation level for JSON output
-      --count           Print the count of features.
-      --name            Print the datasource's name.
-      --help            Show this message and exit.
+  Write DataBC features to stdout as GeoJSON feature objects.
 
+Options:
+  --query TEXT                    A valid CQL or ECQL query
+  --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                  bottom, right, top]". Coordinates are BC
+                                  Albers (default) or --bounds_crs
+  --indent INTEGER                Indentation level for JSON output
+  --compact / --not-compact       Use compact separators (',', ':').
+  --dst-crs, --dst_crs TEXT       Destination CRS
+  -p, --pagesize INTEGER          Maximum request size
+  -s, --sortby TEXT               Name of sort field
+  --bounds-crs, --bounds_crs TEXT
+                                  CRS of provided bounds
+  -w, --max_workers INTEGER       Max number of concurrent requests
+  -v, --verbose                   Increase verbosity.
+  -q, --quiet                     Decrease verbosity.
+  --help                          Show this message and exit.
+```
 
-#### `dump`
+#### dem 
 
-    $ bcdata dump --help
-    Usage: bcdata dump [OPTIONS] DATASET
+```
+$ bcdata dem --help
 
-      Write DataBC features to stdout as GeoJSON feature collection.
+Usage: bcdata dem [OPTIONS]
 
-        $ bcdata dump bc-airports
-        $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
-        $ bcdata dump bc-airports --bounds xmin ymin xmax ymax
+  Dump BC DEM to TIFF
 
-       It can also be combined to read bounds of a feature dataset using Fiona:
-         $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
+Options:
+  -o, --out_file TEXT             Output file
+  --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                  bottom, right, top]". Coordinates are BC
+                                  Albers (default) or --bounds_crs  [required]
+  --dst-crs, --dst_crs TEXT       Destination CRS
+  --bounds-crs, --bounds_crs TEXT
+                                  CRS of provided bounds
+  -r, --resolution INTEGER
+  -a, --align                     Align provided bounds to provincial standard
+  -i, --interpolation [nearest|bilinear|bicubic]
+  -v, --verbose                   Increase verbosity.
+  -q, --quiet                     Decrease verbosity.
+  --help                          Show this message and exit.
+```
 
-    Options:
-      --query TEXT                    A valid CQL or ECQL query, quote enclosed (h
-                                      ttps://docs.geoserver.org/stable/en/user/tut
-                                      orials/cql/cql_tutorial.html)
-      -o, --out_file TEXT             Output file
-      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
-                                      bottom, right, top]". Coordinates are BC
-                                      Albers (default) or --bounds_crs
-      --bounds-crs, --bounds_crs TEXT
-                                      CRS of provided bounds
-      -v, --verbose                   Increase verbosity.
-      -q, --quiet                     Decrease verbosity.
-      --help                          Show this message and exit.
+#### dump 
 
-#### `cat`
+```
+$ bcdata dump --help
 
-    $ bcdata cat --help
-    Usage: bcdata cat [OPTIONS] DATASET
+Usage: bcdata dump [OPTIONS] DATASET
 
-      Write DataBC features to stdout as GeoJSON feature objects.
+  Write DataBC features to stdout as GeoJSON feature collection.
 
-    Options:
-      --query TEXT                    A valid `CQL` or `ECQL` query (https://docs.
-                                      geoserver.org/stable/en/user/tutorials/cql/c
-                                      ql_tutorial.html)
-      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
-                                      bottom, right, top]". Coordinates are BC
-                                      Albers (default) or --bounds_crs
-      --indent INTEGER                Indentation level for JSON output
-      --compact / --not-compact       Use compact separators (',', ':').
-      --dst-crs, --dst_crs TEXT       Destination CRS.
-      -p, --pagesize INTEGER          Max number of records to request
-      -s, --sortby TEXT               Name of sort field
-      --bounds-crs, --bounds_crs TEXT
-                                      CRS of provided bounds
-      -w, --max_workers INTEGER       Max number of concurrent requests
-      -v, --verbose                   Increase verbosity.
-      -q, --quiet                     Decrease verbosity.
-      --help                          Show this message and exit.
+    $ bcdata dump bc-airports
+    $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
+    $ bcdata dump bc-airports --bounds xmin ymin xmax ymax
 
+   It can also be combined to read bounds of a feature dataset using Fiona: 
+   $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
 
-#### `dem`
+Options:
+  --query TEXT                    A valid CQL or ECQL query
+  -o, --out_file TEXT             Output file
+  --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                  bottom, right, top]". Coordinates are BC
+                                  Albers (default) or --bounds_crs
+  --bounds-crs, --bounds_crs TEXT
+                                  CRS of provided bounds
+  -v, --verbose                   Increase verbosity.
+  -q, --quiet                     Decrease verbosity.
+  --help                          Show this message and exit.
+```
 
-    $ bcdata dem --help
-    Usage: bcdata dem [OPTIONS]
+#### info
 
-      Dump BC DEM to TIFF
+```
+$ bcdata info --help
 
-    Options:
-      -o, --out_file TEXT             Output file
-      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
-                                      bottom, right, top]". Coordinates are BC
-                                      Albers (default) or --bounds_crs  [required]
-      --dst-crs, --dst_crs TEXT       Destination CRS.
-      --bounds-crs, --bounds_crs TEXT
-                                      CRS of provided bounds
-      -r, --resolution INTEGER
-      -v, --verbose                   Increase verbosity.
-      -q, --quiet                     Decrease verbosity.
-      --help                          Show this message and exit.
+Usage: bcdata info [OPTIONS] DATASET
 
+  Print basic metadata about a DataBC WFS layer as JSON.
 
-#### `bc2pg`
+  Optionally print a single metadata item as a string.
+
+Options:
+  --indent INTEGER  Indentation level for JSON output
+  --count           Print the count of features.
+  --name            Print the table name of the dateset.
+  -v, --verbose     Increase verbosity.
+  -q, --quiet       Decrease verbosity.
+  --help            Show this message and exit.
+```
+
+#### list
+
+```
+$ bcdata list --help
+
+Usage: bcdata list [OPTIONS]
+
+  List DataBC layers available via WFS
+
+Options:
+  -r, --refresh  Refresh the cached list
+  --help         Show this message and exit.
+```
+
+#### CLI notes
 
 Note that `bc2pg` creates `public.bcdata` as a meta table tracking the most recent download date for each layer downloaded.
 Disable with the switch `--no_timestamp` if you do not wish to create this table or do not have access to `public` schema.
 
-    $ bcdata bc2pg --help
-      Usage: bcdata bc2pg [OPTIONS] DATASET
-
-      Download a DataBC WFS layer to postgres - an ogr2ogr wrapper.
-
-         $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
-
-      The default target database can be specified by setting the $DATABASE_URL
-      environment variable.
-      https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
-
-    Options:
-      -db, --db_url TEXT              SQLAlchemy database url
-      --table TEXT                    Destination table name
-      --schema TEXT                   Destination schema name
-      --query TEXT                    A valid `CQL` or `ECQL` query (https://docs.
-                                      geoserver.org/stable/en/user/tutorials/cql/c
-                                      ql_tutorial.html)
-      --bounds TEXT                   Bounds: "left bottom right top" or "[left,
-                                      bottom, right, top]". Coordinates are BC
-                                      Albers (default) or --bounds_crs
-      --bounds-crs, --bounds_crs TEXT
-                                      CRS of provided bounds
-      -p, --pagesize INTEGER          Max number of records to request
-      -w, --max_workers INTEGER       Max number of concurrent requests
-      --dim TEXT                      Force the coordinate dimension to val (valid
-                                      values are XY, XYZ)
-      --fid TEXT                      Primary key of dataset
-      --append                        Append data to existing table
-      --promote_to_multi              Promote features to multipart
-      --no_timestamp                  Do not add download timestamp to bcdata meta
-                                      table
-      --makevalid                     run OGR's MakeValid() to ensure geometries
-                                      are valid simple features
-      -v, --verbose                   Increase verbosity.
-      -q, --quiet                     Decrease verbosity.
-      --help                          Show this message and exit.
-
-When was a table last downloaded?
+Example of a record in `public.bcdata`:
 
 ```
 mydb=# select * from bcdata;
@@ -312,7 +315,7 @@ Save a layer to a geopackage in BC Albers:
       | fio collect \
       | fio load -f GPKG --dst-crs EPSG:3005 airports.gpkg
 
-Load a couple of layer to postgres and run a query:
+Load data to postgres and run a spatial query:
 
     $ bcdata bc2pg bc-airports \
         --db_url postgresql://postgres:postgres@localhost:5432/postgis
@@ -332,7 +335,6 @@ Load a couple of layer to postgres and run a query:
      Victoria Inner Harbour Airport (Victoria Harbour Water Airport)
      Victoria Harbour (Shoal Point) Heliport
     (3 rows)
-
 
 ## Projections / CRS
 

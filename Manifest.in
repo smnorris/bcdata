@@ -2,5 +2,5 @@ global-exclude .DS_Store
 global-exclude *.pyc
 exclude MANIFEST.in
 recursive-include tests *.py
-include CHANGES.txt LICENSE.txt README.rst
+include CHANGES.txt LICENSE.txt README.md
 include requirements.txt

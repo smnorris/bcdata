@@ -1,34 +1,22 @@
-import os
-from urllib.parse import urlparse
 import logging
+import os
 
 import psycopg2
 from psycopg2 import sql
+from sqlalchemy import MetaData, Table, Column
+from geoalchemy2 import Geometry
+from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import DATE, NUMERIC, VARCHAR
 
 log = logging.getLogger(__name__)
 
 
 class Database(object):
-    """A simple wrapper around a psycopg connection"""
+    """Wrapper around psycopg2 and sqlachemy"""
 
     def __init__(self, url=os.environ.get("DATABASE_URL")):
         self.url = url
-        u = urlparse(url)
-        db, user, password, host, port = (
-            u.path[1:],
-            u.username,
-            u.password,
-            u.hostname,
-            u.port,
-        )
-        self.database = db
-        self.user = user
-        self.password = password
-        self.host = host
-        self.port = u.port
-        self.ogr_string = f"PG:host={host} user={user} dbname={db} port={port}"
-        if self.password:
-            self.ogr_string = self.ogr_string + f" password={password}"
+        self.engine = create_engine(url)
         self.conn = psycopg2.connect(url)
         # make sure postgis is available
         try:
@@ -36,6 +24,13 @@ class Database(object):
         except psycopg2.errors.UndefinedFunction:
             log.error("Cannot find PostGIS, is extension added to database %s ?", url)
             raise psycopg2.errors.UndefinedFunction
+
+        # supported oracle/wfs to postgres types
+        self.supported_types = {
+            "NUMBER": NUMERIC,
+            "VARCHAR2": VARCHAR,
+            "DATE": DATE,
+        }
 
     @property
     def schemas(self):
@@ -81,27 +76,100 @@ class Database(object):
             with self.conn.cursor() as curs:
                 curs.executemany(sql, params)
 
-    def drop_pk(self, schema, table, column):
-        """drop primary key constraint for given table"""
-        dbq = sql.SQL(
-            """
-            ALTER TABLE {schema}.{table}
-            ALTER COLUMN {column} DROP DEFAULT
-            """
-        ).format(
-            schema=sql.Identifier(schema),
-            table=sql.Identifier(table),
-            column=sql.Identifier(column),
+    def create_schema(self, schema):
+        if schema not in self.schemas:
+            log.info(f"Schema {schema} does not exist, creating it")
+            dbq = sql.SQL("CREATE SCHEMA {schema}").format(
+                schema=sql.Identifier(schema)
+            )
+            self.execute(dbq)
+
+    def drop_table(self, schema, table):
+        if schema + "." + table in self.tables:
+            log.info(f"Dropping table {schema}.{table}")
+            dbq = sql.SQL("DROP TABLE {schema}.{table}").format(
+                schema=sql.Identifier(schema),
+                table=sql.Identifier(table),
+            )
+            self.execute(dbq)
+
+    def define_table(
+        self,
+        schema_name,
+        table_name,
+        table_details,
+        table_comments,
+        geom_type,
+        primary_key=None,
+        append=False,
+    ):
+        """build sqlalchemy table definition from bcdc provided json definitions"""
+        # remove columns of unsupported types, redundant columns
+        table_details = [
+            c for c in table_details if c["data_type"] in self.supported_types.keys()
+        ]
+        table_details = [
+            c
+            for c in table_details
+            if c["column_name"] not in ["FEATURE_AREA_SQM", "FEATURE_LENGTH_M"]
+        ]
+
+        # translate the oracle types to sqlalchemy provided postgres types
+        columns = []
+        for i in range(len(table_details)):
+            column_name = table_details[i]["column_name"].lower()
+            column_type = self.supported_types[table_details[i]["data_type"]]
+            # append precision if varchar or numeric
+            if table_details[i]["data_type"] in ["VARCHAR2", "NUMBER"]:
+                column_type = column_type(int(table_details[i]["data_precision"]))
+            # check that comments are present
+            if "column_comments" in table_details[i].keys():
+                column_comments = table_details[i]["column_comments"]
+            else:
+                column_comments = None
+            if column_name == primary_key:
+                columns.append(
+                    Column(
+                        column_name,
+                        column_type,
+                        primary_key=True,
+                        comment=column_comments,
+                    )
+                )
+            else:
+                columns.append(
+                    Column(
+                        column_name,
+                        column_type,
+                        comment=column_comments,
+                    )
+                )
+
+        # make everything multipart
+        # (some datasets have mixed singlepart/multipart geometries)
+        if geom_type in ["POINT", "LINESTRING", "POLYGON"]:
+            geom_type = "MULTI" + geom_type
+        columns.append(Column("geom", Geometry(geom_type, srid=3005)))
+        meta = MetaData(bind=self.engine)
+        table = Table(
+            table_name,
+            meta,
+            *columns,
+            comment=table_comments,
+            schema=schema_name,
         )
-        self.execute(dbq)
-        dbq = sql.SQL(
-            """
-            ALTER TABLE {schema}.{table}
-            DROP CONSTRAINT IF EXISTS {constraint}
-            """
-        ).format(
-            schema=sql.Identifier(schema),
-            table=sql.Identifier(table),
-            constraint=sql.Identifier(table + "_pkey"),
-        )
-        self.execute(dbq)
+
+        if schema_name not in self.schemas:
+            self.create_schema(schema_name)
+
+        # drop existing table if append is not flagged
+        if schema_name + "." + table_name in self.tables and not append:
+            log.info("Table {schema_name}.{table_name} exists, overwriting")
+            self.drop_table(schema_name, table_name)
+
+        # create the table
+        if schema_name + "." + table_name not in self.tables:
+            log.info("Creating table {schema_name}.{table_name}")
+            table.create()
+
+        return table

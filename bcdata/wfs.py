@@ -3,9 +3,9 @@ from datetime import timedelta
 import json
 import logging
 import math
-import os
 from pathlib import Path
-from urllib.parse import urlparse
+import os
+from urllib.parse import urlencode
 import sys
 import warnings
 import xml.etree.ElementTree as ET
@@ -15,8 +15,8 @@ from owslib.wfs import WebFeatureService
 import requests
 import geopandas as gpd
 
-import bcdata
 
+import bcdata
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -58,35 +58,12 @@ def check_cache(path):
             return False
 
 
-def get_table_name(package):
-    """Query DataBC API to find WFS table/layer name for given package"""
-    package = package.lower()  # package names are lowercase
-    params = {"id": package}
-    r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
-    if r.status_code != 200:
-        raise ValueError("{d} is not present in DataBC API list".format(d=package))
-    result = r.json()["result"]
-    # Because the object_name in the result json is not a 100% reliable key
-    # for WFS requests, parse URL in WMS resource(s).
-    # Also, some packages may have >1 WFS layer - if this is the case, bail
-    # and provide user with a list of layers
-    layer_urls = [r["url"] for r in result["resources"] if r["format"] == "wms"]
-    layer_names = [urlparse(l).path.split("/")[3] for l in layer_urls]
-    if len(layer_names) > 1:
-        raise ValueError(
-            "Package {} includes more than one WFS resource, specify one of the following: \n{}".format(
-                package, "\n".join(layer_names)
-            )
-        )
-    return layer_names[0]
-
-
 def validate_name(dataset):
     """Check wfs/cache and the bcdc api to see if dataset name is valid"""
     if dataset.upper() in list_tables():
         return dataset.upper()
     else:
-        return get_table_name(dataset.upper())
+        return bcdata.get_table_name(dataset.upper())
 
 
 def list_tables(refresh=False, cache_file=None):
@@ -133,10 +110,10 @@ def get_count(dataset, query=None):
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
-def make_request(parameters):
+def make_request(url):
     """Submit a getfeature request to DataBC WFS and return features"""
     try:
-        r = requests.get(bcdata.WFS_URL, params=parameters)
+        r = requests.get(url)
         log.info(r.url)
         r.raise_for_status()  # check status code is 200
     except requests.exceptions.HTTPError as err:  # fail if not 200
@@ -145,16 +122,18 @@ def make_request(parameters):
     return r.json()["features"]  # return features if status code is 200
 
 
-def define_request(
+def define_requests(
     dataset,
     query=None,
     crs="epsg:4326",
     bounds=None,
     bounds_crs="EPSG:3005",
+    count=None,
     sortby=None,
     pagesize=10000,
 ):
-    """Define the getfeature request parameters required to download a dataset
+    """Translate provided parameters into a list of WFS request URLs required
+    to download the dataset as specified
 
     References:
     - http://www.opengeospatial.org/standards/wfs
@@ -164,7 +143,11 @@ def define_request(
     # validate the table name and find out how many features it holds
     table = validate_name(dataset)
     n = bcdata.get_count(table, query=query)
-    log.info(f"Total features requested: {n}")
+    # if count not provided or if it is greater than n of total features,
+    # set count to number of features
+    if not count or count > n:
+        count = n
+    log.info(f"Total features requested: {count}")
     wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
     geom_column = wfs.get_schema("pub:" + table)["geometry_column"]
 
@@ -174,14 +157,14 @@ def define_request(
     # But I do not see any next uri in the responses. Instead of following
     # the paged urls, for datasets with >10k records, just generate urls
     # based on number of features in the dataset.
-    chunks = math.ceil(n / pagesize)
+    chunks = math.ceil(count / pagesize)
 
     # if making several requests, we need to sort by something
     if chunks > 1 and not sortby:
         sortby = get_sortkey(table)
 
     # build the request parameters for each chunk
-    param_dicts = []
+    urls = []
     for i in range(chunks):
         request = {
             "service": "WFS",
@@ -192,7 +175,7 @@ def define_request(
             "SRSNAME": crs,
         }
         if sortby:
-            request["sortby"] = sortby
+            request["sortby"] = sortby.upper()
         # build the CQL based on query and bounds
         # (the bbox param shortcut is mutually exclusive with CQL_FILTER)
         if query and not bounds:
@@ -204,12 +187,16 @@ def define_request(
                 request["CQL_FILTER"] = bnd_query
             else:
                 request["CQL_FILTER"] = query + " AND " + bnd_query
-
+        if chunks == 1:
+            request["count"] = count
         if chunks > 1:
             request["startIndex"] = i * pagesize
-            request["count"] = pagesize
-        param_dicts.append(request)
-    return param_dicts
+            if count < (request["startIndex"] + pagesize):
+                request["count"] = count - request["startIndex"]
+            else:
+                request["count"] = pagesize
+        urls.append(bcdata.WFS_URL + "?" + urlencode(request, doseq=True))
+    return urls
 
 
 def get_data(
@@ -218,23 +205,25 @@ def get_data(
     crs="epsg:4326",
     bounds=None,
     bounds_crs="epsg:3005",
+    count=None,
     sortby=None,
     pagesize=10000,
     max_workers=2,
     as_gdf=False,
 ):
     """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS"""
-    param_dicts = define_request(
+    urls = define_requests(
         dataset,
         query=query,
         crs=crs,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        count=count,
         sortby=sortby,
         pagesize=pagesize,
     )
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        results = executor.map(make_request, param_dicts)
+        results = executor.map(make_request, urls)
 
     outjson = dict(type="FeatureCollection", features=[])
     for result in results:
@@ -260,39 +249,55 @@ def get_features(
     crs="epsg:4326",
     bounds=None,
     bounds_crs="epsg:3005",
+    count=None,
     sortby=None,
     pagesize=10000,
     max_workers=2,
 ):
     """Yield features from DataBC WFS"""
-    param_dicts = define_request(
+    urls = define_requests(
         dataset,
         query=query,
         crs=crs,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        count=count,
         sortby=sortby,
         pagesize=pagesize,
     )
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for result in executor.map(make_request, param_dicts):
+        for result in executor.map(make_request, urls):
             for feature in result:
                 yield feature
 
 
-def get_type(dataset):
-    """Request a single feature and return geometry type"""
+def get_types(dataset, count=10):
+    """Return distinct types within the first n features"""
     # validate the table name
     table = validate_name(dataset)
-    parameters = {
-        "service": "WFS",
-        "version": "2.0.0",
-        "request": "GetFeature",
-        "typeName": table,
-        "outputFormat": "json",
-        "count": 1,
-    }
-    r = requests.get(bcdata.WFS_URL, params=parameters)
-    log.debug(r.url)
-    # return the feature type
-    return r.json()["features"][0]["geometry"]["type"]
+    log.info("Getting feature geometry type")
+    # get features and find distinct types where geom is not empty
+    geom_types = list(
+        set(
+            [
+                f["geometry"]["type"].upper()
+                for f in get_features(table, count=count)
+                if f["geometry"]
+            ]
+        )
+    )
+    if len(geom_types) > 1:
+        typestring = ",".join(geom_types)
+        log.warning(f"Dataset {dataset} has multiple geometry types: {typestring}")
+    # validate the type (shouldn't be necessary)
+    for geom_type in geom_types:
+        if geom_type not in (
+            "POINT",
+            "LINESTRING",
+            "POLYGON",
+            "MULTIPOINT",
+            "MULTILINESTRING",
+            "MULTIPOLYGON",
+        ):
+            raise ValueError("Geometry type {geomtype} is not supported")
+    return geom_types

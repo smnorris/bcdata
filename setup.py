@@ -23,7 +23,7 @@ with open("README.md", encoding="utf-8") as f:
 setup(
     name="bcdata",
     version=version,
-    description=u"Python tools for quick access to DataBC geo-data available via WFS",
+    description="Python tools for quick access to DataBC geo-data available via WFS",
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
@@ -31,21 +31,22 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering :: GIS",
     ],
     keywords='gis geospatial data BC DataBC download "Britsh Columbia"',
-    author=u"Simon Norris",
+    author="Simon Norris",
     author_email="snorris@hillcrestgeo.ca",
     url="https://github.com/smnorris/bcdata",
     license="Apache",
     packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
     include_package_data=True,
     zip_safe=False,
-    install_requires=read('requirements.txt').splitlines(),
-    extras_require={"test": ["pytest>=3", "rasterio"]},
+    install_requires=read("requirements.txt").splitlines(),
+    extras_require={"test": ["pytest>=3"]},
     entry_points="""
       [console_scripts]
       bcdata=bcdata.cli:cli

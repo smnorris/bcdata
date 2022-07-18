@@ -1,6 +1,26 @@
 Changes
 =======
 
+0.7.0 (2022-07-18)
+------------------
+- bcdata.define_request function renamed to define_requests, returns list of
+  parsed urls rather than a list of request parameter dictionaries  - this makes
+  it easy to interactively generate request urls for geopandas/debugging/other
+- new bc2pg Python module/function
+    + general purpose loading tool
+    + output table column types and comments are as specified in BC Data
+      Catalogue API
+    + data loads are via sqlalchemy/geopandas
+    + schema_only option included for creation of empty tables
+    + all features are promoted to multipart
+    + BC Albers only, no re-projection support
+- updated bc2pg command line tool
+    + uses new bc2pg Python function (no longer an ogr2ogr wrapper)
+    + fid option renamed to primary_key
+    + new option --schema_only
+    + options removed: bounds,bounds_crs,max_workers,dim,promote_to_multi,makevalid
+- added a count option to most functions/commands for downloading only n records
+
 0.6.3 (2022-06-08)
 ------------------
 - add --max_workers option to bcdata cat
