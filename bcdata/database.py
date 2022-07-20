@@ -164,12 +164,12 @@ class Database(object):
 
         # drop existing table if append is not flagged
         if schema_name + "." + table_name in self.tables and not append:
-            log.info("Table {schema_name}.{table_name} exists, overwriting")
+            log.info(f"Table {schema_name}.{table_name} exists, overwriting")
             self.drop_table(schema_name, table_name)
 
         # create the table
         if schema_name + "." + table_name not in self.tables:
-            log.info("Creating table {schema_name}.{table_name}")
+            log.info(f"Creating table {schema_name}.{table_name}")
             table.create()
 
         return table
