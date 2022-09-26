@@ -89,6 +89,11 @@ def test_get_data_paged_count():
     assert len(data["features"]) == 300
 
 
+def test_get_data_sortby():
+    data = bcdata.get_data(AIRPORTS_TABLE, count=1, sortby="AIRPORT_NAME")
+    assert data["features"][0]["properties"]["AIRPORT_NAME"] == "100 Mile House Airport"
+
+
 def test_cql_filter():
     data = bcdata.get_data(
         AIRPORTS_TABLE,

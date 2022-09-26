@@ -173,3 +173,9 @@ class Database(object):
             table.create()
 
         return table
+
+    def get_columns(self, schema, table):
+        metadata = MetaData(schema=schema)
+        metadata.bind = self.engine
+        table = Table(table, metadata, schema=schema, autoload=True)
+        return list(table.columns.keys())

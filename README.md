@@ -21,7 +21,7 @@ This Python module and CLI attempts to simplify downloads of BC geographic data 
 ### conda
 
 `bcdata` has several dependencies that may not easily be installed via `pip` (`gdal`, `fiona`, `geopandas`, `rasterio`)
-Installing via `miniconda`, the [conda package manager](https://conda.io/en/latest/miniconda.html) is recommended on Windows or if do not wish to install these dependencies yourself.  Once `conda` is installed, download the provided `environment.yml` file to your system, open the `Anaconda Prompt` command line from the start menu, navigate to the folder where you saved `environment.yml` and create/actvate the environment.
+Installing via `miniconda`, the [conda package manager](https://conda.io/en/latest/miniconda.html) is recommended on Windows or if you do not wish to install these dependencies yourself.  Once `conda` is installed, download the provided `environment.yml` file to your system, open the `Anaconda Prompt` command line from the start menu, navigate to the folder where you saved `environment.yml` and create/actvate the environment.
 
     conda env create -f environment.yml
     conda activate bcdataenv

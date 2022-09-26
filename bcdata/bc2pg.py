@@ -37,33 +37,41 @@ def bc2pg(
         schema_name = schema.lower()
     if table:
         table_name = table.lower()
-    table_comments, table_details = bcdata.get_table_definition(dataset)
-    # find geometry type(s) in first 10 records and take the first one
-    geom_type = bcdata.get_types(dataset, 10)[0]
 
-    # define db connection and connect
+    # connect to target db
     db = Database(db_url)
 
-    # build the table definition and create table if not appending
-    table = db.define_table(
-        schema_name,
-        table_name,
-        table_details,
-        table_comments,
-        geom_type,
-        primary_key,
-        append,
-    )
-    column_names = [c.name for c in table.columns]
+    # if appending, get column names from db
+    if append:
+        # make sure table actually exists
+        if dataset.lower() not in db.tables:
+            raise ValueError(f"{dataset} does not exist, nothing to append to")
+        column_names = db.get_columns(schema_name, table_name)
+
+    # if not appending, define and create table
+    else:
+        # get info about the table from catalouge
+        table_comments, table_details = bcdata.get_table_definition(dataset)
+        # find geometry type(s) in first 10 records and take the first one
+        geom_type = bcdata.get_types(dataset, 10)[0]
+
+        # build the table definition and create table
+        table = db.define_table(
+            schema_name,
+            table_name,
+            table_details,
+            table_comments,
+            geom_type,
+            primary_key,
+            append,
+        )
+        column_names = [c.name for c in table.columns]
 
     # check if column provided in sortby option is present in dataset
     if sortby and sortby.lower() not in column_names:
         raise ValueError(
             f"Specified sortby column {sortby} is not present in {dataset}"
         )
-
-    if append and dataset.lower() not in db.tables:
-        raise ValueError(f"{dataset} does not exist, nothing to append to")
 
     # load the data
     if not schema_only:

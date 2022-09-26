@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.7.1 (2022-09-26)
+------------------
+- bc2pg - add missing --sortby option
+- bc2pg - better --append checks
+
 0.7.0 (2022-07-18)
 ------------------
 - bcdata.define_request function renamed to define_requests, returns list of
