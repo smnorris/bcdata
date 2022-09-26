@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.7.2 (2022-09-26)
+------------------
+- bc2pg - handle geometries with Z values (#114)
+
 0.7.1 (2022-09-26)
 ------------------
 - bc2pg - add missing --sortby option

@@ -277,14 +277,9 @@ def get_types(dataset, count=10):
     table = validate_name(dataset)
     log.info("Getting feature geometry type")
     # get features and find distinct types where geom is not empty
+    features = [f for f in get_features(table, count=count)]
     geom_types = list(
-        set(
-            [
-                f["geometry"]["type"].upper()
-                for f in get_features(table, count=count)
-                if f["geometry"]
-            ]
-        )
+        set([f["geometry"]["type"].upper() for f in features if f["geometry"]])
     )
     if len(geom_types) > 1:
         typestring = ",".join(geom_types)
@@ -300,4 +295,28 @@ def get_types(dataset, count=10):
             "MULTIPOLYGON",
         ):
             raise ValueError("Geometry type {geomtype} is not supported")
+    # if Z coordinates are supplied, modify the type accordingly
+    # (presuming that all )
+    # (points and lines only, presumably there are no 3d polygon features)
+    for i in range(len(geom_types)):
+        if (
+            geom_types[i] == "POINT"
+            and len(features[0]["geometry"]["coordinates"]) == 3
+        ):
+            geom_types[i] = "POINTZ"
+        if (
+            geom_types[i] == "MULTIPOINT"
+            and len(features[0]["geometry"]["coordinates"][0]) == 3
+        ):
+            geom_types[i] = "POINTZ"
+        if (
+            geom_types[i] == "LINESTRING"
+            and len(features[0]["geometry"]["coordinates"][0]) == 3
+        ):
+            geom_types[i] = "LINESTRINGZ"
+        if (
+            geom_types[i] == "MULTILINESTRING"
+            and len(features[0]["geometry"]["coordinates"][0][0]) == 3
+        ):
+            geom_types[i] = "MULTILINESTRINGZ"
     return geom_types
