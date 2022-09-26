@@ -13,6 +13,7 @@ UTMZONES_KEY = "utm-zones-of-british-columbia"
 BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 GLACIERS_TABLE = "whse_basemapping.fwa_glaciers_poly"
+STREAMS_TABLE = "whse_basemapping.fwa_stream_networks_sp"
 
 
 def test_validate_table_lowercase():
@@ -67,6 +68,11 @@ def test_get_types():
 def test_get_mixed_types():
     data = bcdata.get_types(GLACIERS_TABLE, 100)
     assert len(data) == 2
+
+
+def test_get_types_z():
+    data = bcdata.get_types(STREAMS_TABLE)
+    assert data[0] == "LINESTRINGZ"
 
 
 def test_get_features():
