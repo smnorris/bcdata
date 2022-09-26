@@ -10,6 +10,7 @@ TERRACE_QUERY = "AIRPORT_NAME='Terrace (Northwest Regional) Airport'"
 VICTORIA_QUERY = "Victoria Harbour (Camel Point) Heliport"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 TENURES_TABLE = "whse_tantalis.ta_crown_tenures_svw"
+STREAMS_TABLE = "whse_basemapping.fwa_stream_networks_sp"
 
 
 def test_bc2pg():
@@ -38,6 +39,18 @@ def test_bc2pg_schema():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema="testschema")
     assert "testschema.gsr_airports_svw" in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop schema testschema cascade")
+
+
+def test_bc2pg_z():
+    bcdata.bc2pg(STREAMS_TABLE, DB_URL, query="WATERSHED_GROUP_CODE='VICT'")
+    assert STREAMS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query(
+        """
+        SELECT ST_NDims(geom) from whse_basemapping.fwa_stream_networks_sp limit 1
+        """
+    )
+    assert r[0][0] == 3
+    DB_CONNECTION.execute("drop table " + STREAMS_TABLE)
 
 
 def test_bc2pg_primary_key():
