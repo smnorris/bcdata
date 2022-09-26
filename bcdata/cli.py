@@ -303,6 +303,7 @@ def cat(
 )
 @click.option("--pagesize", "-p", default=10000, help="Maximum request size")
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
+@click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--schema_only",
     "-s",
@@ -332,6 +333,7 @@ def bc2pg(
     count,
     pagesize,
     primary_key,
+    sortby,
     no_timestamp,
     schema_only,
     append,
@@ -358,6 +360,7 @@ def bc2pg(
         count=count,
         pagesize=pagesize,
         primary_key=primary_key,
+        sortby=sortby,
         timestamp=True,
         schema_only=schema_only,
         append=append,
