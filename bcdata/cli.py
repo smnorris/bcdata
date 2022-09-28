@@ -350,7 +350,10 @@ def bc2pg(
     log_level = max(10, 20 - 10 * verbosity)
     logging.basicConfig(stream=sys.stderr, level=log_level)
     log = logging.getLogger(__name__)
-
+    if no_timestamp:
+        timestamp = False
+    else:
+        timestamp = True
     out_table = bcdata.bc2pg(
         dataset,
         db_url,
@@ -361,7 +364,7 @@ def bc2pg(
         pagesize=pagesize,
         primary_key=primary_key,
         sortby=sortby,
-        timestamp=True,
+        timestamp=timestamp,
         schema_only=schema_only,
         append=append,
     )

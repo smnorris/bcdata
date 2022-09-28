@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.7.4 ()
+------------------
+- bc2pg - fix #116, -t --no_timestamp option now recognized
+
 0.7.3 (2022-09-26)
 ------------------
 - bc2pg - fully handle geometries with Z values (#114) and add a test to check
