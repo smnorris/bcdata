@@ -120,7 +120,7 @@ class Database(object):
             column_name = table_details[i]["column_name"].lower()
             column_type = self.supported_types[table_details[i]["data_type"]]
             # append precision if varchar or numeric
-            if table_details[i]["data_type"] in ["VARCHAR2", "NUMBER"]:
+            if table_details[i]["data_type"] == "VARCHAR2":
                 column_type = column_type(int(table_details[i]["data_precision"]))
             # check that comments are present
             if "column_comments" in table_details[i].keys():
