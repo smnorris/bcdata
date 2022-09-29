@@ -11,7 +11,7 @@ from .bc2pg import bc2pg
 from .wcs import get_dem
 
 
-__version__ = "0.7.4dev0"
+__version__ = "0.7.4"
 
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
 WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
