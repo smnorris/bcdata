@@ -106,7 +106,12 @@ def get_count(dataset, query=None):
     }
     if query:
         payload["CQL_FILTER"] = query
-    r = requests.get(bcdata.WFS_URL, params=payload)
+    try:
+        r = requests.get(bcdata.WFS_URL, params=payload)
+        log.debug(r.url)
+        r.raise_for_status()  # check status code is 200
+    except requests.exceptions.HTTPError as err:  # fail if not 200
+        raise SystemExit(err)
     return int(ET.fromstring(r.text).attrib["numberMatched"])
 
 
