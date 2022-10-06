@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.7.5 ()
+------------------
+- better handling of connection errors (#118)
+
 0.7.4 (2022-09-28)
 ------------------
 - bc2pg - option --no_timestamp now recognized (#116)
