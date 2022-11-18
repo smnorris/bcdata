@@ -47,6 +47,11 @@ def test_get_data_asgdf():
     assert type(gdf) == GeoDataFrame
 
 
+def test_get_null_gdf():
+    gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=9999", as_gdf=True)
+    assert type(gdf) == GeoDataFrame
+
+
 def test_get_data_small():
     data = bcdata.get_data(AIRPORTS_TABLE)
     assert data["type"] == "FeatureCollection"

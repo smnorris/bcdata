@@ -86,18 +86,6 @@ def test_bc2pg_filter():
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 
-def test_bc2pg_empty_geometry():
-    bcdata.bc2pg(
-        TENURES_TABLE,
-        DB_URL,
-        query="INTRID_SID=270626",
-    )
-    assert TENURES_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query("select * from whse_tantalis.ta_crown_tenures_svw")
-    assert len(r) == 1
-    DB_CONNECTION.execute("drop table " + TENURES_TABLE)
-
-
 def test_bc2pg_schema_only():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
