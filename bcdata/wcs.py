@@ -8,6 +8,8 @@ import bcdata
 
 log = logging.getLogger(__name__)
 
+WCS_URL = "https://openmaps.gov.bc.ca/om/wcs"
+
 
 def align_bounds(bounds):
     """
@@ -84,7 +86,7 @@ def get_dem(
 
     # request data from WCS
     log.debug(payload)
-    r = requests.get(bcdata.WCS_URL, params=payload)
+    r = requests.get(WCS_URL, params=payload)
 
     # save to tiff
     if r.status_code == 200:

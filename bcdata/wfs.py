@@ -23,11 +23,15 @@ if not sys.warnoptions:
 
 log = logging.getLogger(__name__)
 
+WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
+OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
+
+WFS = WebFeatureService(OWS_URL, version="2.0.0")
+
 
 def get_sortkey(table):
     """Check data for unique columns available for sorting paged requests"""
-    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-    columns = list(wfs.get_schema("pub:" + table)["properties"].keys())
+    columns = list(WFS.get_schema("pub:" + table)["properties"].keys())
     # use OBJECTID as default sort key, if present
     if "OBJECTID" in columns:
         return "OBJECTID"
@@ -81,8 +85,7 @@ def list_tables(refresh=False, cache_file=None):
     # - we force a refresh
     # - the cache is older than 1 day
     if refresh or check_cache(cache_file):
-        wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-        bcdata_objects = [i.strip("pub:") for i in list(wfs.contents)]
+        bcdata_objects = [i.strip("pub:") for i in list(WFS.contents)]
         with open(cache_file, "w") as outfile:
             json.dump(sorted(bcdata_objects), outfile)
     else:
@@ -107,7 +110,7 @@ def get_count(dataset, query=None):
     if query:
         payload["CQL_FILTER"] = query
     try:
-        r = requests.get(bcdata.WFS_URL, params=payload)
+        r = requests.get(WFS_URL, params=payload)
         log.debug(r.url)
         r.raise_for_status()  # check status code is 200
     except requests.exceptions.HTTPError as err:  # fail if not 200
@@ -155,8 +158,7 @@ def define_requests(
     if not count or count > n:
         count = n
     log.info(f"Total features requested: {count}")
-    wfs = WebFeatureService(url=bcdata.OWS_URL, version="2.0.0")
-    geom_column = wfs.get_schema("pub:" + table)["geometry_column"]
+    geom_column = WFS.get_schema("pub:" + table)["geometry_column"]
 
     # DataBC WFS getcapabilities says that it supports paging,
     # and the spec says that responses should include 'next URI'
@@ -202,7 +204,7 @@ def define_requests(
                 request["count"] = count - request["startIndex"]
             else:
                 request["count"] = pagesize
-        urls.append(bcdata.WFS_URL + "?" + urlencode(request, doseq=True))
+        urls.append(WFS_URL + "?" + urlencode(request, doseq=True))
     return urls
 
 

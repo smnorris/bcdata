@@ -5,7 +5,7 @@ Changes
 ------------------
 - better handling of connection errors (#118)
 - correctly handle empty geodataframes (#121)
-
+- use single WebFeatureService() instance
 
 0.7.4 (2022-09-28)
 ------------------

@@ -9,12 +9,14 @@ import bcdata
 
 log = logging.getLogger(__name__)
 
+BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
+
 
 def get_table_name(package):
     """Query DataBC API to find WFS table/layer name for given package"""
     package = package.lower()  # package names are lowercase
     params = {"id": package}
-    r = requests.get(bcdata.BCDC_API_URL + "package_show", params=params)
+    r = requests.get(BCDC_API_URL + "package_show", params=params)
     if r.status_code != 200:
         raise ValueError("{d} is not present in DataBC API list".format(d=package))
     result = r.json()["result"]
@@ -45,7 +47,7 @@ def get_table_definition(table_name):
             f"Only tables available via WFS are supported, {table_name} not found"
         )
     # search the api for the provided table
-    r = requests.get(bcdata.BCDC_API_URL + "package_search", params={"q": table_name})
+    r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
     # catch general api errors
     status_code = r.status_code
     if status_code != 200:
