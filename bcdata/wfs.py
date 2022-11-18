@@ -120,10 +120,12 @@ def make_request(url):
     try:
         r = requests.get(url)
         log.info(r.url)
+        log.debug(r.headers)
         r.raise_for_status()  # check status code is 200
     except requests.exceptions.HTTPError as err:  # fail if not 200
+        print(log.debug(r.headers))
         raise SystemExit(err)
-    log.debug(r.headers)
+
     return r.json()["features"]  # return features if status code is 200
 
 
@@ -243,8 +245,11 @@ def get_data(
             ] = f"""{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}"""
         return outjson
     else:
-        gdf = gpd.GeoDataFrame.from_features(outjson)
-        gdf.crs = {"init": crs}
+        if len(outjson["features"]) > 0:
+            gdf = gpd.GeoDataFrame.from_features(outjson)
+            gdf.crs = {"init": crs}
+        else:
+            gdf = gpd.GeoDataFrame()
         return gdf
 
 
