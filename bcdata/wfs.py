@@ -29,9 +29,9 @@ OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
 WFS = WebFeatureService(OWS_URL, version="2.0.0")
 
 
-def get_sortkey(table):
+def get_sortkey(table, wfs_schema):
     """Check data for unique columns available for sorting paged requests"""
-    columns = list(WFS.get_schema("pub:" + table)["properties"].keys())
+    columns = list(wfs_schema["properties"].keys())
     # use OBJECTID as default sort key, if present
     if "OBJECTID" in columns:
         return "OBJECTID"
@@ -158,8 +158,9 @@ def define_requests(
     if not count or count > n:
         count = n
     log.info(f"Total features requested: {count}")
-    geom_column = WFS.get_schema("pub:" + table)["geometry_column"]
 
+    wfs_schema = WFS.get_schema("pub:" + table)
+    geom_column = wfs_schema["geometry_column"]
     # DataBC WFS getcapabilities says that it supports paging,
     # and the spec says that responses should include 'next URI'
     # (section 7.7.4.4.1)....
@@ -170,7 +171,7 @@ def define_requests(
 
     # if making several requests, we need to sort by something
     if chunks > 1 and not sortby:
-        sortby = get_sortkey(table)
+        sortby = get_sortkey(table, wfs_schema)
 
     # build the request parameters for each chunk
     urls = []
