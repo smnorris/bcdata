@@ -26,8 +26,6 @@ log = logging.getLogger(__name__)
 WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
 
-WFS = WebFeatureService(OWS_URL, version="2.0.0")
-
 
 def get_sortkey(table, wfs_schema):
     """Check data for unique columns available for sorting paged requests"""
@@ -85,6 +83,7 @@ def list_tables(refresh=False, cache_file=None):
     # - we force a refresh
     # - the cache is older than 1 day
     if refresh or check_cache(cache_file):
+        WFS = WebFeatureService(OWS_URL, version="2.0.0")
         bcdata_objects = [i.strip("pub:") for i in list(WFS.contents)]
         with open(cache_file, "w") as outfile:
             json.dump(sorted(bcdata_objects), outfile)
@@ -158,7 +157,7 @@ def define_requests(
     if not count or count > n:
         count = n
     log.info(f"Total features requested: {count}")
-
+    WFS = WebFeatureService(OWS_URL, version="2.0.0")
     wfs_schema = WFS.get_schema("pub:" + table)
     geom_column = wfs_schema["geometry_column"]
     # DataBC WFS getcapabilities says that it supports paging,
