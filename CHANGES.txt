@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.7.7 (2023-04-13)
+------------------
+- add option to lowercasify properties keys / column names (#126)
+
 0.7.6 (2023-02-01)
 ------------------
 - better handling of connection errors (#118)

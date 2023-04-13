@@ -57,6 +57,11 @@ def test_get_data_small():
     assert data["type"] == "FeatureCollection"
 
 
+def test_get_data_lowercase():
+    data = bcdata.get_data(AIRPORTS_TABLE, lowercase=True)
+    assert "airport_name" in data["features"][0]["properties"].keys()
+
+
 def test_get_data_crs():
     data = bcdata.get_data(AIRPORTS_TABLE, crs="EPSG:3005")
     assert (
