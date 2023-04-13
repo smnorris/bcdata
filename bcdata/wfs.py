@@ -219,6 +219,7 @@ def get_data(
     pagesize=10000,
     max_workers=2,
     as_gdf=False,
+    lowercase=False,
 ):
     """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS"""
     urls = define_requests(
@@ -237,6 +238,12 @@ def get_data(
     outjson = dict(type="FeatureCollection", features=[])
     for result in results:
         outjson["features"] += result
+    # if specified, lowercasify all properties
+    if lowercase:
+        for feature in outjson["features"]:
+            feature["properties"] = {
+                k.lower(): v for k, v in feature["properties"].items()
+            }
     if not as_gdf:
         # If output crs is specified, include the crs object in the json
         # But as default, we prefer to default to 4326 and RFC7946 (no crs)
@@ -265,6 +272,7 @@ def get_features(
     sortby=None,
     pagesize=10000,
     max_workers=2,
+    lowercase=False,
 ):
     """Yield features from DataBC WFS"""
     urls = define_requests(
@@ -280,6 +288,10 @@ def get_features(
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for result in executor.map(make_request, urls):
             for feature in result:
+                if lowercase:
+                    feature["properties"] = {
+                        k.lower(): v for k, v in feature["properties"].items()
+                    }
                 yield feature
 
 

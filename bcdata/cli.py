@@ -72,6 +72,10 @@ dst_crs_opt = click.option(
     "--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS"
 )
 
+lowercase_opt = click.option(
+    "--lowercase", "-l", is_flag=True, help="Write column/properties names as lowercase"
+)
+
 
 @click.group()
 @click.version_option(version=bcdata.__version__, message="%(version)s")
@@ -191,9 +195,10 @@ def dem(
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
+@lowercase_opt
 @verbose_opt
 @quiet_opt
-def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
+def dump(dataset, query, out_file, bounds, bounds_crs, lowercase, verbose, quiet):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -209,7 +214,9 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
     verbosity = verbose - quiet
     configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
-    data = bcdata.get_data(table, query=query, bounds=bounds, bounds_crs=bounds_crs)
+    data = bcdata.get_data(
+        table, query=query, bounds=bounds, bounds_crs=bounds_crs, lowercase=lowercase
+    )
     if out_file:
         with open(out_file, "w") as sink:
             sink.write(json.dumps(data))
@@ -239,6 +246,7 @@ def dump(dataset, query, out_file, bounds, bounds_crs, verbose, quiet):
 @click.option(
     "--max_workers", "-w", default=2, help="Max number of concurrent requests"
 )
+@lowercase_opt
 @verbose_opt
 @quiet_opt
 def cat(
@@ -252,6 +260,7 @@ def cat(
     pagesize,
     sortby,
     max_workers,
+    lowercase,
     verbose,
     quiet,
 ):
@@ -276,6 +285,7 @@ def cat(
         crs=dst_crs,
         pagesize=pagesize,
         max_workers=max_workers,
+        lowercase=lowercase,
     ):
         click.echo(json.dumps(feat, **dump_kwds))
 

@@ -153,6 +153,7 @@ Options:
   --bounds-crs, --bounds_crs TEXT
                                   CRS of provided bounds
   -w, --max_workers INTEGER       Max number of concurrent requests
+  -l, --lowercase                 Write column/properties names as lowercase
   -v, --verbose                   Increase verbosity.
   -q, --quiet                     Decrease verbosity.
   --help                          Show this message and exit.
@@ -196,7 +197,7 @@ Usage: bcdata dump [OPTIONS] DATASET
     $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
     $ bcdata dump bc-airports --bounds xmin ymin xmax ymax
 
-   It can also be combined to read bounds of a feature dataset using Fiona: 
+   It can also be combined to read bounds of a feature dataset using Fiona:
    $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
 
 Options:
@@ -207,6 +208,7 @@ Options:
                                   Albers (default) or --bounds_crs
   --bounds-crs, --bounds_crs TEXT
                                   CRS of provided bounds
+  -l, --lowercase                 Write column/properties names as lowercase
   -v, --verbose                   Increase verbosity.
   -q, --quiet                     Decrease verbosity.
   --help                          Show this message and exit.
