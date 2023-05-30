@@ -10,7 +10,7 @@ dependencies:
   - requests
   - owslib
   - rasterio
-  - geopandas
+  - geopandas<0.13
   - psycopg2
   - sqlalchemy<2.0
   - geoalchemy2
