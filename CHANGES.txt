@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.7.8 ()
+------------------
+- pin geopandas requirement to <v0.13 (#129)
+
 0.7.7 (2023-04-13)
 ------------------
 - add option to lowercasify properties keys / column names (#126)
