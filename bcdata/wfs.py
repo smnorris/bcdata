@@ -300,47 +300,42 @@ def get_types(dataset, count=10):
     # validate the table name
     table = validate_name(dataset)
     log.info("Getting feature geometry type")
-    # get features and find distinct types where geom is not empty
-    features = [f for f in get_features(table, count=count)]
-    geom_types = list(
-        set([f["geometry"]["type"].upper() for f in features if f["geometry"]])
-    )
+    # get first n features, examine the feature geometry type (where geometry is not empty)
+    geom_types = []
+    for f in get_features(table, count=count):
+        if f["geometry"]:
+            geom_type = f["geometry"]["type"].upper()
+            # only these geometry types are expected/supported
+            if geom_type not in (
+                "POINT",
+                "LINESTRING",
+                "POLYGON",
+                "MULTIPOINT",
+                "MULTILINESTRING",
+                "MULTIPOLYGON",
+            ):
+                raise ValueError("Geometry type {geomtype} is not supported")
+
+            if (
+                (geom_type == "POINT" and len(f["geometry"]["coordinates"]) == 3)
+                or (
+                    geom_type == "MULTIPOINT"
+                    and len(f["geometry"]["coordinates"][0]) == 3
+                )
+                or (
+                    geom_type == "LINESTRING"
+                    and len(f["geometry"]["coordinates"][0]) == 3
+                )
+                or (
+                    geom_type == "MULTILINESTRING"
+                    and len(f["geometry"]["coordinates"][0][0]) == 3
+                )
+            ):
+                geom_type = geom_type + "Z"
+            geom_types.append(geom_type)
+    geom_types = list(set(geom_types))
+    # issue warning if types are mixed
     if len(geom_types) > 1:
         typestring = ",".join(geom_types)
         log.warning(f"Dataset {dataset} has multiple geometry types: {typestring}")
-    # validate the type (shouldn't be necessary)
-    for geom_type in geom_types:
-        if geom_type not in (
-            "POINT",
-            "LINESTRING",
-            "POLYGON",
-            "MULTIPOINT",
-            "MULTILINESTRING",
-            "MULTIPOLYGON",
-        ):
-            raise ValueError("Geometry type {geomtype} is not supported")
-    # if Z coordinates are supplied, modify the type accordingly
-    # (presuming that all )
-    # (points and lines only, presumably there are no 3d polygon features)
-    for i in range(len(geom_types)):
-        if (
-            geom_types[i] == "POINT"
-            and len(features[0]["geometry"]["coordinates"]) == 3
-        ):
-            geom_types[i] = "POINTZ"
-        if (
-            geom_types[i] == "MULTIPOINT"
-            and len(features[0]["geometry"]["coordinates"][0]) == 3
-        ):
-            geom_types[i] = "POINTZ"
-        if (
-            geom_types[i] == "LINESTRING"
-            and len(features[0]["geometry"]["coordinates"][0]) == 3
-        ):
-            geom_types[i] = "LINESTRINGZ"
-        if (
-            geom_types[i] == "MULTILINESTRING"
-            and len(features[0]["geometry"]["coordinates"][0][0]) == 3
-        ):
-            geom_types[i] = "MULTILINESTRINGZ"
     return geom_types
