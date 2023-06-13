@@ -6,4 +6,4 @@ geoalchemy2
 click>=8.0
 cligj>=0.5
 rasterio>=1.0
-geopandas<0.13
+geopandas>=0.13.2
