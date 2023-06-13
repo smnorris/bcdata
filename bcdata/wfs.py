@@ -315,7 +315,7 @@ def get_types(dataset, count=10):
                 "MULTIPOLYGON",
             ):
                 raise ValueError("Geometry type {geomtype} is not supported")
-
+            # look for z dimension, note geom has Z if found
             if (
                 (geom_type == "POINT" and len(f["geometry"]["coordinates"]) == 3)
                 or (
