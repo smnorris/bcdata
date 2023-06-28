@@ -68,9 +68,11 @@ def bc2pg(
         # get info about the table from catalouge
         table_comments, table_details = bcdata.get_table_definition(dataset)
 
-        # check that provided geometry type is valid
-        if geometry_type and geometry_type not in SUPPORTED_TYPES:
-            raise ValueError("Geometry type {geometry_type} is not supported")
+        # clean provided geometry type and ensure it is valid
+        if geometry_type:
+            geometry_type = geometry_type.upper()
+            if geometry_type not in SUPPORTED_TYPES:
+                raise ValueError("Geometry type {geometry_type} is not supported")
 
         # if geometry type is not provided, infer from first 10 records in dataset
         if not geometry_type:

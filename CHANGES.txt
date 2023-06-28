@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.7.12 (2023-06-28)
+------------------
+- fix bc2pg cli error
+
 0.7.11 (2023-06-28)
 ------------------
 - fix conflicting bc2pg short option definitions (#134)

@@ -372,7 +372,7 @@ def bc2pg(
         table=table,
         schema=schema,
         query=query,
-        geometry_type=geometry_type.upper(),
+        geometry_type=geometry_type,
         count=count,
         pagesize=pagesize,
         primary_key=primary_key,
