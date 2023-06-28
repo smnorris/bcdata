@@ -117,11 +117,13 @@ Options:
                           environment variable if set
   --table TEXT            Destination table name
   --schema TEXT           Destination schema name
+  --geometry_type TEXT    Spatial type of geometry column
   --query TEXT            A valid CQL or ECQL query
   -c, --count INTEGER     Total number of features to load
   -p, --pagesize INTEGER  Maximum request size
   -k, --primary_key TEXT  Primary key of dataset
-  -s, --schema_only       Dump only the object definitions (schema), not data
+  -s, --sortby TEXT       Name of sort field
+  -e, --schema_only       Create empty table from catalogue schema
   -a, --append            Append to existing table
   -t, --no_timestamp      Do not add download timestamp to bcdata meta table
   -v, --verbose           Increase verbosity.

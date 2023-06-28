@@ -316,10 +316,10 @@ def cat(
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
 @click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
+    "-e",
     "--schema_only",
-    "-s",
     is_flag=True,
-    help="Dump only the object definitions (schema), not data",
+    help="Create empty table from catalogue schema",
 )
 @click.option(
     "--append",
