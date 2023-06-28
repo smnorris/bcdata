@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.7.10 (2023-06-28)
+------------------
+- add bc2pg option --geometry_type to avoid issues when type sniffing (#132)
+- fix appending to table with name different from source (#133)
+
 0.7.9 (2023-06-13)
 ------------------
 - fix geometry type checking (#131)

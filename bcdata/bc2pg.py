@@ -15,12 +15,25 @@ from bcdata.database import Database
 
 log = logging.getLogger(__name__)
 
+SUPPORTED_TYPES = [
+    "POINT",
+    "POINTZ",
+    "MULTIPOINT",
+    "MULTIPOINTZ",
+    "LINESTRING",
+    "MULTILINESTRING",
+    "MULTILINESTRINGZ",
+    "POLYGON",
+    "MULTIPOLYGON",
+]
+
 
 def bc2pg(
     dataset,
     db_url,
     table=None,
     schema=None,
+    geometry_type=None,
     query=None,
     count=None,
     sortby=None,
@@ -54,8 +67,14 @@ def bc2pg(
     else:
         # get info about the table from catalouge
         table_comments, table_details = bcdata.get_table_definition(dataset)
-        # find geometry type(s) in first 10 records and take the first one
-        geom_type = bcdata.get_types(dataset, 10)[0]
+
+        # check that provided geometry type is valid
+        if geometry_type and geometry_type not in SUPPORTED_TYPES:
+            raise ValueError("Geometry type {geometry_type} is not supported")
+
+        # if geometry type is not provided, infer from first 10 records in dataset
+        if not geometry_type:
+            geometry_type = bcdata.get_types(dataset, 10)[0]
 
         # build the table definition and create table
         table = db.define_table(
@@ -63,7 +82,7 @@ def bc2pg(
             table_name,
             table_details,
             table_comments,
-            geom_type,
+            geometry_type,
             primary_key,
             append,
         )

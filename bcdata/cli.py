@@ -300,6 +300,7 @@ def cat(
 )
 @click.option("--table", help="Destination table name")
 @click.option("--schema", help="Destination schema name")
+@click.option("--geometry_type", help="Spatial type of geometry column")
 @click.option(
     "--query",
     help="A valid CQL or ECQL query",
@@ -339,6 +340,7 @@ def bc2pg(
     db_url,
     table,
     schema,
+    geometry_type,
     query,
     count,
     pagesize,
@@ -370,6 +372,7 @@ def bc2pg(
         table=table,
         schema=schema,
         query=query,
+        geometry_type=geometry_type.upper(),
         count=count,
         pagesize=pagesize,
         primary_key=primary_key,

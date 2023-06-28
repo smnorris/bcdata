@@ -1,3 +1,5 @@
+import pytest
+
 import bcdata
 from bcdata.database import Database
 
@@ -39,6 +41,22 @@ def test_bc2pg_schema():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema="testschema")
     assert "testschema.gsr_airports_svw" in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop schema testschema cascade")
+
+
+def test_bc2pg_geometry_type():
+    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10, geometry_type="POINT")
+    assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+
+def test_bc2pg_geometry_type_mismatch():
+    with pytest.raises(Exception):
+        bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10, geometry_type="LINESTRING")
+
+
+def test_bc2pg_geometry_type_invalid():
+    with pytest.raises(Exception):
+        bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10, geometry_type="MULTIPOLYGONZ")
 
 
 def test_bc2pg_z():
