@@ -111,3 +111,24 @@ def test_bc2pg_append():
     r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 2
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+
+def test_bc2pg_append_to_other():
+    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, schema_only=True, table="arpt")
+    bcdata.bc2pg(
+        AIRPORTS_TABLE,
+        DB_URL,
+        table="arpt",
+        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
+        append=True,
+    )
+    bcdata.bc2pg(
+        AIRPORTS_TABLE,
+        DB_URL,
+        table="arpt",
+        query="AIRPORT_NAME='Victoria International Airport'",
+        append=True,
+    )
+    r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.arpt")
+    assert len(r) == 2
+    DB_CONNECTION.execute("drop table whse_imagery_and_base_maps.arpt")

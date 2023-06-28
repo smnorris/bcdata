@@ -44,8 +44,10 @@ def bc2pg(
     # if appending, get column names from db
     if append:
         # make sure table actually exists
-        if dataset.lower() not in db.tables:
-            raise ValueError(f"{dataset} does not exist, nothing to append to")
+        if schema_name + "." + table_name not in db.tables:
+            raise ValueError(
+                f"{schema_name}.{table_name} does not exist, nothing to append to"
+            )
         column_names = db.get_columns(schema_name, table_name)
 
     # if not appending, define and create table
