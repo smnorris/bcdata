@@ -150,10 +150,10 @@ class Database(object):
         if geom_type[:5] != "MULTI":
             geom_type = "MULTI" + geom_type
         columns.append(Column("geom", Geometry(geom_type, srid=3005)))
-        meta = MetaData(bind=self.engine)
+        metadata_obj = MetaData()
         table = Table(
             table_name,
-            meta,
+            metadata_obj,
             *columns,
             comment=table_comments,
             schema=schema_name,
@@ -170,12 +170,11 @@ class Database(object):
         # create the table
         if schema_name + "." + table_name not in self.tables:
             log.info(f"Creating table {schema_name}.{table_name}")
-            table.create()
+            table.create(self.engine)
 
         return table
 
     def get_columns(self, schema, table):
-        metadata = MetaData(schema=schema)
-        metadata.bind = self.engine
-        table = Table(table, metadata, schema=schema, autoload=True)
+        metadata_obj = MetaData(schema=schema)
+        table = Table(table, metadata_obj, schema=schema, autoload_with=self.engine)
         return list(table.columns.keys())

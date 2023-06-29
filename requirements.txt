@@ -1,7 +1,7 @@
 requests
 owslib
 psycopg2
-sqlalchemy<2.0
+sqlalchemy>=2.0
 geoalchemy2
 click>=8.0
 cligj>=0.5
