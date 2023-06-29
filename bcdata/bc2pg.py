@@ -163,18 +163,19 @@ def bc2pg(
 
         # once load complete, note date/time of load completion in public.bcdata
         if timestamp:
-            log.info("Logging download date to public.bcdata")
+            log.info("Logging download date to bcdata.log")
             db.execute(
-                """CREATE TABLE IF NOT EXISTS public.bcdata (
+                """CREATE SCHEMA IF NOT EXISTS bcdata;
+                   CREATE TABLE IF NOT EXISTS bcdata.log (
                      table_name text PRIMARY KEY,
-                     date_downloaded timestamp WITH TIME ZONE
-                   )
+                     latest_download timestamp WITH TIME ZONE
+                   );
                 """
             )
             db.execute(
-                """INSERT INTO public.bcdata (table_name, date_downloaded)
-                   SELECT %s as table_name, NOW() as date_downloaded
-                   ON CONFLICT (table_name) DO UPDATE SET date_downloaded = NOW();
+                """INSERT INTO bcdata.log (table_name, latest_download)
+                   SELECT %s as table_name, NOW() as latest_download
+                   ON CONFLICT (table_name) DO UPDATE SET latest_download = NOW();
                 """,
                 (schema_name + "." + table_name,),
             )
