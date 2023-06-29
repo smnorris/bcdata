@@ -8,6 +8,7 @@ Changes
 - move bc2pg download logging to bcdata.log
 - fix dem command default output CRS (#125)
 - upgrade to sqlalchemy v2 (#124)
+- single threaded downloads only (--max_workers option removed)
 
 0.7.12 (2023-06-28)
 ------------------
