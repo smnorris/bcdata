@@ -9,6 +9,9 @@ from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
+from tenacity import retry
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 
 import bcdata
 from bcdata.database import Database
@@ -26,6 +29,12 @@ SUPPORTED_TYPES = [
     "POLYGON",
     "MULTIPOLYGON",
 ]
+
+
+@retry(stop=stop_after_delay(10), wait=wait_random_exponential(multiplier=1, max=60))
+def _download(url):
+    """offload download requests to geopandas, using tenacity to handle unsuccessful requests"""
+    return gpd.read_file(url)
 
 
 def bc2pg(
@@ -109,10 +118,8 @@ def bc2pg(
         )
         # loop through the requests
         for n, url in enumerate(urls):
-            # download with geopandas, let geopandas handle errors
             log.info(url)
-            df = gpd.read_file(url)
-
+            df = _download(url)
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify

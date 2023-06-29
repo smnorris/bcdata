@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.8.0a (2023-06-29)
+------------------
+- cache WFS GetCapabilities response for faster requests and fewer http errors
+- retry bc2pg requests on failure
+
 0.7.12 (2023-06-28)
 ------------------
 - fix bc2pg cli error

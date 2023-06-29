@@ -5,6 +5,8 @@ import pytest
 from rasterio.coords import BoundingBox
 
 import bcdata
+from bcdata.wfs import get_capabilities
+
 from geopandas.geodataframe import GeoDataFrame
 
 AIRPORTS_PACKAGE = "bc-airports"
@@ -22,7 +24,7 @@ def test_validate_table_lowercase():
 
 
 def test_cache_file(tmp_path):
-    bcdata.list_tables(refresh=True, cache_file=tmp_path / ".bcdata_test")
+    get_capabilities(refresh=True, cache_file=tmp_path / ".bcdata_test")
     assert os.path.exists(tmp_path / ".bcdata_test")
 
 

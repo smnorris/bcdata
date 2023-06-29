@@ -13,8 +13,11 @@ from concurrent.futures import ThreadPoolExecutor
 
 from owslib.wfs import WebFeatureService
 import requests
+from tenacity import retry
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
+from tenacity.retry import retry_if_exception_type
 import geopandas as gpd
-
 
 import bcdata
 
@@ -27,9 +30,51 @@ WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
 
 
-def get_sortkey(table, wfs_schema):
+def check_cache(path):
+    """Return true if the getcapabilities cache does not exist or is more than a day old"""
+    if not os.path.exists(path):
+        return True
+    else:
+        # check the age
+        mod_date = datetime.fromtimestamp(os.path.getmtime(path))
+        if mod_date < (datetime.now() - timedelta(days=1)):
+            return True
+        else:
+            return False
+
+
+def get_capabilities(refresh=False, cache_file=None):
+    """
+    Request server capabilities (layer definitions).
+    Cache response as file daily, caching to location specified by:
+      - cache_file parameter
+      - $BCDATA_CACHE environment variable
+      - default (~/.bcdata)
+    """
+    if not cache_file:
+        if "BCDATA_CACHE" in os.environ:
+            cache_file = os.environ["BCDATA_CACHE"]
+        else:
+            cache_file = os.path.join(str(Path.home()), ".bcdata")
+
+    # download capabilites xml if file is > 1 day old or refresh is specified
+    if check_cache(cache_file) or refresh:
+        with open(cache_file, "w") as f:
+            f.write(
+                ET.tostring(
+                    WebFeatureService(OWS_URL, version="2.0.0")._capabilities,
+                    encoding="unicode",
+                )
+            )
+
+    # load cached xml to WFS object
+    with open(cache_file, "r") as f:
+        return WebFeatureService(OWS_URL, version="2.0.0", xml=f.read())
+
+
+def get_sortkey(table, schema):
     """Check data for unique columns available for sorting paged requests"""
-    columns = list(wfs_schema["properties"].keys())
+    columns = list(schema["properties"].keys())
     # use OBJECTID as default sort key, if present
     if "OBJECTID" in columns:
         return "OBJECTID"
@@ -44,22 +89,6 @@ def get_sortkey(table, wfs_schema):
         return columns[0]
 
 
-def check_cache(path):
-    """Return true if the cache file holding list of all datasets
-    does not exist or is more than a day old
-    (this is not very long, but checking daily seems to be a good strategy)
-    """
-    if not os.path.exists(path):
-        return True
-    else:
-        # check the age
-        mod_date = datetime.fromtimestamp(os.path.getmtime(path))
-        if mod_date < (datetime.now() - timedelta(days=1)):
-            return True
-        else:
-            return False
-
-
 def validate_name(dataset):
     """Check wfs/cache and the bcdc api to see if dataset name is valid"""
     if dataset.upper() in list_tables():
@@ -68,32 +97,17 @@ def validate_name(dataset):
         return bcdata.get_table_name(dataset.upper())
 
 
-def list_tables(refresh=False, cache_file=None):
-    """Return a list of all datasets available via WFS"""
-    # default cache listing all objects available is
-    # ~/.bcdata
-    if not cache_file:
-        if "BCDATA_CACHE" in os.environ:
-            cache_file = os.environ["BCDATA_CACHE"]
-        else:
-            cache_file = os.path.join(str(Path.home()), ".bcdata")
-
-    # regenerate the cache if:
-    # - the cache file doesn't exist
-    # - we force a refresh
-    # - the cache is older than 1 day
-    if refresh or check_cache(cache_file):
-        WFS = WebFeatureService(OWS_URL, version="2.0.0")
-        bcdata_objects = [i.strip("pub:") for i in list(WFS.contents)]
-        with open(cache_file, "w") as outfile:
-            json.dump(sorted(bcdata_objects), outfile)
-    else:
-        with open(cache_file, "r") as infile:
-            bcdata_objects = json.load(infile)
-
-    return bcdata_objects
+def list_tables(cache_file=None):
+    """Return a list of all tables available via WFS"""
+    capabilites = get_capabilities(cache_file)
+    return [i.strip("pub:") for i in list(capabilites.contents)]
 
 
+@retry(
+    retry=retry_if_exception_type(requests.exceptions.HTTPError),
+    stop=stop_after_delay(10),
+    wait=wait_random_exponential(multiplier=1, max=60),
+)
 def get_count(dataset, query=None):
     """Ask DataBC WFS how many features there are in a table/query"""
     # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
@@ -108,27 +122,11 @@ def get_count(dataset, query=None):
     }
     if query:
         payload["CQL_FILTER"] = query
-    try:
-        r = requests.get(WFS_URL, params=payload)
-        log.debug(r.url)
-        r.raise_for_status()  # check status code is 200
-    except requests.exceptions.HTTPError as err:  # fail if not 200
-        raise SystemExit(err)
+
+    r = requests.get(WFS_URL, params=payload)
+    log.debug(r.url)
+    r.raise_for_status()  # check status code is 200
     return int(ET.fromstring(r.text).attrib["numberMatched"])
-
-
-def make_request(url):
-    """Submit a getfeature request to DataBC WFS and return features"""
-    try:
-        r = requests.get(url)
-        log.info(r.url)
-        log.debug(r.headers)
-        r.raise_for_status()  # check status code is 200
-    except requests.exceptions.HTTPError as err:  # fail if not 200
-        print(log.debug(r.headers))
-        raise SystemExit(err)
-
-    return r.json()["features"]  # return features if status code is 200
 
 
 def define_requests(
@@ -157,20 +155,16 @@ def define_requests(
     if not count or count > n:
         count = n
     log.info(f"Total features requested: {count}")
-    WFS = WebFeatureService(OWS_URL, version="2.0.0")
-    wfs_schema = WFS.get_schema("pub:" + table)
-    geom_column = wfs_schema["geometry_column"]
-    # DataBC WFS getcapabilities says that it supports paging,
-    # and the spec says that responses should include 'next URI'
-    # (section 7.7.4.4.1)....
-    # But I do not see any next uri in the responses. Instead of following
-    # the paged urls, for datasets with >10k records, just generate urls
-    # based on number of features in the dataset.
+    wfs = get_capabilities()
+    schema = wfs.get_schema("pub:" + table)
+    geom_column = schema["geometry_column"]
+
+    # for datasets with >10k records, generate a list of urls based on number of features in the dataset.
     chunks = math.ceil(count / pagesize)
 
     # if making several requests, we need to sort by something
     if chunks > 1 and not sortby:
-        sortby = get_sortkey(table, wfs_schema)
+        sortby = get_sortkey(table, schema)
 
     # build the request parameters for each chunk
     urls = []
@@ -208,6 +202,20 @@ def define_requests(
     return urls
 
 
+@retry(
+    retry=retry_if_exception_type(requests.exceptions.HTTPError),
+    stop=stop_after_delay(10),
+    wait=wait_random_exponential(multiplier=1, max=60),
+)
+def make_request(url):
+    """Submit a getfeature request to DataBC WFS and return features"""
+    r = requests.get(url)
+    log.info(r.url)
+    log.debug(r.headers)
+    r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
+    return r.json()["features"]
+
+
 def get_data(
     dataset,
     query=None,
@@ -217,11 +225,10 @@ def get_data(
     count=None,
     sortby=None,
     pagesize=10000,
-    max_workers=2,
     as_gdf=False,
     lowercase=False,
 ):
-    """Get GeoJSON featurecollection (or geodataframe) from DataBC WFS"""
+    """Request features from DataBC WFS and return GeoJSON featurecollection or geodataframe"""
     urls = define_requests(
         dataset,
         query=query,
@@ -232,8 +239,10 @@ def get_data(
         sortby=sortby,
         pagesize=pagesize,
     )
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        results = executor.map(make_request, urls)
+    # loop through requests
+    results = []
+    for url in urls:
+        results.append(make_request(url))
 
     outjson = dict(type="FeatureCollection", features=[])
     for result in results:
@@ -271,7 +280,6 @@ def get_features(
     count=None,
     sortby=None,
     pagesize=10000,
-    max_workers=2,
     lowercase=False,
 ):
     """Yield features from DataBC WFS"""
@@ -285,14 +293,13 @@ def get_features(
         sortby=sortby,
         pagesize=pagesize,
     )
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for result in executor.map(make_request, urls):
-            for feature in result:
-                if lowercase:
-                    feature["properties"] = {
-                        k.lower(): v for k, v in feature["properties"].items()
-                    }
-                yield feature
+    for url in urls:
+        for feature in make_request(url):
+            if lowercase:
+                feature["properties"] = {
+                    k.lower(): v for k, v in feature["properties"].items()
+                }
+            yield feature
 
 
 def get_types(dataset, count=10):

@@ -152,7 +152,6 @@ Options:
   -s, --sortby TEXT               Name of sort field
   --bounds-crs, --bounds_crs TEXT
                                   CRS of provided bounds
-  -w, --max_workers INTEGER       Max number of concurrent requests
   -l, --lowercase                 Write column/properties names as lowercase
   -v, --verbose                   Increase verbosity.
   -q, --quiet                     Decrease verbosity.
