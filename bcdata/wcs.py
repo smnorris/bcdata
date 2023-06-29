@@ -34,10 +34,12 @@ def get_dem(
     """Get TRIM DEM for provided bounds, write to GeoTIFF."""
     # align bounds if specified (and bounds are BC Albers CRS)
     if align:
-        if src_crs == "EPSG:3005" and dst_crs == "EPSG:3005":
+        if src_crs.upper() == "EPSG:3005" and dst_crs.upper() == "EPSG:3005":
             bounds = align_bounds(bounds)
         else:
-            raise ValueError("Align is only valid for BC Albers based requests")
+            raise ValueError(
+                f"Target CRS is {dst_crs}, align is only valid for BC Albers based bounds and outputs"
+            )
 
     bbox = ",".join([str(b) for b in bounds])
 
@@ -87,11 +89,23 @@ def get_dem(
     # request data from WCS
     log.debug(payload)
     r = requests.get(WCS_URL, params=payload)
-
-    # save to tiff
+    log.debug(r.headers)
     if r.status_code == 200:
-        with open(out_file, "wb") as file:
-            file.write(r.content)
+        if r.headers["Content-Type"] == "image/tiff":
+            with open(out_file, "wb") as file:
+                file.write(r.content)
+        elif r.headers["Content-Type"] == "application/vnd.ogc.se_xml;charset=UTF-8":
+            raise RuntimeError(
+                "WCS request {} failed with error {}".format(
+                    r.url, str(r.content.decode("utf-8"))
+                )
+            )
+        else:
+            raise RuntimeError(
+                "WCS request {} failed, content type {}".format(
+                    r.url, str(r.headers["Content-Type"])
+                )
+            )
     else:
         raise RuntimeError(
             "WCS request {} failed with status code {}".format(

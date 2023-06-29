@@ -133,10 +133,13 @@ def info(dataset, indent, meta_member, verbose, quiet):
 @cli.command()
 @click.option("--out_file", "-o", help="Output file", default="dem25.tif")
 @bounds_opt_dem
-@dst_crs_opt
+@click.option(
+    "--dst-crs",
+    help="CRS of output file",
+    default="EPSG:3005",
+)
 @click.option(
     "--bounds-crs",
-    "--bounds_crs",
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
@@ -168,8 +171,6 @@ def dem(
     """Dump BC DEM to TIFF"""
     verbosity = verbose - quiet
     configure_logging(verbosity)
-    if not dst_crs:
-        dst_crs = "EPSG:3005"
     bcdata.get_dem(
         bounds,
         out_file=out_file,

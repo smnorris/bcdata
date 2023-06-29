@@ -6,6 +6,7 @@ Changes
 - cache WFS GetCapabilities response for faster requests and fewer http errors
 - retry bc2pg requests on failure
 - move bc2pg download logging to bcdata.log
+- fix dem command default output CRS (#125)
 
 0.7.12 (2023-06-28)
 ------------------
