@@ -17,6 +17,10 @@ def configure_logging(verbosity):
     logging.basicConfig(stream=sys.stderr, level=log_level)
 
 
+def complete_dataset_names(ctx, param, incomplete):
+    return [k for k in bcdata.list_tables() if k.startswith(incomplete)]
+
+
 # bounds handling direct from rasterio
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/options.py
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/clip.py
@@ -287,7 +291,7 @@ def cat(
 
 
 @cli.command()
-@click.argument("dataset", type=click.STRING)
+@click.argument("dataset", type=click.STRING, shell_complete=complete_dataset_names)
 @click.option(
     "--db_url",
     "-db",
