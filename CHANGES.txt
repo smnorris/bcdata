@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.8.0a2 (2023-07-)
+0.8.0a2 (2023-07-03)
 ------------------
 - handle tables with schema stored in bcdc resource with format='multiple' (#135)
 
