@@ -74,12 +74,13 @@ def get_table_definition(table_name):
                         else:
                             log.info(f"No table comments found for {table_name}")
                             table_comments = None
-                        if "details" in resource.keys():
+                        if "details" in resource.keys() and resource["details"] != "":
                             table_details = resource["details"]
                         else:
                             log.info(f"No details found for {table_name}")
                             table_details = None
-                        matches.append((table_comments, table_details))
+                        if table_details and table_comments:
+                            matches.append((table_comments, table_details))
                 # some datasets are documented in the resource with format="multiple", not format="wms"
                 # (for example, WHSE_FOREST_VEGETATION.OGSR_PRIORITY_DEF_AREA_CUR_SP)
                 elif resource["format"] == "multiple":
@@ -94,10 +95,9 @@ def get_table_definition(table_name):
                         else:
                             log.info(f"No details found for {table_name}")
                             table_details = None
-                        matches.append((table_comments, table_details))
+                        if table_details and table_comments:
+                            matches.append((table_comments, table_details))
         # uniquify the result
-        # (presuming there is only one unique result, but this seems safe as we are
-        # matching on the oracle table name)
         if len(matches) > 0:
             matched = list(set(matches))[0]
             return (matched[0], json.loads(matched[1]))

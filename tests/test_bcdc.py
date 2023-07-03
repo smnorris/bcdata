@@ -22,3 +22,11 @@ def test_get_table_definition():
     table = bcdc.get_table_definition(AIRPORTS_TABLE)
     assert table[0] == AIRPORTS_COMMENTS
     assert table[1] == json.loads(AIRPORTS_SCHEMA)
+
+
+def test_get_table_definition_format_multi():
+    table = bcdc.get_table_definition(
+        "WHSE_FOREST_VEGETATION.OGSR_PRIORITY_DEF_AREA_CUR_SP"
+    )
+    assert table[0]
+    assert table[1]
