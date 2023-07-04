@@ -105,7 +105,7 @@ def list_tables(cache_file=None):
 
 @retry(
     retry=retry_if_exception_type(requests.exceptions.HTTPError),
-    stop=stop_after_delay(10),
+    stop=stop_after_delay(120),
     wait=wait_random_exponential(multiplier=1, max=60),
 )
 def get_count(dataset, query=None):
@@ -122,11 +122,14 @@ def get_count(dataset, query=None):
     }
     if query:
         payload["CQL_FILTER"] = query
-
-    r = requests.get(WFS_URL, params=payload)
-    log.debug(r.url)
-    r.raise_for_status()  # check status code is 200
-    return int(ET.fromstring(r.text).attrib["numberMatched"])
+    try:
+        r = requests.get(WFS_URL, params=payload)
+        log.debug(r.url)
+        log.debug(r.headers)
+        r.raise_for_status()  # check status code is 200
+        return int(ET.fromstring(r.text).attrib["numberMatched"])
+    except Exception:
+        log.debug("Network error")
 
 
 def define_requests(
@@ -204,7 +207,7 @@ def define_requests(
 
 @retry(
     retry=retry_if_exception_type(requests.exceptions.HTTPError),
-    stop=stop_after_delay(10),
+    stop=stop_after_delay(120),
     wait=wait_random_exponential(multiplier=1, max=60),
 )
 def make_request(url):
