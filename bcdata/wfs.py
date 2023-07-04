@@ -26,6 +26,7 @@ if not sys.warnoptions:
 
 log = logging.getLogger(__name__)
 
+
 WFS_URL = "https://openmaps.gov.bc.ca/geo/pub/wfs"
 OWS_URL = "http://openmaps.gov.bc.ca/geo/ows"
 
@@ -141,6 +142,7 @@ def define_requests(
     count=None,
     sortby=None,
     pagesize=10000,
+    check_count=True,
 ):
     """Translate provided parameters into a list of WFS request URLs required
     to download the dataset as specified
@@ -150,14 +152,26 @@ def define_requests(
     - http://docs.geoserver.org/stable/en/user/services/wfs/vendor.html
     - http://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html
     """
-    # validate the table name and find out how many features it holds
+    # validate the table name
     table = validate_name(dataset)
-    n = get_count(table, query=query)
-    log.info(get_count.retry.statistics)
-    # if count not provided or if it is greater than n of total features,
-    # set count to number of features
-    if not count or count > n:
-        count = n
+    # find out how many records are in the table
+    if not count and check_count is False:
+        raise ValueError(
+            "{count: Null, check_count=False} is invalid, either provide record count or let bcdata request it"
+        )
+    elif (
+        not count and check_count is True
+    ):  # if not provided a count, get one if not told otherwise
+        count = get_count(table, query=query)
+        log.info(get_count.retry.statistics)
+    elif (
+        count and check_count is True
+    ):  # if provided a count that is bigger than actual number of records, automatically correct count
+        n = get_count(table, query=query)
+        log.info(get_count.retry.statistics)
+        if count > n:
+            count = n
+
     log.info(f"Total features requested: {count}")
     wfs = get_capabilities()
     schema = wfs.get_schema("pub:" + table)
@@ -286,6 +300,7 @@ def get_features(
     sortby=None,
     pagesize=10000,
     lowercase=False,
+    check_count=True,
 ):
     """Yield features from DataBC WFS"""
     urls = define_requests(
@@ -297,6 +312,7 @@ def get_features(
         count=count,
         sortby=sortby,
         pagesize=pagesize,
+        check_count=check_count,
     )
     for url in urls:
         for feature in make_request(url):
@@ -315,7 +331,9 @@ def get_types(dataset, count=10):
     log.info("Getting feature geometry type")
     # get first n features, examine the feature geometry type (where geometry is not empty)
     geom_types = []
-    for f in get_features(table, count=count):
+    for f in get_features(
+        table, count=count, check_count=False
+    ):  # to minimize network traffic, do not check record count for this requests
         if f["geometry"]:
             geom_type = f["geometry"]["type"].upper()
             # only these geometry types are expected/supported

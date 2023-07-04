@@ -11,10 +11,12 @@ from cligj import verbose_opt, quiet_opt
 
 import bcdata
 
+LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
+
 
 def configure_logging(verbosity):
     log_level = max(10, 30 - 10 * verbosity)
-    logging.basicConfig(stream=sys.stderr, level=log_level)
+    logging.basicConfig(stream=sys.stderr, level=log_level, format=LOG_FORMAT)
 
 
 def complete_dataset_names(ctx, param, incomplete):
@@ -360,7 +362,7 @@ def bc2pg(
     # for this command, default to INFO level logging
     verbosity = verbose - quiet
     log_level = max(10, 20 - 10 * verbosity)
-    logging.basicConfig(stream=sys.stderr, level=log_level)
+    logging.basicConfig(stream=sys.stderr, level=log_level, format=LOG_FORMAT)
     log = logging.getLogger(__name__)
     if no_timestamp:
         timestamp = False
