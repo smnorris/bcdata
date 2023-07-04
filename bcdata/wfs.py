@@ -152,7 +152,8 @@ def define_requests(
     """
     # validate the table name and find out how many features it holds
     table = validate_name(dataset)
-    n = bcdata.get_count(table, query=query)
+    n = get_count(table, query=query)
+    log.info(get_count.retry.statistics)
     # if count not provided or if it is greater than n of total features,
     # set count to number of features
     if not count or count > n:
@@ -246,6 +247,7 @@ def get_data(
     results = []
     for url in urls:
         results.append(make_request(url))
+        log.info(make_request.retry.statistics)
 
     outjson = dict(type="FeatureCollection", features=[])
     for result in results:
@@ -303,6 +305,7 @@ def get_features(
                     k.lower(): v for k, v in feature["properties"].items()
                 }
             yield feature
+        log.info(make_request.retry.statistics)
 
 
 def get_types(dataset, count=10):

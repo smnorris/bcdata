@@ -37,7 +37,7 @@ def _download(url):
     try:
         data = gpd.read_file(url)
     except Exception:
-        log.debug("Data transfer error")
+        log.error("Data transfer error")
     return data
 
 
@@ -124,7 +124,7 @@ def bc2pg(
         for n, url in enumerate(urls):
             log.info(url)
             df = _download(url)
-            log.debug(_download.retry.statistics)
+            log.info(_download.retry.statistics)  # log the retry stats
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify
