@@ -34,7 +34,11 @@ SUPPORTED_TYPES = [
 @retry(stop=stop_after_delay(10), wait=wait_random_exponential(multiplier=1, max=60))
 def _download(url):
     """offload download requests to geopandas, using tenacity to handle unsuccessful requests"""
-    return gpd.read_file(url)
+    try:
+        data = gpd.read_file(url)
+    except Exception:
+        log.debug("Cannot connect to remote server")
+    return data
 
 
 def bc2pg(
