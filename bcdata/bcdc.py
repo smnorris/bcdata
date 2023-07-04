@@ -64,7 +64,6 @@ def get_table_definition(table_name):
         for result in r.json()["result"]["results"]:
             # iterate through resources associated with each package
             for resource in result["resources"]:
-                log.debug(resource)
                 # if resource is wms and url matches provided table name,
                 # extract the metadata
                 if resource["format"] == "wms":
@@ -72,15 +71,14 @@ def get_table_definition(table_name):
                         if "object_table_comments" in resource.keys():
                             table_comments = resource["object_table_comments"]
                         else:
-                            log.info(f"No table comments found for {table_name}")
                             table_comments = None
                         if "details" in resource.keys() and resource["details"] != "":
                             table_details = resource["details"]
                         else:
-                            log.info(f"No details found for {table_name}")
                             table_details = None
                         if table_details and table_comments:
                             matches.append((table_comments, table_details))
+                            log.debug(resource)
                 # some datasets are documented in the resource with format="multiple", not format="wms"
                 # (for example, WHSE_FOREST_VEGETATION.OGSR_PRIORITY_DEF_AREA_CUR_SP)
                 elif resource["format"] == "multiple":
@@ -88,15 +86,14 @@ def get_table_definition(table_name):
                         if "object_table_comments" in resource.keys():
                             table_comments = resource["object_table_comments"]
                         else:
-                            log.info(f"No table comments found for {table_name}")
                             table_comments = None
                         if "details" in resource.keys():
                             table_details = resource["details"]
                         else:
-                            log.info(f"No details found for {table_name}")
                             table_details = None
                         if table_details and table_comments:
                             matches.append((table_comments, table_details))
+                            log.debug(resource)
         # uniquify the result
         if len(matches) > 0:
             matched = list(set(matches))[0]
