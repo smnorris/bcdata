@@ -64,42 +64,39 @@ def get_table_definition(table_name):
         for result in r.json()["result"]["results"]:
             # iterate through resources associated with each package
             for resource in result["resources"]:
-                # if resource is wms and url matches provided table name,
-                # extract the metadata
+                # wms format resource
                 if resource["format"] == "wms":
+                    # if wms, check for table name match in this location
                     if urlparse(resource["url"]).path.split("/")[3] == table_name:
                         if "object_table_comments" in resource.keys():
                             table_comments = resource["object_table_comments"]
                         else:
                             table_comments = None
+                        # only add to matches if schema details found
                         if "details" in resource.keys() and resource["details"] != "":
                             table_details = resource["details"]
-                        else:
-                            table_details = None
-                        if table_details and table_comments:
                             matches.append((table_comments, table_details))
                             log.debug(resource)
-                # some datasets are documented in the resource with format="multiple", not format="wms"
-                # (for example, WHSE_FOREST_VEGETATION.OGSR_PRIORITY_DEF_AREA_CUR_SP)
+
+                # multiple format resource
                 elif resource["format"] == "multiple":
+                    # if multiple format, check for table name match in this location
                     if json.loads(resource["preview_info"])["layer_name"] == table_name:
                         if "object_table_comments" in resource.keys():
                             table_comments = resource["object_table_comments"]
                         else:
                             table_comments = None
-                        if "details" in resource.keys():
+                        # only add to matches if schema details found
+                        if "details" in resource.keys() and resource["details"] != "":
                             table_details = resource["details"]
-                        else:
-                            table_details = None
-                        if table_details and table_comments:
                             matches.append((table_comments, table_details))
                             log.debug(resource)
+
         # uniquify the result
         if len(matches) > 0:
             matched = list(set(matches))[0]
             return (matched[0], json.loads(matched[1]))
         else:
-            log.warning(
-                f"BCDC search for {table_name} does not return expected details"
+            raise ValueError(
+                f"BCDC search for {table_name} does not return a table schema"
             )
-            return (None, None)

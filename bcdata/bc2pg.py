@@ -81,6 +81,11 @@ def bc2pg(
         # get info about the table from catalouge
         table_comments, table_details = bcdata.get_table_definition(dataset)
 
+        if not table_details:
+            raise ValueError(
+                "Cannot create table, schema details not found via bcdc api"
+            )
+
         # clean provided geometry type and ensure it is valid
         if geometry_type:
             geometry_type = geometry_type.upper()
@@ -96,8 +101,8 @@ def bc2pg(
             schema_name,
             table_name,
             table_details,
-            table_comments,
             geometry_type,
+            table_comments,
             primary_key,
             append,
         )

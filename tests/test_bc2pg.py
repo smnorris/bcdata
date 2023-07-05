@@ -21,6 +21,12 @@ def test_bc2pg():
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 
+def test_bc2pg_50kgrid():
+    bcdata.bc2pg("whse_basemapping.dbm_mof_50k_grid", DB_URL)
+    assert "whse_basemapping.dbm_mof_50k_grid" in DB_CONNECTION.tables
+    DB_CONNECTION.execute("drop table " + "whse_basemapping.dbm_mof_50k_grid")
+
+
 def test_bc2pg_count():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables

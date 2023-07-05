@@ -98,8 +98,8 @@ class Database(object):
         schema_name,
         table_name,
         table_details,
-        table_comments,
         geom_type,
+        table_comments=None,
         primary_key=None,
         append=False,
     ):
