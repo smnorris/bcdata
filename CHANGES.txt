@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.8.0a3 (2023-07-05)
+------------------
+- improve retry logic on download error, further request minimization, fix bcdc regression from #135
+
 0.8.0a2 (2023-07-03)
 ------------------
 - handle tables with schema stored in bcdc resource with format='multiple' (#135)
