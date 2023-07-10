@@ -249,13 +249,13 @@ Options:
 
 #### CLI notes
 
-Note that `bc2pg` creates `public.bcdata` as a meta table tracking the most recent download date for each layer downloaded.
-Disable with the switch `--no_timestamp` if you do not wish to create this table or do not have access to `public` schema.
+Note that `bc2pg` creates `bcdata.log` and logs the most recent download date for each table downloaded.
+Disable with the switch `--no_timestamp` if you do not wish to create this table.
 
-Example of a record in `public.bcdata`:
+Example of a record in `bcdata.log`:
 
 ```
-mydb=# select * from bcdata;
+mydb=# select * from bcdata.log;
                  table_name                  |        date_downloaded
 ---------------------------------------------+-------------------------------
  whse_imagery_and_base_maps.gsr_airports_svw | 2021-02-17 11:50:34.044481-08
