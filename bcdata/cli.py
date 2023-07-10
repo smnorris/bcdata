@@ -333,7 +333,7 @@ def cat(
     "--no_timestamp",
     "-t",
     is_flag=True,
-    help="Do not add download timestamp to bcdata meta table",
+    help="Do not log download to bcdata.log",
 )
 @verbose_opt
 @quiet_opt

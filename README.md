@@ -36,9 +36,9 @@ Linux/Mac: `export DATABASE_URL=postgresql://{username}:{password}@{hostname}:{p
 Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port}/{database}`
 
 
-#### Layer list cache file
+#### Cache file
 
-A list of DataBC layers is cached to file to speed request validation. The cache is automatically refreshed if it is more than a day old.
+To speed request validation, a list of tables available is cached locally (as xml). The cache is automatically refreshed if it is more than a day old.
 The cache file location defaults to `~/.bcdata`, but can be configured by setting the a `$BCDATA_CACHE` environment variable.
 
 `export BCDATA_CACHE=/path/to/bcdata_cache`
@@ -125,7 +125,7 @@ Options:
   -s, --sortby TEXT       Name of sort field
   -e, --schema_only       Create empty table from catalogue schema
   -a, --append            Append to existing table
-  -t, --no_timestamp      Do not add download timestamp to bcdata meta table
+  -t, --no_timestamp      Do not log download to bcdata.log
   -v, --verbose           Increase verbosity.
   -q, --quiet             Decrease verbosity.
   --help                  Show this message and exit.
