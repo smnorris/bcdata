@@ -44,6 +44,16 @@ def check_cache(path):
             return False
 
 
+@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
+def get_schema(wfs, table):
+    try:
+        schema = wfs.get_schema("pub:" + table)
+    except Exception:
+        log.error("BCDC API Error")
+    return schema
+
+
+@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
 def get_capabilities(refresh=False, cache_file=None):
     """
     Request server capabilities (layer definitions).
@@ -59,15 +69,17 @@ def get_capabilities(refresh=False, cache_file=None):
             cache_file = os.path.join(str(Path.home()), ".bcdata")
 
     # download capabilites xml if file is > 1 day old or refresh is specified
-    if check_cache(cache_file) or refresh:
-        with open(cache_file, "w") as f:
-            f.write(
-                ET.tostring(
-                    WebFeatureService(OWS_URL, version="2.0.0")._capabilities,
-                    encoding="unicode",
+    try:
+        if check_cache(cache_file) or refresh:
+            with open(cache_file, "w") as f:
+                f.write(
+                    ET.tostring(
+                        WebFeatureService(OWS_URL, version="2.0.0")._capabilities,
+                        encoding="unicode",
+                    )
                 )
-            )
-
+    except Exception:
+        log.error("WFS Error")
     # load cached xml to WFS object
     with open(cache_file, "r") as f:
         return WebFeatureService(OWS_URL, version="2.0.0", xml=f.read())
@@ -174,7 +186,7 @@ def define_requests(
 
     log.info(f"Total features requested: {count}")
     wfs = get_capabilities()
-    schema = wfs.get_schema("pub:" + table)
+    schema = get_schema(wfs, table)
     geom_column = schema["geometry_column"]
 
     # for datasets with >10k records, generate a list of urls based on number of features in the dataset.
