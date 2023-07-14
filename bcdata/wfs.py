@@ -83,7 +83,7 @@ class BCWFS(object):
                 encoding="unicode",
             )
         except Exception:
-            log.error("WFS Error")
+            log.info("WFS/network error")
         return capabilities
 
     @retry(
@@ -94,7 +94,7 @@ class BCWFS(object):
             # self.capabilities attribute is owslib.wfs.WebFeatureService instance
             schema = self.capabilities.get_schema("pub:" + table)
         except Exception:
-            log.error("WFS Error")
+            log.info("WFS/network error")
         return schema
 
     @retry(
@@ -120,7 +120,7 @@ class BCWFS(object):
             r.raise_for_status()  # check status code is 200
             return int(ET.fromstring(r.text).attrib["numberMatched"])
         except Exception:
-            log.debug("WFS error")
+            log.info("WFS/network error")
 
     @retry(
         retry=retry_if_exception_type(requests.exceptions.HTTPError),
@@ -136,7 +136,7 @@ class BCWFS(object):
             r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
             return r.json()["features"]
         except Exception:
-            log.debug("WFS error")
+            log.info("WFS/network error")
 
     def get_capabilities(self, refresh=False):
         """
