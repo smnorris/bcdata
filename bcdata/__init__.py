@@ -11,4 +11,4 @@ from .bc2pg import bc2pg
 from .wcs import get_dem
 
 
-__version__ = "0.8.0b1"
+__version__ = "0.8.0"

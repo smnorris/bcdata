@@ -37,7 +37,7 @@ def _download(url):
     try:
         data = gpd.read_file(url)
     except Exception:
-        log.info("WFS/network error")
+        log.debug("WFS/network error")
     return data
 
 
