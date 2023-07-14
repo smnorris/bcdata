@@ -1,11 +1,7 @@
 import os
 
-import rasterio
-import pytest
-from rasterio.coords import BoundingBox
-
 import bcdata
-from bcdata.wfs import get_capabilities
+from bcdata.wfs import BCWFS
 
 from geopandas.geodataframe import GeoDataFrame
 
@@ -24,13 +20,11 @@ def test_validate_table_lowercase():
 
 
 def test_cache_file(tmp_path):
-    get_capabilities(refresh=True, cache_file=tmp_path / ".bcdata_test")
-    assert os.path.exists(tmp_path / ".bcdata_test")
+    BCWFS(cache_path=tmp_path / ".bcdata")
+    assert os.path.exists(tmp_path / ".bcdata" / "capabilities.xml")
 
 
 def test_get_table_name_urlparse():
-    # bcdc api query result["object_name"] is not correct WFS layer name,
-    # use WFS resource url
     table = bcdata.get_table_name("natural-resource-nr-district")
     assert table == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
 
@@ -72,18 +66,18 @@ def test_get_data_crs():
     )
 
 
-def test_get_types():
-    data = bcdata.get_types(AIRPORTS_TABLE)
+def test_get_spatial_types():
+    data = bcdata.get_spatial_types(AIRPORTS_TABLE)
     assert data[0] == "POINT"
 
 
 def test_get_mixed_types():
-    data = bcdata.get_types(GLACIERS_TABLE, 100)
+    data = bcdata.get_spatial_types(GLACIERS_TABLE, 100)
     assert len(data) == 2
 
 
 def test_get_types_z():
-    data = bcdata.get_types(STREAMS_TABLE)
+    data = bcdata.get_spatial_types(STREAMS_TABLE)
     assert data[0] == "LINESTRINGZ"
 
 
@@ -141,66 +135,3 @@ def test_cql_bounds_filter():
         data["features"][0]["properties"]["AIRPORT_NAME"]
         == "Victoria International Airport"
     )
-
-
-def test_dem(tmpdir):
-    bounds = [1046891, 704778, 1055345, 709629]
-    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"))
-    assert os.path.exists(out_file)
-    with rasterio.open(out_file) as src:
-        stats = [
-            {
-                "min": float(b.min()),
-                "max": float(b.max()),
-                "mean": float(b.mean()),
-            }
-            for b in src.read()
-        ]
-    assert stats[0]["max"] == 3982
-
-
-def test_dem_align(tmpdir):
-    bounds = [1046891, 704778, 1055345, 709629]
-    out_file = bcdata.get_dem(
-        bounds, os.path.join(tmpdir, "test_dem_align.tif"), align=True
-    )
-    assert os.path.exists(out_file)
-    with rasterio.open(out_file) as src:
-        bounds = src.bounds
-    bbox = BoundingBox(1046787.5, 704687.5, 1055487.5, 709787.5)
-    assert bounds == bbox
-
-
-def test_dem_rasterio(tmpdir):
-    bounds = [1046891, 704778, 1055345, 709629]
-    src = bcdata.get_dem(bounds, as_rasterio=True)
-    stats = [
-        {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())}
-        for b in src.read()
-    ]
-    assert stats[0]["max"] == 3982
-
-
-# interpolation takes a while to run, comment out for for faster tests
-# def test_dem_resample(tmpdir):
-#    bounds = [1046891, 704778, 1055345, 709629]
-#    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem.tif"), interpolation="bilinear", resolution=50)
-#    assert os.path.exists(out_file)
-#    with rasterio.open(out_file) as src:
-#        stats = [{'min': float(b.min()),
-#                  'max': float(b.max()),
-#                  'mean': float(b.mean())
-#                  } for b in src.read()]
-#    assert stats[0]['max'] == 3956.0
-
-
-def test_dem_invalid_resample1():
-    with pytest.raises(ValueError):
-        bounds = [1046891, 704778, 1055345, 709629]
-        bcdata.get_dem(bounds, "test_dem.tif", interpolation="cubic", resolution=50)
-
-
-def test_dem_invalid_resample2():
-    with pytest.raises(ValueError):
-        bounds = [1046891, 704778, 1055345, 709629]
-        bcdata.get_dem(bounds, "test_dem.tif", interpolation="bilinear")

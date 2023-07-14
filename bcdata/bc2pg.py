@@ -94,7 +94,7 @@ def bc2pg(
 
         # if geometry type is not provided, infer from first 10 records in dataset
         if not geometry_type:
-            geometry_type = bcdata.get_types(dataset, 10)[0]
+            geometry_type = bcdata.get_spatial_types(dataset, 10)[0]
 
         # build the table definition and create table
         table = db.define_table(

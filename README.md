@@ -36,10 +36,13 @@ Linux/Mac: `export DATABASE_URL=postgresql://{username}:{password}@{hostname}:{p
 Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port}/{database}`
 
 
-#### Cache file
+#### Layer list / layer schema cache
 
-To speed request validation, a list of tables available is cached locally (as xml). The cache is automatically refreshed if it is more than a day old.
-The cache file location defaults to `~/.bcdata`, but can be configured by setting the a `$BCDATA_CACHE` environment variable.
+To reduce the volume of requests, information about data requested is cached locally:
+ - the WFS GetCapabilities response xml (listing all datasets available via the service) is cached as `capabilities.xml`
+ - schemas of individual layers that have previously been requested are cached with the cache file name matching the object/table name
+
+The `capabilities.xml` is automatically refreshed if it is more than a day old. The layer definition files are refreshed if more than 30 days old. These cache files are stored by default in `~/bcdata`. Modify this location by  setting the the `$BCDATA_CACHE` environment variable:
 
 `export BCDATA_CACHE=/path/to/bcdata_cache`
 

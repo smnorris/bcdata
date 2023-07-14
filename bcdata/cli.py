@@ -293,6 +293,13 @@ def cat(
 
 
 @cli.command()
+@verbose_opt
+@quiet_opt
+def clear_cache(verbose, quiet):
+    bcdata.clear_cache()
+
+
+@cli.command()
 @click.argument("dataset", type=click.STRING, shell_complete=complete_dataset_names)
 @click.option(
     "--db_url",
