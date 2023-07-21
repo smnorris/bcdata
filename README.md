@@ -261,7 +261,7 @@ Example of a record in `bcdata.log`:
 
 ```
 mydb=# select * from bcdata.log;
-                 table_name                  |        date_downloaded
+                 table_name                  |        latest_download
 ---------------------------------------------+-------------------------------
  whse_imagery_and_base_maps.gsr_airports_svw | 2021-02-17 11:50:34.044481-08
 ```
