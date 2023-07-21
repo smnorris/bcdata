@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.8.0 (2023-07-21)
+------------------
+All changes from pre-releases below
+
 0.8.0b1 (2023-07-13)
 ------------------
 - wrap all requests to WFS/BCDC with @retry to better handle network/service errors
