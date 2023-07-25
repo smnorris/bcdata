@@ -3,6 +3,7 @@ import logging
 
 from geoalchemy2 import Geometry
 import geopandas as gpd
+import numpy
 from shapely.geometry.point import Point
 from shapely.geometry.multipoint import MultiPoint
 from shapely.geometry.linestring import LineString
@@ -24,6 +25,7 @@ SUPPORTED_TYPES = [
     "MULTIPOINT",
     "MULTIPOINTZ",
     "LINESTRING",
+    "LINESTRINGZ",
     "MULTILINESTRING",
     "MULTILINESTRINGZ",
     "POLYGON",
@@ -67,6 +69,18 @@ def bc2pg(
     # connect to target db
     db = Database(db_url)
 
+    # define requests
+    urls = bcdata.define_requests(
+        dataset,
+        query=query,
+        count=count,
+        sortby=sortby,
+        pagesize=pagesize,
+        crs="epsg:3005",
+    )
+
+    df = None  # just for tracking if first download is done by geometry type check
+
     # if appending, get column names from db
     if append:
         # make sure table actually exists
@@ -86,15 +100,21 @@ def bc2pg(
                 "Cannot create table, schema details not found via bcdc api"
             )
 
-        # clean provided geometry type and ensure it is valid
-        if geometry_type:
-            geometry_type = geometry_type.upper()
-            if geometry_type not in SUPPORTED_TYPES:
-                raise ValueError("Geometry type {geometry_type} is not supported")
-
-        # if geometry type is not provided, infer from first 10 records in dataset
+        # if geometry type is not provided, determine type by making the first request
         if not geometry_type:
-            geometry_type = bcdata.get_spatial_types(dataset, 10)[0]
+            log.info(urls[0])
+            df = _download(urls[0])
+            log.info(_download.retry.statistics)  # log the retry stats
+            geometry_type = df.geom_type.unique()[0]  # keep only the first type
+            if numpy.any(
+                df.has_z.unique()[0]
+            ):  # geopandas does not include Z in geom_type string
+                geometry_type = geometry_type + "Z"
+
+        # ensure geom type is valid
+        geometry_type = geometry_type.upper()
+        if geometry_type not in SUPPORTED_TYPES:
+            raise ValueError("Geometry type {geometry_type} is not supported")
 
         # build the table definition and create table
         table = db.define_table(
@@ -116,20 +136,13 @@ def bc2pg(
 
     # load the data
     if not schema_only:
-        # define requests
-        urls = bcdata.define_requests(
-            dataset,
-            query=query,
-            count=count,
-            sortby=sortby,
-            pagesize=pagesize,
-            crs="epsg:3005",
-        )
         # loop through the requests
         for n, url in enumerate(urls):
-            log.info(url)
-            df = _download(url)
-            log.info(_download.retry.statistics)  # log the retry stats
+            # if not downloaded above when checking geom type, dow
+            if df is None:
+                log.info(url)
+                df = _download(url)
+                log.info(_download.retry.statistics)  # log the retry stats
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify
@@ -170,6 +183,7 @@ def bc2pg(
                 schema=schema_name,
                 index=False,
             )
+            df = None
 
         # once load complete, note date/time of load completion in public.bcdata
         if timestamp:

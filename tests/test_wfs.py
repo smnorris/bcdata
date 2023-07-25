@@ -66,21 +66,6 @@ def test_get_data_crs():
     )
 
 
-def test_get_spatial_types():
-    data = bcdata.get_spatial_types(AIRPORTS_TABLE)
-    assert data[0] == "POINT"
-
-
-def test_get_mixed_types():
-    data = bcdata.get_spatial_types(GLACIERS_TABLE, 100)
-    assert len(data) == 2
-
-
-def test_get_types_z():
-    data = bcdata.get_spatial_types(STREAMS_TABLE)
-    assert data[0] == "LINESTRINGZ"
-
-
 def test_get_features():
     data = [f for f in bcdata.get_features(AIRPORTS_TABLE)]
     assert len(data) == 455

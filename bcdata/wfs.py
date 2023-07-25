@@ -374,53 +374,6 @@ class BCWFS(object):
                 yield feature
             log.info(self._request_features.retry.statistics)
 
-    def get_spatial_types(self, dataset, count=10):
-        """Return distinct types within the first n features"""
-        # validate the table name
-        table = self.validate_name(dataset)
-        log.info("Getting feature geometry type")
-        # get first n features, examine the feature geometry type (where geometry is not empty)
-        geom_types = []
-        for f in self.get_features(
-            table, count=count, check_count=False
-        ):  # to minimize network traffic, do not check record count for this requests
-            if f["geometry"]:
-                geom_type = f["geometry"]["type"].upper()
-                # only these geometry types are expected/supported
-                if geom_type not in (
-                    "POINT",
-                    "LINESTRING",
-                    "POLYGON",
-                    "MULTIPOINT",
-                    "MULTILINESTRING",
-                    "MULTIPOLYGON",
-                ):
-                    raise ValueError("Geometry type {geomtype} is not supported")
-                # look for z dimension, modify type if found
-                if (
-                    (geom_type == "POINT" and len(f["geometry"]["coordinates"]) == 3)
-                    or (
-                        geom_type == "MULTIPOINT"
-                        and len(f["geometry"]["coordinates"][0]) == 3
-                    )
-                    or (
-                        geom_type == "LINESTRING"
-                        and len(f["geometry"]["coordinates"][0]) == 3
-                    )
-                    or (
-                        geom_type == "MULTILINESTRING"
-                        and len(f["geometry"]["coordinates"][0][0]) == 3
-                    )
-                ):
-                    geom_type = geom_type + "Z"
-                geom_types.append(geom_type)
-        geom_types = list(set(geom_types))
-        # issue warning if types are mixed
-        if len(geom_types) > 1:
-            typestring = ",".join(geom_types)
-            log.warning(f"Dataset {dataset} has multiple geometry types: {typestring}")
-        return geom_types
-
 
 # abstract away the WFS object
 
@@ -506,11 +459,6 @@ def get_features(
         lowercase=lowercase,
         check_count=check_count,
     )
-
-
-def get_spatial_types(dataset, count=10):
-    WFS = BCWFS()
-    return WFS.get_spatial_types(dataset, count=count)
 
 
 def list_tables(refresh=False):
