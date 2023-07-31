@@ -98,7 +98,6 @@ class BCWFS(object):
         return schema
 
     @retry(
-        retry=retry_if_exception_type(requests.exceptions.HTTPError),
         stop=stop_after_delay(120),
         wait=wait_random_exponential(multiplier=1, max=60),
     )
@@ -118,12 +117,14 @@ class BCWFS(object):
             log.debug(r.url)
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200
-            return int(ET.fromstring(r.text).attrib["numberMatched"])
+            count = int(ET.fromstring(r.text).attrib["numberMatched"])
+            if not count:
+                raise ValueError("No count returned")
         except Exception:
             log.debug("WFS/network error")
+        return count
 
     @retry(
-        retry=retry_if_exception_type(requests.exceptions.HTTPError),
         stop=stop_after_delay(120),
         wait=wait_random_exponential(multiplier=1, max=60),
     )
@@ -134,9 +135,12 @@ class BCWFS(object):
             log.info(r.url)
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
-            return r.json()["features"]
+            features = r.json()["features"]
+            if not features:
+                raise ValueError("No features returned")
         except Exception:
             log.debug("WFS/network error")
+        return features
 
     def get_capabilities(self, refresh=False):
         """
@@ -220,6 +224,7 @@ class BCWFS(object):
         """
         # validate the table name
         table = self.validate_name(dataset)
+
         # find out how many records are in the table
         if not count and check_count is False:
             raise ValueError(
