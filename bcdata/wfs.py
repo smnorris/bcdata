@@ -118,6 +118,7 @@ class BCWFS(object):
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200
             count = int(ET.fromstring(r.text).attrib["numberMatched"])
+            # a count should always be returned, retry if no/empty count returned
             if not count:
                 raise ValueError("No count returned")
         except Exception:
@@ -136,6 +137,7 @@ class BCWFS(object):
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
             features = r.json()["features"]
+            # features should always be returned, retry if features element is empty
             if not features:
                 raise ValueError("No features returned")
         except Exception:
