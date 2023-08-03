@@ -38,6 +38,12 @@ def test_get_count_filtered():
     assert bcdata.get_count(UTMZONES_KEY, query="UTM_ZONE=10") == 1
 
 
+def test_get_count_bounds():
+    assert (
+        bcdata.get_count(AIRPORTS_TABLE, bounds=[1188000, 377051, 1207437, 390361]) == 8
+    )
+
+
 def test_get_data_asgdf():
     gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True)
     assert type(gdf) == GeoDataFrame

@@ -101,7 +101,9 @@ class BCWFS(object):
         stop=stop_after_delay(120),
         wait=wait_random_exponential(multiplier=1, max=60),
     )
-    def _request_count(self, table, query=None):
+    def _request_count(
+        self, table, query=None, bounds=None, bounds_crs=None, geom_column=None
+    ):
         payload = {
             "service": "WFS",
             "version": "2.0.0",
@@ -110,8 +112,13 @@ class BCWFS(object):
             "resultType": "hits",
             "outputFormat": "json",
         }
-        if query:
-            payload["CQL_FILTER"] = query
+        if query or bounds:
+            payload["CQL_FILTER"] = self.build_bounds_filter(
+                query=query,
+                bounds=bounds,
+                bounds_crs=bounds_crs,
+                geom_column=geom_column,
+            )
         try:
             r = requests.get(self.wfs_url, params=payload)
             log.debug(r.url)
@@ -146,6 +153,26 @@ class BCWFS(object):
             log.debug("WFS/network error")
         return features
 
+    def build_bounds_filter(self, query, bounds, bounds_crs, geom_column):
+        """The bbox param shortcut is mutually exclusive with CQL_FILTER,
+        combine query and bounds into a single CQL_FILTER expression
+        """
+        # return query untouched if no bounds provided
+        if not bounds:
+            if query:
+                cql_filter = query
+            else:
+                cql_filter = None
+        # parse the bounds into a bbox
+        elif bounds:
+            b0, b1, b2, b3 = [str(b) for b in bounds]
+            bnd_query = f"bbox({geom_column}, {b0}, {b1}, {b2}, {b3}, '{bounds_crs}')"
+            if query:
+                cql_filter = query + " AND " + bnd_query
+            else:
+                cql_filter = bnd_query
+        return cql_filter
+
     def get_capabilities(self, refresh=False):
         """
         Request server capabilities (layer definitions).
@@ -161,11 +188,19 @@ class BCWFS(object):
         with open(os.path.join(self.cache_path, "capabilities.xml"), "r") as f:
             return WebFeatureService(self.ows_url, version="2.0.0", xml=f.read())
 
-    def get_count(self, dataset, query=None):
-        """Ask DataBC WFS how many features there are in a table/query"""
-        # https://gis.stackexchange.com/questions/45101/only-return-the-numberoffeatures-in-a-wfs-query
+    def get_count(
+        self, dataset, query=None, bounds=None, bounds_crs="EPSG:3005", geom_column=None
+    ):
+        """Ask DataBC WFS how many features there are in a table/query/bounds"""
         table = self.validate_name(dataset)
-        count = self._request_count(table, query)
+        geom_column = self.get_schema(table)["geometry_column"]
+        count = self._request_count(
+            table,
+            query=query,
+            bounds=bounds,
+            bounds_crs=bounds_crs,
+            geom_column=geom_column,
+        )
         log.info(self._request_count.retry.statistics)
         return count
 
@@ -229,6 +264,10 @@ class BCWFS(object):
         # validate the table name
         table = self.validate_name(dataset)
 
+        # get name of the geometry column
+        schema = self.get_schema(table)
+        geom_column = schema["geometry_column"]
+
         # find out how many records are in the table
         if not count and check_count is False:
             raise ValueError(
@@ -237,17 +276,27 @@ class BCWFS(object):
         elif (
             not count and check_count is True
         ):  # if not provided a count, get one if not told otherwise
-            count = self.get_count(table, query=query)
+            count = self.get_count(
+                table,
+                query=query,
+                bounds=bounds,
+                bounds_crs=bounds_crs,
+                geom_column=geom_column,
+            )
         elif (
             count and check_count is True
         ):  # if provided a count that is bigger than actual number of records, automatically correct count
-            n = self.get_count(table, query=query)
+            n = self.get_count(
+                table,
+                query=query,
+                bounds=bounds,
+                bounds_crs=bounds_crs,
+                geom_column=geom_column,
+            )
             if count > n:
                 count = n
 
         log.info(f"Total features requested: {count}")
-        schema = self.get_schema(table)
-        geom_column = schema["geometry_column"]
 
         # for datasets with >10k records, generate a list of urls based on number of features in the dataset.
         chunks = math.ceil(count / pagesize)
@@ -269,19 +318,13 @@ class BCWFS(object):
             }
             if sortby:
                 request["sortby"] = sortby.upper()
-            # build the CQL based on query and bounds
-            # (the bbox param shortcut is mutually exclusive with CQL_FILTER)
-            if query and not bounds:
-                request["CQL_FILTER"] = query
-            if bounds:
-                b0, b1, b2, b3 = [str(b) for b in bounds]
-                bnd_query = (
-                    f"bbox({geom_column}, {b0}, {b1}, {b2}, {b3}, '{bounds_crs}')"
+            if query or bounds:
+                request["CQL_FILTER"] = self.build_bounds_filter(
+                    query=query,
+                    bounds=bounds,
+                    bounds_crs=bounds_crs,
+                    geom_column=geom_column,
                 )
-                if not query:
-                    request["CQL_FILTER"] = bnd_query
-                else:
-                    request["CQL_FILTER"] = query + " AND " + bnd_query
             if chunks == 1:
                 request["count"] = count
             if chunks > 1:
@@ -411,9 +454,17 @@ def define_requests(
     )
 
 
-def get_count(dataset, query=None):
+def get_count(dataset, query=None, bounds=None, bounds_crs="EPSG:3005"):
     WFS = BCWFS()
-    return WFS.get_count(dataset, query=query)
+    table = WFS.validate_name(dataset)
+    geom_column = WFS.get_schema(table)["geometry_column"]
+    return WFS.get_count(
+        dataset,
+        query=query,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
+        geom_column=geom_column,
+    )
 
 
 def get_data(
