@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from bcdata import bcdc
 
 AIRPORTS_PACKAGE = "bc-airports"
@@ -11,6 +12,11 @@ AIRPORTS_SCHEMA = """[{"data_precision": 200, "column_comments": "CUSTODIAN_ORG_
 def test_get_table_name():
     table = bcdc.get_table_name(AIRPORTS_PACKAGE)
     assert table == AIRPORTS_TABLE
+
+
+def test_get_table_name_invalid():
+    with pytest.raises(ValueError):
+        bcdc.get_table_name("bc-airports-doesnotexist")
 
 
 def test_table_name_uppercase():

@@ -16,16 +16,32 @@ BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
 
 
 @retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
+def _package_show(package):
+    try:
+        r = requests.get(BCDC_API_URL + "package_show", params={"id": package})
+    except Exception:
+        log.error("BCDC API Error")
+    return r
+
+
+@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
+def _table_definition(table_name):
+    try:
+        r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
+        status_code = r.status_code
+        if status_code != 200:
+            raise ValueError(f"Error searching BC Data Catalogue API: {status_code}")
+    except Exception:
+        log.error("BCDC API Error")
+    return r
+
+
 def get_table_name(package):
     """Query DataBC API to find WFS table/layer name for given package"""
     package = package.lower()  # package names are lowercase
-    params = {"id": package}
-    try:
-        r = requests.get(BCDC_API_URL + "package_show", params=params)
-        if r.status_code != 200:
-            raise ValueError("{d} is not present in DataBC API list".format(d=package))
-    except Exception:
-        log.error("BCDC API Error")
+    r = _package_show(package)
+    if r.status_code != 200:
+        raise ValueError("{d} is not present in DataBC API list".format(d=package))
     result = r.json()["result"]
     # Because the object_name in the result json is not a 100% reliable key
     # for WFS requests, parse URL in WMS resource(s).
@@ -42,7 +58,6 @@ def get_table_name(package):
     return layer_names[0]
 
 
-@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
 def get_table_definition(table_name):
     """
     Given a table/object name, search BCDC for the first package/resource with a
@@ -55,14 +70,7 @@ def get_table_definition(table_name):
             f"Only tables available via WFS are supported, {table_name} not found"
         )
     # search the api for the provided table
-    try:
-        r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
-        # catch general api errors
-        status_code = r.status_code
-        if status_code != 200:
-            raise ValueError(f"Error searching BC Data Catalogue API: {status_code}")
-    except Exception:
-        log.error("BCDC API Error")
+    r = _table_definition(table_name)
     # if there are no matching results, let the user know
     if r.json()["result"]["count"] == 0:
         log.warning(
