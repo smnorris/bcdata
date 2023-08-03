@@ -119,7 +119,7 @@ class BCWFS(object):
             r.raise_for_status()  # check status code is 200
             count = int(ET.fromstring(r.text).attrib["numberMatched"])
             # because table name has been validated, a count should always be returned
-            # retry if no/empty count returned
+            # if empty count returned, presume network/service error and retry
             if not count:
                 raise ValueError("No count returned")
         except Exception:
@@ -139,7 +139,7 @@ class BCWFS(object):
             r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
             features = r.json()["features"]
             # because table name has been validated, features should always be returned
-            # retry if features element is empty
+            # if features element is empty, presume network/service error and retry
             if not features:
                 raise ValueError("No features returned")
         except Exception:
