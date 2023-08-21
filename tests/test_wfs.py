@@ -1,7 +1,6 @@
 import os
 
 import bcdata
-from bcdata.wfs import BCWFS
 
 from geopandas.geodataframe import GeoDataFrame
 
@@ -19,9 +18,9 @@ def test_validate_table_lowercase():
     assert table == AIRPORTS_TABLE
 
 
-def test_cache_file(tmp_path):
-    BCWFS(cache_path=tmp_path / ".bcdata")
-    assert os.path.exists(tmp_path / ".bcdata" / "capabilities.xml")
+# def test_cache_file(tmp_path):
+#    BCWFS(cache_path=tmp_path / ".bcdata")
+#    assert os.path.exists(tmp_path / ".bcdata" / "capabilities.xml")
 
 
 def test_get_table_name_urlparse():

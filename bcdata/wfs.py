@@ -11,7 +11,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 
-from owslib.wfs import WebFeatureService
+from owslib.feature import schema as wfs_schema
 import requests
 from tenacity import retry
 from tenacity.stop import stop_after_delay
@@ -28,11 +28,11 @@ log = logging.getLogger(__name__)
 
 
 class BCWFS(object):
-    """Wrapper around owslib WebFeatureService to manage cached resources"""
+    """Wrapper around web feature service"""
 
-    def __init__(self, cache_path=None, refresh=False):
+    def __init__(self, cache_path=None):
         self.wfs_url = "https://openmaps.gov.bc.ca/geo/pub/wfs"
-        self.ows_url = "http://openmaps.gov.bc.ca/geo/ows"
+        self.ows_url = "https://openmaps.gov.bc.ca/geo/pub/ows"
 
         # point to cache path
         if cache_path:
@@ -54,8 +54,6 @@ class BCWFS(object):
                 )
         # create cache folder if it does not exist
         p.mkdir(parents=True, exist_ok=True)
-        # load capabilities
-        self.capabilities = self.get_capabilities(refresh)
 
     def check_cached_file(self, cache_file, days=1):
         """Return true if the file is empty / does not exist / is more than n days old"""
@@ -76,23 +74,35 @@ class BCWFS(object):
     @retry(
         stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
     )
-    def _request_capabilities(self):
+    def _request_schema(self, table):
         try:
-            capabilities = ET.tostring(
-                WebFeatureService(self.ows_url, version="2.0.0")._capabilities,
-                encoding="unicode",
+            schema = wfs_schema.get_schema(
+                "https://openmaps.gov.bc.ca/geo/pub/ows",
+                typename=table,
+                version="2.0.0",
             )
         except Exception:
             log.debug("WFS/network error")
-        return capabilities
+        return schema
 
     @retry(
         stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
     )
-    def _request_schema(self, table):
+    def _describe_feature_type(self, table):
+        """get table schema via DescribeFeatureType request"""
+        payload = {
+            "service": "WFS",
+            "version": "2.0.0",
+            "request": "DescribeFeatureType",
+            "typeName": table,
+        }
         try:
-            # self.capabilities attribute is owslib.wfs.WebFeatureService instance
-            schema = self.capabilities.get_schema("pub:" + table)
+            ows_url = "https://openmaps.gov.bc.ca/geo/pub/ows"
+            r = requests.get(ows_url, params=payload)
+            log.debug(r.url)
+            log.debug(r.headers)
+            r.raise_for_status()  # check status code is 200
+            schema = ET.fromstring(r.text)
         except Exception:
             log.debug("WFS/network error")
         return schema
@@ -173,21 +183,6 @@ class BCWFS(object):
                 cql_filter = bnd_query
         return cql_filter
 
-    def get_capabilities(self, refresh=False):
-        """
-        Request server capabilities (layer definitions).
-        Cache response as file daily, caching to one of:
-          - $BCDATA_CACHE environment variable
-          - default (~/.bcdata)
-        """
-        # request capabilities if cached capabilities file is > 1 day old or refresh is specified
-        if self.check_cached_file("capabilities.xml", days=1) or refresh:
-            with open(os.path.join(self.cache_path, "capabilities.xml"), "w") as f:
-                f.write(self._request_capabilities())
-        # load cached xml from file
-        with open(os.path.join(self.cache_path, "capabilities.xml"), "r") as f:
-            return WebFeatureService(self.ows_url, version="2.0.0", xml=f.read())
-
     def get_count(
         self, dataset, query=None, bounds=None, bounds_crs="EPSG:3005", geom_column=None
     ):
@@ -232,7 +227,7 @@ class BCWFS(object):
 
     def list_tables(self):
         """Return a list of all tables available via WFS"""
-        return [i.strip("pub:") for i in list(self.capabilities.contents)]
+        return bcdata.table_list
 
     def validate_name(self, dataset):
         """Check wfs/cache and the bcdc api to see if dataset name is valid"""
@@ -521,9 +516,8 @@ def get_features(
     )
 
 
-def list_tables(refresh=False):
-    WFS = BCWFS(refresh=refresh)
-    return WFS.list_tables()
+def list_tables():
+    return bcdata.table_list
 
 
 def validate_name(dataset):

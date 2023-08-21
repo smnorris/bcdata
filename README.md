@@ -38,11 +38,9 @@ Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port
 
 #### Layer list / layer schema cache
 
-To reduce the volume of requests, information about data requested is cached locally:
- - the WFS GetCapabilities response xml (listing all datasets available via the service) is cached as `capabilities.xml`
- - schemas of individual layers that have previously been requested are cached with the cache file name matching the object/table name
-
-`capabilities.xml` is automatically refreshed if it is more than a day old. The layer definition files are refreshed if more than 30 days old. These cache files are stored by default in `~/.bcdata`. Modify this location by  setting the the `$BCDATA_CACHE` environment variable:
+To reduce the volume of requests, information about data requested is cached locally. 
+Schemas of individual layers that have previously been requested are cached with the cache file name matching the object/table name.
+Location of the cache defaults to `~/.bcdata` but can be moditified by setting the `BCDATA_CACHE` environment variable:
 
 `export BCDATA_CACHE=/path/to/bcdata_cache`
 
@@ -248,7 +246,6 @@ Usage: bcdata list [OPTIONS]
   List DataBC layers available via WFS
 
 Options:
-  -r, --refresh  Refresh the cached list
   --help         Show this message and exit.
 ```
 

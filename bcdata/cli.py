@@ -90,12 +90,12 @@ def cli():
 
 
 @cli.command()
-@click.option("--refresh", "-r", is_flag=True, help="Refresh the cached list")
-def list(refresh):
+# @click.option("--refresh", "-r", is_flag=True, help="Refresh the cached list")
+def list():
     """List DataBC layers available via WFS"""
     # This works too, but is much slower:
     # ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
-    for table in bcdata.list_tables(refresh):
+    for table in bcdata.list_tables():
         click.echo(table)
 
 
