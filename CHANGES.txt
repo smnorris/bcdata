@@ -1,9 +1,11 @@
 Changes
 =======
 
-0.8.1 (2023-07-)
+0.8.1 (2023-08-21)
 ------------------
 - remove redundant request from bc2pg, drop wfs get_spatial_types function
+- get sort key and geom column via DescribeFeatureType request (via owslib.feature.schema) rather than GetCapabilities
+- list tables internally as a temporary work around for missing getCapabilities response from service (#141)
 
 0.8.0 (2023-07-21)
 ------------------
