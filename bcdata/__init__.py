@@ -10,7 +10,7 @@ from .bc2pg import bc2pg
 from .wcs import get_dem
 
 
-__version__ = "0.8.1"
+__version__ = "0.8.1post1"
 
 table_list = [
     "WHSE_BASEMAPPING.DBM_BC_7H_MIL_BATHYMETRC_POLY",

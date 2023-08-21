@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.8.1post1 (2023-08-21)
+------------------
+- update requirements.txt/environment.yml and pin dependencies
+
 0.8.1 (2023-08-21)
 ------------------
 - remove redundant request from bc2pg, drop wfs get_spatial_types function
