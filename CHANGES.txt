@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.8.2 ()
+------------------
+- restore dynamic layer listing (#142)
+
 0.8.1post1 (2023-08-21)
 ------------------
 - update requirements.txt/environment.yml and pin dependencies
