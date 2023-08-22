@@ -18,11 +18,6 @@ def test_validate_table_lowercase():
     assert table == AIRPORTS_TABLE
 
 
-# def test_cache_file(tmp_path):
-#    BCWFS(cache_path=tmp_path / ".bcdata")
-#    assert os.path.exists(tmp_path / ".bcdata" / "capabilities.xml")
-
-
 def test_get_table_name_urlparse():
     table = bcdata.get_table_name("natural-resource-nr-district")
     assert table == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
