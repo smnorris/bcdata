@@ -242,7 +242,6 @@ def dump(dataset, query, out_file, bounds, bounds_crs, lowercase, verbose, quiet
 @indent_opt
 @compact_opt
 @dst_crs_opt
-@click.option("--pagesize", "-p", default=10000, help="Maximum request size")
 @click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--bounds-crs",
@@ -261,7 +260,6 @@ def cat(
     indent,
     compact,
     dst_crs,
-    pagesize,
     sortby,
     lowercase,
     verbose,
@@ -286,7 +284,6 @@ def cat(
         bounds_crs=bounds_crs,
         sortby=sortby,
         crs=dst_crs,
-        pagesize=pagesize,
         lowercase=lowercase,
     ):
         click.echo(json.dumps(feat, **dump_kwds))
@@ -321,7 +318,6 @@ def clear_cache(verbose, quiet):
     type=int,
     help="Total number of features to load",
 )
-@click.option("--pagesize", "-p", default=10000, help="Maximum request size")
 @click.option("--primary_key", "-k", default=None, help="Primary key of dataset")
 @click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
@@ -352,7 +348,6 @@ def bc2pg(
     geometry_type,
     query,
     count,
-    pagesize,
     primary_key,
     sortby,
     no_timestamp,
@@ -383,7 +378,6 @@ def bc2pg(
         query=query,
         geometry_type=geometry_type,
         count=count,
-        pagesize=pagesize,
         primary_key=primary_key,
         sortby=sortby,
         timestamp=timestamp,
