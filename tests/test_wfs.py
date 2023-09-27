@@ -11,6 +11,7 @@ BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 GLACIERS_TABLE = "whse_basemapping.fwa_glaciers_poly"
 STREAMS_TABLE = "whse_basemapping.fwa_stream_networks_sp"
+WELLS_TABLE = "whse_water_management.gw_water_wells_wrbc_svw"
 
 
 def test_validate_table_lowercase():
@@ -71,19 +72,15 @@ def test_get_features():
     assert len(data) == 455
 
 
-def test_get_data_paged():
-    data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250)
-    assert len(data["features"]) == 455
-
-
 def test_get_data_count():
     data = bcdata.get_data(AIRPORTS_TABLE, count=100)
     assert len(data["features"]) == 100
 
 
+# this test presumes paging is at 10k records
 def test_get_data_paged_count():
-    data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250, count=300)
-    assert len(data["features"]) == 300
+    data = bcdata.get_data(WELLS_TABLE, count=11000)
+    assert len(data["features"]) == 11000
 
 
 def test_get_data_sortby():

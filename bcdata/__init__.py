@@ -1,13 +1,13 @@
-from .bcdc import get_table_name
-from .bcdc import get_table_definition
-from .wfs import define_requests
-from .wfs import get_count
-from .wfs import get_data
-from .wfs import get_features
-from .wfs import list_tables
-from .wfs import validate_name
 from .bc2pg import bc2pg
+from .bcdc import get_table_definition, get_table_name
 from .wcs import get_dem
-
+from .wfs import (
+    define_requests,
+    get_count,
+    get_data,
+    get_features,
+    list_tables,
+    validate_name,
+)
 
 __version__ = "0.8.2.dev"

@@ -2,13 +2,12 @@ import json
 import logging
 from urllib.parse import urlparse
 
+import requests
 from tenacity import retry
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
-import requests
 
 import bcdata
-
 
 log = logging.getLogger(__name__)
 

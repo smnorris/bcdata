@@ -2,10 +2,9 @@ import logging
 import os
 
 import psycopg2
-from psycopg2 import sql
-from sqlalchemy import MetaData, Table, Column
 from geoalchemy2 import Geometry
-from sqlalchemy import create_engine
+from psycopg2 import sql
+from sqlalchemy import Column, MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import DATE, NUMERIC, VARCHAR
 
 log = logging.getLogger(__name__)

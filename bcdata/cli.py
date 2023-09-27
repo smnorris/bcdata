@@ -1,13 +1,11 @@
-import sys
 import json
 import logging
 import os
 import re
+import sys
 
 import click
-from cligj import indent_opt
-from cligj import compact_opt
-from cligj import verbose_opt, quiet_opt
+from cligj import compact_opt, indent_opt, quiet_opt, verbose_opt
 
 import bcdata
 

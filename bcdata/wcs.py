@@ -1,8 +1,8 @@
 import logging
 from math import trunc
 
-import requests
 import rasterio
+import requests
 
 import bcdata
 
