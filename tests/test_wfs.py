@@ -1,8 +1,8 @@
 import os
 
-import bcdata
-
 from geopandas.geodataframe import GeoDataFrame
+
+import bcdata
 
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"

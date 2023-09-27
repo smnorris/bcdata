@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from bcdata import bcdc
 
 AIRPORTS_PACKAGE = "bc-airports"
