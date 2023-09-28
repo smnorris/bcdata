@@ -57,8 +57,16 @@ class BCWFS(object):
         self.refresh = refresh
         self.cache_refresh_days = 30
         self.capabilities = self.get_capabilities()
-        # self.pagesize = self.get_pagesize()
-        self.pagesize = 10000
+        # get pagesize from xml using the xpath from https://github.com/bcgov/bcdata/
+        countdefault = ET.fromstring(self.capabilities).findall(
+            ".//{http://www.opengis.net/ows/1.1}Constraint[@name='CountDefault']"
+        )[0]
+        self.pagesize = int(
+            countdefault.find(
+                "ows:DefaultValue", {"ows": "http://www.opengis.net/ows/1.1"}
+            ).text
+        )
+
         self.request_headers = {"User-Agent": "bcdata.py ({bcdata.__version__})"}
 
     def check_cached_file(self, cache_file):
