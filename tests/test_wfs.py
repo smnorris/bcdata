@@ -1,8 +1,8 @@
 import os
 
-import bcdata
-
 from geopandas.geodataframe import GeoDataFrame
+
+import bcdata
 
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
@@ -11,6 +11,7 @@ BEC_KEY = "biogeoclimatic-ecosystem-classification-bec-map"
 ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 GLACIERS_TABLE = "whse_basemapping.fwa_glaciers_poly"
 STREAMS_TABLE = "whse_basemapping.fwa_stream_networks_sp"
+WELLS_TABLE = "whse_water_management.gw_water_wells_wrbc_svw"
 
 
 def test_validate_table_lowercase():
@@ -43,6 +44,13 @@ def test_get_data_asgdf():
     assert type(gdf) == GeoDataFrame
 
 
+def test_get_data_asgdf_crs():
+    gdf = bcdata.get_data(
+        UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True, crs="EPSG:3005"
+    )
+    assert gdf.crs == "EPSG:3005"
+
+
 def test_get_null_gdf():
     gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=9999", as_gdf=True)
     assert type(gdf) == GeoDataFrame
@@ -71,19 +79,17 @@ def test_get_features():
     assert len(data) == 455
 
 
-def test_get_data_paged():
-    data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250)
-    assert len(data["features"]) == 455
-
-
 def test_get_data_count():
     data = bcdata.get_data(AIRPORTS_TABLE, count=100)
     assert len(data["features"]) == 100
 
 
+# this presumes the page size will always be less than the total number of wells
 def test_get_data_paged_count():
-    data = bcdata.get_data(AIRPORTS_TABLE, pagesize=250, count=300)
-    assert len(data["features"]) == 300
+    wfs = bcdata.wfs.BCWFS()
+    count = wfs.pagesize + 100
+    data = bcdata.get_data(WELLS_TABLE, count=count)
+    assert len(data["features"]) == count
 
 
 def test_get_data_sortby():

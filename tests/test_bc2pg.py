@@ -3,7 +3,6 @@ import pytest
 import bcdata
 from bcdata.database import Database
 
-
 DB_URL = "postgresql://postgres@localhost:5432/bcdata_test"
 DB_CONNECTION = Database(url=DB_URL)
 AIRPORTS_PACKAGE = "bc-airports"

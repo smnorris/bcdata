@@ -1,24 +1,24 @@
-from datetime import datetime
-from datetime import timedelta
 import json
 import logging
 import math
-from pathlib import Path
 import os
-from urllib.parse import urlencode
 import sys
 import warnings
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
+from pathlib import Path
+from urllib.parse import urlencode
 
+import geopandas as gpd
+import requests
 from owslib.feature import schema as wfs_schema
 from owslib.feature import wfs200
-import requests
+from owslib.wfs import WebFeatureService
 from tenacity import retry
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
-from tenacity.retry import retry_if_exception_type
-import geopandas as gpd
 
 import bcdata
 
@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 class BCWFS(object):
     """Wrapper around web feature service"""
 
-    def __init__(self):
+    def __init__(self, refresh=False):
         self.wfs_url = "https://openmaps.gov.bc.ca/geo/pub/wfs"
         self.ows_url = (
             "http://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities"
@@ -54,8 +54,22 @@ class BCWFS(object):
                 )
         # create cache folder if it does not exist
         p.mkdir(parents=True, exist_ok=True)
+        self.refresh = refresh
+        self.cache_refresh_days = 30
+        self.capabilities = self.get_capabilities()
+        # get pagesize from xml using the xpath from https://github.com/bcgov/bcdata/
+        countdefault = ET.fromstring(self.capabilities).findall(
+            ".//{http://www.opengis.net/ows/1.1}Constraint[@name='CountDefault']"
+        )[0]
+        self.pagesize = int(
+            countdefault.find(
+                "ows:DefaultValue", {"ows": "http://www.opengis.net/ows/1.1"}
+            ).text
+        )
 
-    def check_cached_file(self, cache_file, days=1):
+        self.request_headers = {"User-Agent": "bcdata.py ({bcdata.__version__})"}
+
+    def check_cached_file(self, cache_file):
         """Return true if the file is empty / does not exist / is more than n days old"""
         cache_file = os.path.join(self.cache_path, cache_file)
         if not os.path.exists(os.path.join(cache_file)):
@@ -64,7 +78,7 @@ class BCWFS(object):
             mod_date = datetime.fromtimestamp(os.path.getmtime(cache_file))
             # if file older than specified days or empty, return true
             if (
-                mod_date < (datetime.now() - timedelta(days=days))
+                mod_date < (datetime.now() - timedelta(days=self.cache_refresh_days))
                 or os.stat(cache_file).st_size == 0
             ):
                 return True
@@ -88,33 +102,17 @@ class BCWFS(object):
     @retry(
         stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
     )
-    def _list_tables(self):
+    def _request_capabilities(self):
         try:
-            wfs = wfs200.WebFeatureService_2_0_0(self.ows_url, "2.0.0", None, False)
+            capabilities = ET.tostring(
+                wfs200.WebFeatureService_2_0_0(
+                    self.ows_url, "2.0.0", None, False
+                )._capabilities,
+                encoding="unicode",
+            )
         except Exception:
             log.debug("WFS/network error")
-        return [i.strip("pub:") for i in list(wfs.contents)]
-
-    @retry(
-        stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
-    )
-    def _describe_feature_type(self, table):
-        """get table schema via DescribeFeatureType request"""
-        payload = {
-            "service": "WFS",
-            "version": "2.0.0",
-            "request": "DescribeFeatureType",
-            "typeName": table,
-        }
-        try:
-            r = requests.get("https://openmaps.gov.bc.ca/geo/pub/ows", params=payload)
-            log.debug(r.url)
-            log.debug(r.headers)
-            r.raise_for_status()  # check status code is 200
-            schema = ET.fromstring(r.text)
-        except Exception:
-            log.debug("WFS/network error")
-        return schema
+        return capabilities
 
     @retry(
         stop=stop_after_delay(120),
@@ -139,7 +137,7 @@ class BCWFS(object):
                 geom_column=geom_column,
             )
         try:
-            r = requests.get(self.wfs_url, params=payload)
+            r = requests.get(self.wfs_url, params=payload, headers=self.request_headers)
             log.debug(r.url)
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200
@@ -159,7 +157,7 @@ class BCWFS(object):
     def _request_features(self, url):
         """Submit a getfeature request to DataBC WFS and return features"""
         try:
-            r = requests.get(url)
+            r = requests.get(url, headers=self.request_headers)
             log.info(r.url)
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
@@ -192,6 +190,21 @@ class BCWFS(object):
                 cql_filter = bnd_query
         return cql_filter
 
+    def get_capabilities(self):
+        """
+        Request server capabilities (layer definitions).
+        Cache response as file daily, caching to one of:
+          - $BCDATA_CACHE environment variable
+          - default (~/.bcdata)
+        """
+        # request capabilities if cached file is old or refresh is specified
+        if self.check_cached_file("capabilities.xml") or self.refresh:
+            with open(os.path.join(self.cache_path, "capabilities.xml"), "w") as f:
+                f.write(self._request_capabilities())
+        # load cached xml from file
+        with open(os.path.join(self.cache_path, "capabilities.xml"), "r") as f:
+            return f.read()
+
     def get_count(
         self, dataset, query=None, bounds=None, bounds_crs="EPSG:3005", geom_column=None
     ):
@@ -208,9 +221,9 @@ class BCWFS(object):
         log.info(self._request_count.retry.statistics)
         return count
 
-    def get_schema(self, table, refresh=False):
+    def get_schema(self, table):
         # download table definition if file is > 30 days old, empty, or refresh is specified
-        if self.check_cached_file(table, days=30) or refresh:
+        if self.check_cached_file(table) or self.refresh:
             with open(os.path.join(self.cache_path, table), "w") as f:
                 schema = self._request_schema(table)
                 f.write(json.dumps(schema, indent=4))
@@ -234,14 +247,16 @@ class BCWFS(object):
         else:
             return columns[0]
 
-    def list_tables(self, refresh=False):
-        """Make a GetCapabilites request and return a list of all tables available via WFS"""
-        if self.check_cached_file("tables.txt", days=1) or refresh:
-            with open(os.path.join(self.cache_path, "tables.txt"), "w") as f:
-                f.write("\n".join(self._list_tables()))
-        # load cached table list from file
-        with open(os.path.join(self.cache_path, "tables.txt"), "r") as f:
-            return f.read().splitlines()
+    def list_tables(self):
+        """read and parse capabilities xml, which lists all tables available"""
+        return [
+            i.strip("pub:")
+            for i in list(
+                WebFeatureService(
+                    self.ows_url, version="2.0.0", xml=self.capabilities
+                ).contents
+            )
+        ]
 
     def validate_name(self, dataset):
         """Check wfs/cache and the bcdc api to see if dataset name is valid"""
@@ -259,7 +274,6 @@ class BCWFS(object):
         bounds_crs="EPSG:3005",
         count=None,
         sortby=None,
-        pagesize=10000,
         check_count=True,
     ):
         """Translate provided parameters into a list of WFS request URLs required
@@ -308,7 +322,7 @@ class BCWFS(object):
         log.info(f"Total features requested: {count}")
 
         # for datasets with >10k records, generate a list of urls based on number of features in the dataset.
-        chunks = math.ceil(count / pagesize)
+        chunks = math.ceil(count / self.pagesize)
 
         # if making several requests, we need to sort by something
         if chunks > 1 and not sortby:
@@ -337,11 +351,11 @@ class BCWFS(object):
             if chunks == 1:
                 request["count"] = count
             if chunks > 1:
-                request["startIndex"] = i * pagesize
-                if count < (request["startIndex"] + pagesize):
+                request["startIndex"] = i * self.pagesize
+                if count < (request["startIndex"] + self.pagesize):
                     request["count"] = count - request["startIndex"]
                 else:
-                    request["count"] = pagesize
+                    request["count"] = self.pagesize
             urls.append(self.wfs_url + "?" + urlencode(request, doseq=True))
         return urls
 
@@ -354,7 +368,6 @@ class BCWFS(object):
         bounds_crs="epsg:3005",
         count=None,
         sortby=None,
-        pagesize=10000,
         as_gdf=False,
         lowercase=False,
     ):
@@ -367,7 +380,6 @@ class BCWFS(object):
             bounds_crs=bounds_crs,
             count=count,
             sortby=sortby,
-            pagesize=pagesize,
         )
         # loop through requests
         results = []
@@ -396,7 +408,7 @@ class BCWFS(object):
         else:
             if len(outjson["features"]) > 0:
                 gdf = gpd.GeoDataFrame.from_features(outjson)
-                gdf.crs = {"init": crs}
+                gdf.crs = crs
             else:
                 gdf = gpd.GeoDataFrame()
             return gdf
@@ -410,7 +422,6 @@ class BCWFS(object):
         bounds_crs="epsg:3005",
         count=None,
         sortby=None,
-        pagesize=10000,
         lowercase=False,
         check_count=True,
     ):
@@ -423,7 +434,6 @@ class BCWFS(object):
             bounds_crs=bounds_crs,
             count=count,
             sortby=sortby,
-            pagesize=pagesize,
             check_count=check_count,
         )
         for url in urls:
@@ -447,7 +457,6 @@ def define_requests(
     bounds_crs="EPSG:3005",
     count=None,
     sortby=None,
-    pagesize=10000,
     check_count=True,
 ):
     WFS = BCWFS()
@@ -458,7 +467,6 @@ def define_requests(
         bounds=bounds,
         count=count,
         sortby=sortby,
-        pagesize=pagesize,
         check_count=check_count,
     )
 
@@ -484,7 +492,6 @@ def get_data(
     bounds_crs="epsg:3005",
     count=None,
     sortby=None,
-    pagesize=10000,
     as_gdf=False,
     lowercase=False,
 ):
@@ -497,7 +504,6 @@ def get_data(
         bounds_crs=bounds_crs,
         count=count,
         sortby=sortby,
-        pagesize=pagesize,
         as_gdf=as_gdf,
         lowercase=lowercase,
     )
@@ -511,7 +517,6 @@ def get_features(
     bounds_crs="epsg:3005",
     count=None,
     sortby=None,
-    pagesize=10000,
     lowercase=False,
     check_count=True,
 ):
@@ -524,15 +529,14 @@ def get_features(
         bounds_crs=bounds_crs,
         count=count,
         sortby=sortby,
-        pagesize=pagesize,
         lowercase=lowercase,
         check_count=check_count,
     )
 
 
 def list_tables(refresh=False):
-    WFS = BCWFS()
-    return WFS.list_tables(refresh)
+    WFS = BCWFS(refresh)
+    return WFS.list_tables()
 
 
 def validate_name(dataset):

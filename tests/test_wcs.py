@@ -1,7 +1,7 @@
 import os
 
-import rasterio
 import pytest
+import rasterio
 from rasterio.coords import BoundingBox
 
 import bcdata

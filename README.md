@@ -6,8 +6,7 @@ There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
 but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl/wget` can be awkward.
 
-This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with PostGIS and Python GIS tools like `geopandas`, `fiona` and `rasterio`.
-
+This Python module and CLI attempts to simplify downloads of BC geographic data and smoothly integrate with PostGIS and Python GIS tools like `geopandas`, `fiona` and `rasterio`. As noted above, the module is an interface only to geographic data [avialable via WFS/WCS](https://bcgov.github.io/data-publication/pages/tips_tricks_webservices.html)  - to work with other BC open data, use the [bcdata R package](https://github.com/bcgov/bcdata).
 
 **Disclaimer**  
 *It is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)*
@@ -44,7 +43,7 @@ Location of the cache defaults to `~/.bcdata` but can be moditified by setting t
 
 `export BCDATA_CACHE=/path/to/bcdata_cache`
 
-Force a cache refresh by deleting the files in the cache or the entire cache folder.
+The cache will automatically refresh after 30 days - force a cache refresh by deleting the files in the cache or the entire cache folder.
 
 ## Usage
 
@@ -123,7 +122,6 @@ Options:
   --geometry_type TEXT    Spatial type of geometry column
   --query TEXT            A valid CQL or ECQL query
   -c, --count INTEGER     Total number of features to load
-  -p, --pagesize INTEGER  Maximum request size
   -k, --primary_key TEXT  Primary key of dataset
   -s, --sortby TEXT       Name of sort field
   -e, --schema_only       Create empty table from catalogue schema
@@ -151,7 +149,6 @@ Options:
   --indent INTEGER                Indentation level for JSON output
   --compact / --not-compact       Use compact separators (',', ':').
   --dst-crs, --dst_crs TEXT       Destination CRS
-  -p, --pagesize INTEGER          Maximum request size
   -s, --sortby TEXT               Name of sort field
   --bounds-crs, --bounds_crs TEXT
                                   CRS of provided bounds
