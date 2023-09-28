@@ -53,7 +53,6 @@ def bc2pg(
     count=None,
     sortby=None,
     primary_key=None,
-    pagesize=10000,
     timestamp=True,
     schema_only=False,
     append=False,
@@ -75,7 +74,6 @@ def bc2pg(
         query=query,
         count=count,
         sortby=sortby,
-        pagesize=pagesize,
         crs="epsg:3005",
     )
 
