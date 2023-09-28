@@ -51,7 +51,8 @@ Making WFS requests and dumping to file/postgres is fairly straightforward with 
 
 `bcdata` smooths the above processes by:
 
-- providing a CLI for basic/typical request options
+- providing Python and CLI interfaces for typical request options
 - generating paged requests
-- handling typical minor issues (eg mixed geometry types)
+- reducing server load by caching getcapabilites responses
+- handling typical minor data issues (eg mixed geometry types)
 - creating postgres tables that mirror the table schema as defined in BCGW (rather than using ogr default types)
