@@ -82,13 +82,16 @@ def get_dem(
         "resx": str(resolution),
         "resy": str(resolution),
     }
-
     if interpolation:
         payload["INTERPOLATION"] = interpolation
 
     # request data from WCS
     log.debug(payload)
-    r = requests.get(WCS_URL, params=payload)
+    r = requests.get(
+        WCS_URL,
+        params=payload,
+        headers={"User-Agent": "bcdata.py ({bcdata.__version__})"},
+    )
     log.debug(r.headers)
     if r.status_code == 200:
         if r.headers["Content-Type"] == "image/tiff":

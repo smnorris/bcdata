@@ -59,6 +59,7 @@ class BCWFS(object):
         self.capabilities = self.get_capabilities()
         # self.pagesize = self.get_pagesize()
         self.pagesize = 10000
+        self.request_headers = {"User-Agent": "bcdata.py ({bcdata.__version__})"}
 
     def check_cached_file(self, cache_file):
         """Return true if the file is empty / does not exist / is more than n days old"""
@@ -106,27 +107,6 @@ class BCWFS(object):
         return capabilities
 
     @retry(
-        stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
-    )
-    def _describe_feature_type(self, table):
-        """get table schema via DescribeFeatureType request"""
-        payload = {
-            "service": "WFS",
-            "version": "2.0.0",
-            "request": "DescribeFeatureType",
-            "typeName": table,
-        }
-        try:
-            r = requests.get("https://openmaps.gov.bc.ca/geo/pub/ows", params=payload)
-            log.debug(r.url)
-            log.debug(r.headers)
-            r.raise_for_status()  # check status code is 200
-            schema = ET.fromstring(r.text)
-        except Exception:
-            log.debug("WFS/network error")
-        return schema
-
-    @retry(
         stop=stop_after_delay(120),
         wait=wait_random_exponential(multiplier=1, max=60),
     )
@@ -149,7 +129,7 @@ class BCWFS(object):
                 geom_column=geom_column,
             )
         try:
-            r = requests.get(self.wfs_url, params=payload)
+            r = requests.get(self.wfs_url, params=payload, headers=self.request_headers)
             log.debug(r.url)
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200
@@ -169,7 +149,7 @@ class BCWFS(object):
     def _request_features(self, url):
         """Submit a getfeature request to DataBC WFS and return features"""
         try:
-            r = requests.get(url)
+            r = requests.get(url, headers=self.request_headers)
             log.info(r.url)
             log.debug(r.headers)
             r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
