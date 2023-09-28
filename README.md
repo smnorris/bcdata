@@ -373,44 +373,7 @@ Create virtualenv and install `bcdata` in development mode:
 
 
 ## Other implementations
-- [bcdata R package](https://github.com/bcgov/bcdata)
-- [OWSLib](https://github.com/geopython/OWSLib) has basic WFS capabilities
-- [pgsql-ogr-fdw](https://github.com/pramsey/pgsql-ogr-fdw) - read WFS data with postgres foreign data wrapper
-- GDAL / curl / wget:
-
-        # list all layers
-        # querying the endpoint this way doesn't seem to work with `VERSION=2.0.0`
-        ogrinfo WFS:http://openmaps.gov.bc.ca/geo/ows?VERSION=1.1.0
-
-        # define a request url for airports
-        airports_url="https://openmaps.gov.bc.ca/geo/pub/WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW&outputFormat=json&SRSNAME=epsg%3A3005"
-
-        # describe airports
-        ogrinfo -so $airports_url OGRGeoJSON
-
-        # dump airports to geojson
-        ogr2ogr \
-          -f GeoJSON \
-          airports.geojson \
-          $airports_url
-
-        # load airports to postgres
-        ogr2ogr \
-          -f PostgreSQL \
-          PG:"host=localhost user=postgres dbname=postgis password=postgres" \
-          -lco SCHEMA=whse_imagery_and_base_maps \
-          -lco GEOMETRY_NAME=geom \
-          -nln gsr_airports_svw \
-          $airports_url
-
-        # Try requesting a larger dataset - ungulate winter range
-        uwr_url="https://openmaps.gov.bc.ca/geo/pub/WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_WILDLIFE_MANAGEMENT.WCP_UNGULATE_WINTER_RANGE_SP&outputFormat=json&SRSNAME=epsg%3A3005"
-
-        # The request only returns the first 10,000 records
-        ogr2ogr \
-          uwr.shp \
-          -dsco OGR_WFS_PAGING_ALLOWED=ON \
-          $uwr_url
-
-        # wget works too, but still only 10k records
-        wget -O uwr.geojson $uwr_url
+- [bcdata R package](https://github.com/bcgov/bcdata) - official BC Open Data R client
+- [OWSLib](https://github.com/geopython/OWSLib) - used internally by `bcdata`
+- [pgsql-ogr-fdw](https://github.com/pramsey/pgsql-ogr-fdw) - read WFS data directly into with postgres foreign data wrapper
+- general purpose command line tools (`ogr2ogr`/`curl`/`wget`) 
