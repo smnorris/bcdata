@@ -408,7 +408,7 @@ class BCWFS(object):
         else:
             if len(outjson["features"]) > 0:
                 gdf = gpd.GeoDataFrame.from_features(outjson)
-                gdf.crs = {"init": crs}
+                gdf.crs = crs
             else:
                 gdf = gpd.GeoDataFrame()
             return gdf

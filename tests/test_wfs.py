@@ -44,6 +44,13 @@ def test_get_data_asgdf():
     assert type(gdf) == GeoDataFrame
 
 
+def test_get_data_asgdf_crs():
+    gdf = bcdata.get_data(
+        UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True, crs="EPSG:3005"
+    )
+    assert gdf.crs == "EPSG:3005"
+
+
 def test_get_null_gdf():
     gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=9999", as_gdf=True)
     assert type(gdf) == GeoDataFrame
@@ -77,10 +84,12 @@ def test_get_data_count():
     assert len(data["features"]) == 100
 
 
-# this test presumes paging is at 10k records
+# this presumes the page size will always be less than the total number of wells
 def test_get_data_paged_count():
-    data = bcdata.get_data(WELLS_TABLE, count=11000)
-    assert len(data["features"]) == 11000
+    wfs = bcdata.wfs.BCWFS()
+    count = wfs.pagesize + 100
+    data = bcdata.get_data(WELLS_TABLE, count=count)
+    assert len(data["features"]) == count
 
 
 def test_get_data_sortby():
