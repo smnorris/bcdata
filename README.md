@@ -376,4 +376,4 @@ Create virtualenv and install `bcdata` in development mode:
 - [bcdata R package](https://github.com/bcgov/bcdata) - official BC Open Data R client
 - [OWSLib](https://github.com/geopython/OWSLib) - used internally by `bcdata`
 - [pgsql-ogr-fdw](https://github.com/pramsey/pgsql-ogr-fdw) - read WFS data directly into with postgres foreign data wrapper
-- general purpose command line tools (`ogr2ogr`/`curl`/`wget`) 
+- general purpose command line tools [(`ogr2ogr`/`curl`/`wget`)](ogr2ogr.md) 
