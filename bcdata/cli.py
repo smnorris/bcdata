@@ -114,6 +114,12 @@ def list(refresh):
     flag_value="name",
     help="Print the table name of the dateset.",
 )
+@click.option(
+    "--description",
+    "meta_member",
+    flag_value="description",
+    help="Print the description of the dateset.",
+)
 @verbose_opt
 @quiet_opt
 def info(dataset, indent, meta_member, verbose, quiet):
@@ -127,7 +133,11 @@ def info(dataset, indent, meta_member, verbose, quiet):
     info = {}
     info["name"] = dataset
     info["count"] = bcdata.get_count(dataset)
-    info["description"], info["schema"] = bcdata.get_table_definition(dataset)
+    (
+        info["description"],
+        info["table_comments"],
+        info["schema"],
+    ) = bcdata.get_table_definition(dataset)
     if meta_member:
         click.echo(info[meta_member])
     else:

@@ -80,6 +80,7 @@ def get_table_definition(table_name):
         matches = []
         # iterate through results of search (packages)
         for result in r.json()["result"]["results"]:
+            notes = result["notes"]
             # iterate through resources associated with each package
             for resource in result["resources"]:
                 # wms format resource
@@ -93,7 +94,7 @@ def get_table_definition(table_name):
                         # only add to matches if schema details found
                         if "details" in resource.keys() and resource["details"] != "":
                             table_details = resource["details"]
-                            matches.append((table_comments, table_details))
+                            matches.append((notes, table_comments, table_details))
                             log.debug(resource)
 
                 # multiple format resource
@@ -107,13 +108,13 @@ def get_table_definition(table_name):
                         # only add to matches if schema details found
                         if "details" in resource.keys() and resource["details"] != "":
                             table_details = resource["details"]
-                            matches.append((table_comments, table_details))
+                            matches.append((notes, table_comments, table_details))
                             log.debug(resource)
 
         # uniquify the result
         if len(matches) > 0:
             matched = list(set(matches))[0]
-            return (matched[0], json.loads(matched[1]))
+            return (matched[0], matched[1], json.loads(matched[2]))
         else:
             raise ValueError(
                 f"BCDC search for {table_name} does not return a table schema"
