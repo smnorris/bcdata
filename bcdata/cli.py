@@ -133,11 +133,11 @@ def info(dataset, indent, meta_member, verbose, quiet):
     info = {}
     info["name"] = dataset
     info["count"] = bcdata.get_count(dataset)
-    (
-        info["description"],
-        info["table_comments"],
-        info["schema"],
-    ) = bcdata.get_table_definition(dataset)
+    table_definition = bcdata.get_table_definition(dataset)
+    info["description"] = table_definition["description"]
+    info["table_comments"] = table_definition["comments"]
+    info["schema"] = table_definition["schema"]
+
     if meta_member:
         click.echo(info[meta_member])
     else:

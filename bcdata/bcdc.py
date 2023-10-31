@@ -59,8 +59,8 @@ def get_table_name(package):
 
 def get_table_definition(table_name):
     """
-    Given a table/object name, search BCDC for the first package/resource with a
-    matching "object_name", returns tuple (table comments, table schema)
+    Given a table/object name, search BCDC for the first package/resource with a matching "object_name",
+    returns dict: {"comments": <>, "notes": <>, "schema": {<schema dict>} }
     """
     # only allow searching for tables present in WFS list
     table_name = table_name.upper()
@@ -114,7 +114,11 @@ def get_table_definition(table_name):
         # uniquify the result
         if len(matches) > 0:
             matched = list(set(matches))[0]
-            return (matched[0], matched[1], json.loads(matched[2]))
+            return {
+                "description": matched[0],  # notes=description
+                "comments": matched[1],
+                "schema": json.loads(matched[2]),
+            }
         else:
             raise ValueError(
                 f"BCDC search for {table_name} does not return a table schema"

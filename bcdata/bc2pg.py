@@ -91,9 +91,9 @@ def bc2pg(
     # if not appending, define and create table
     else:
         # get info about the table from catalouge
-        table_comments, table_details = bcdata.get_table_definition(dataset)
+        table_definition = bcdata.get_table_definition(dataset)
 
-        if not table_details:
+        if not table_definition["schema"]:
             raise ValueError(
                 "Cannot create table, schema details not found via bcdc api"
             )
@@ -118,9 +118,9 @@ def bc2pg(
         table = db.define_table(
             schema_name,
             table_name,
-            table_details,
+            table_definition["schema"],
             geometry_type,
-            table_comments,
+            table_definition["comments"],
             primary_key,
             append,
         )
