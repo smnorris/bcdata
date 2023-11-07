@@ -53,7 +53,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends \
             postgresql-common \
-            install gnupg
+            gnupg
           sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           apt-get -y install postgresql-client-16
 
