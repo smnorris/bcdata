@@ -45,12 +45,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update
+      - name: Update and install postgresql client
         run: |
           apt-get update
           apt-get -y install software-properties-common
           add-apt-repository -y ppa:deadsnakes/ppa
           apt-get update
+          apt-get install -y --no-install-recommends \
+            postgresql-common \
+            install gnupg
+          sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          apt-get -y install postgresql-client-16
 
       - name: Set up Python ${{ matrix.python-version }}
         run: |
