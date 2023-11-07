@@ -228,6 +228,7 @@ Options:
   --indent INTEGER  Indentation level for JSON output
   --count           Print the count of features.
   --name            Print the table name of the dateset.
+  --description     Print the description of the dateset.
   -v, --verbose     Increase verbosity.
   -q, --quiet       Decrease verbosity.
   --help            Show this message and exit.
