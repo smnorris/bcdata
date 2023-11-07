@@ -1,5 +1,5 @@
 geoalchemy2==0.14.*
-geopandas>=0.13.2
+geopandas==0.14.*
 owslib==0.29.*
 psycopg2==2.9.*
 rasterio==1.3.*
