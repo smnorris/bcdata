@@ -1,0 +1,89 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main]
+    paths:
+      - '.github/workflows/tests.yaml'
+      - 'requirements*.txt'
+      - 'setup.py'
+      - 'MANIFEST.in'
+      - 'pyproject.toml'
+      - 'bcdata/**'
+      - 'tests/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/tests.yaml'
+      - 'requirements*.txt'
+      - 'setup.py'
+      - 'MANIFEST.in'
+      - 'pyproject.toml'
+      - 'bcdata/**'
+      - 'tests/**'
+
+jobs:
+  docker_tests:
+    runs-on: ubuntu-latest
+    name: Docker | GDAL=${{ matrix.gdal-version }} | python=${{ matrix.python-version }}
+    container: ghcr.io/osgeo/gdal:ubuntu-small-${{ matrix.gdal-version }}
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+        DEBIAN_FRONTEND: noninteractive
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: '3.9'
+            gdal-version: '3.5.3'
+          - python-version: '3.10'
+            gdal-version: '3.6.4'
+          - python-version: '3.11'
+            gdal-version: '3.7.3'
+          - python-version: '3.12'
+            gdal-version: '3.7.3'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update and install postgresql client
+        run: |
+          apt-get update
+          apt-get -y install software-properties-common
+          add-apt-repository -y ppa:deadsnakes/ppa
+          apt-get update
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: |
+          apt-get install -y --no-install-recommends \
+            python${{ matrix.python-version }} \
+            python${{ matrix.python-version }}-dev \
+            python${{ matrix.python-version }}-venv \
+            python3-pip \
+            g++
+
+      - name: Install dependencies
+        run: |
+          python${{ matrix.python-version }} -m venv testenv
+          . testenv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python setup.py clean
+          python -m pip install --no-deps --force-reinstall -e .[test]
+
+      - name: Run tests
+        run: |
+          . testenv/bin/activate
+          python -m pytest -v -rxXs
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
