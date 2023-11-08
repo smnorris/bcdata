@@ -51,12 +51,6 @@ jobs:
           apt-get -y install software-properties-common
           add-apt-repository -y ppa:deadsnakes/ppa
           apt-get update
-          apt-get install -y --no-install-recommends \
-            libssl-dev \
-            postgresql-common \
-            gnupg
-          sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          apt-get -y install postgresql-client-16
 
       - name: Set up Python ${{ matrix.python-version }}
         run: |
