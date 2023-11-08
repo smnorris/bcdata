@@ -66,6 +66,13 @@ def test_bc2pg_geometry_type_invalid():
         bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10, geometry_type="MULTIPOLYGONZ")
 
 
+def test_bc2pg_primary_key_invalid():
+    with pytest.raises(Exception):
+        bcdata.bc2pg(
+            AIRPORTS_TABLE, DB_URL, count=10, primary_key="airport_primary_key"
+        )
+
+
 def test_bc2pg_z():
     bcdata.bc2pg(STREAMS_TABLE, DB_URL, query="WATERSHED_GROUP_CODE='VICT'")
     assert STREAMS_TABLE in DB_CONNECTION.tables

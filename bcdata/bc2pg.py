@@ -114,6 +114,13 @@ def bc2pg(
         if geometry_type not in SUPPORTED_TYPES:
             raise ValueError("Geometry type {geometry_type} is not supported")
 
+        if primary_key and primary_key.upper() not in [
+            c["column_name"].upper() for c in table_definition["schema"]
+        ]:
+            raise ValueError(
+                "Column {primary_key} specified as primary_key does not exist in source"
+            )
+
         # build the table definition and create table
         table = db.define_table(
             schema_name,
