@@ -1,9 +1,11 @@
+import os
+
 import pytest
 
 import bcdata
 from bcdata.database import Database
 
-DB_URL = "postgresql://postgres@localhost:5432/bcdata_test"
+DB_URL = os.environ.get("DATABASE_URL")
 DB_CONNECTION = Database(url=DB_URL)
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "whse_imagery_and_base_maps.gsr_airports_svw"

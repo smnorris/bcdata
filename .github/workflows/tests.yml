@@ -27,6 +27,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Docker | GDAL=${{ matrix.gdal-version }} | python=${{ matrix.python-version }}
     container: ghcr.io/osgeo/gdal:ubuntu-small-${{ matrix.gdal-version }}
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
         DEBIAN_FRONTEND: noninteractive
     strategy:
@@ -74,3 +85,5 @@ jobs:
         run: |
           . testenv/bin/activate
           python -m pytest -v -rxXs
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
