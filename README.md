@@ -1,5 +1,8 @@
 # bcdata
 
+[![Actions Status](https://github.com/smnorris/bcdata/actions/workflows/tests.yml/badge.svg)](https://github.com/smnorris/bcdata/actions?query=workflow%3Atests)
+[![pypi](https://img.shields.io/pypi/v/bcdata.svg)](https://pypi.python.org/pypi/bcdata/)
+
 Python and command line tools for quick access to DataBC geo-data available via WFS/WCS.
 
 There is a [wealth of British Columbia geographic information available as open
