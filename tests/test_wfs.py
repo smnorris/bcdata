@@ -1,8 +1,13 @@
 import os
 
+import pytest
+import requests
+import requests_mock
+import stamina
 from geopandas.geodataframe import GeoDataFrame
 
 import bcdata
+from bcdata.wfs import ServiceException
 
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
@@ -12,6 +17,25 @@ ASSESSMENTS_TABLE = "whse_fish.pscis_assessment_svw"
 GLACIERS_TABLE = "whse_basemapping.fwa_glaciers_poly"
 STREAMS_TABLE = "whse_basemapping.fwa_stream_networks_sp"
 WELLS_TABLE = "whse_water_management.gw_water_wells_wrbc_svw"
+
+
+@pytest.fixture(autouse=True, scope="session")
+def deactivate_retries():
+    stamina.set_active(False)
+
+
+def test_http_error_502():
+    with requests_mock.mock() as m:
+        m.get(requests_mock.ANY, status_code=502)
+        with pytest.raises(requests.HTTPError):
+            bcdata.get_data(AIRPORTS_TABLE)
+
+
+def test_http_error_404():
+    with requests_mock.mock() as m:
+        m.get(requests_mock.ANY, status_code=404)
+        with pytest.raises(bcdata.wfs.ServiceException):
+            bcdata.get_data(AIRPORTS_TABLE)
 
 
 def test_validate_table_lowercase():
@@ -41,7 +65,7 @@ def test_get_count_bounds():
 
 def test_get_data_asgdf():
     gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True)
-    assert type(gdf) == GeoDataFrame
+    assert type(gdf) is GeoDataFrame
 
 
 def test_get_data_asgdf_crs():
@@ -53,7 +77,7 @@ def test_get_data_asgdf_crs():
 
 def test_get_null_gdf():
     gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=9999", as_gdf=True)
-    assert type(gdf) == GeoDataFrame
+    assert type(gdf) is GeoDataFrame
 
 
 def test_get_data_small():

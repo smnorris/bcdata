@@ -3,6 +3,7 @@ import os
 
 import geopandas as gpd
 import numpy
+import stamina
 from geoalchemy2 import Geometry
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
@@ -10,12 +11,10 @@ from shapely.geometry.multipoint import MultiPoint
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
-from tenacity import retry
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random_exponential
 
 import bcdata
 from bcdata.database import Database
+from bcdata.wfs import BCWFS
 
 log = logging.getLogger(__name__)
 
@@ -31,16 +30,6 @@ SUPPORTED_TYPES = [
     "POLYGON",
     "MULTIPOLYGON",
 ]
-
-
-@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
-def _download(url):
-    """offload download requests to geopandas, using tenacity to handle unsuccessful requests"""
-    try:
-        data = gpd.read_file(url)
-    except Exception:
-        log.debug("WFS/network error")
-    return data
 
 
 def bc2pg(
@@ -68,6 +57,9 @@ def bc2pg(
     # connect to target db
     db = Database(db_url)
 
+    # create wfs service interface instance
+    WFS = BCWFS()
+
     # define requests
     urls = bcdata.define_requests(
         dataset,
@@ -90,7 +82,7 @@ def bc2pg(
 
     # if not appending, define and create table
     else:
-        # get info about the table from catalouge
+        # get info about the table from catalogue
         table_definition = bcdata.get_table_definition(dataset)
 
         if not table_definition["schema"]:
@@ -100,9 +92,9 @@ def bc2pg(
 
         # if geometry type is not provided, determine type by making the first request
         if not geometry_type:
-            log.info(urls[0])
-            df = _download(urls[0])
-            log.info(_download.retry.statistics)  # log the retry stats
+            df = WFS.make_requests(
+                [urls[0]], as_gdf=True, crs="epsg:3005", lowercase=True
+            )
             geometry_type = df.geom_type.unique()[0]  # keep only the first type
             if numpy.any(
                 df.has_z.unique()[0]
@@ -143,11 +135,11 @@ def bc2pg(
     if not schema_only:
         # loop through the requests
         for n, url in enumerate(urls):
-            # if not downloaded above when checking geom type, dow
+            # if first url not downloaded above when checking geom type, do now
             if df is None:
-                log.info(url)
-                df = _download(url)
-                log.info(_download.retry.statistics)  # log the retry stats
+                df = WFS.make_requests(
+                    [url], as_gdf=True, crs="epsg:3005", lowercase=True
+                )
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify
