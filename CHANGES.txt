@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.9.0 (2023-11-)
+0.9.0 (2023-11-17)
 ------------------
-- restore dynamic layer listing (#142)
 - use default pagesize provided by server and remove pagesize option from all functions and commands (#90)
+- restore dynamic layer listing (#142)
+- better error reporting when service unavailable (#143)
 - include data description in `bcdata info` output (#148)
 - standardize and test retries with `stamina`
 
