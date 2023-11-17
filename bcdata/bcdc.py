@@ -3,9 +3,7 @@ import logging
 from urllib.parse import urlparse
 
 import requests
-from tenacity import retry
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random_exponential
+import stamina
 
 import bcdata
 
@@ -14,24 +12,37 @@ log = logging.getLogger(__name__)
 BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
 
 
-@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
+class ServiceException(Exception):
+    pass
+
+
+@stamina.retry(on=requests.HTTPError, timeout=60)
 def _package_show(package):
-    try:
-        r = requests.get(BCDC_API_URL + "package_show", params={"id": package})
-    except Exception:
-        log.error("BCDC API Error")
+    r = requests.get(BCDC_API_URL + "package_show", params={"id": package})
+    if r.status_code in [400, 404]:
+        log.error(f"HTTP error {r.status_code}")
+        log.error(f"Response headers: {r.headers}")
+        log.error(f"Response text: {r.text}")
+        raise ValueError(f"Dataset {package} not found in DataBC API list")
+    if r.status_code in [500, 502, 503, 504]:  # presumed serivce error, retry
+        log.warning(f"HTTP error: {r.status_code}")
+        log.warning(f"Response headers: {r.headers}")
+        log.warning(f"Response text: {r.text}")
+        r.raise_for_status()
+    else:
+        log.debug(r.text)
     return r
 
 
-@retry(stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60))
+@stamina.retry(on=requests.HTTPError, timeout=60)
 def _table_definition(table_name):
-    try:
-        r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
-        status_code = r.status_code
-        if status_code != 200:
-            raise ValueError(f"Error searching BC Data Catalogue API: {status_code}")
-    except Exception:
-        log.error("BCDC API Error")
+    r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
+    if r.status_code != 200:
+        log.warning(r.headers)
+    if r.status_code in [400, 401, 404]:
+        raise ServiceException(r.text)  # presumed request error
+    if r.status_code in [500, 502, 503, 504]:  # presumed serivce error, retry
+        r.raise_for_status()
     return r
 
 
@@ -39,8 +50,6 @@ def get_table_name(package):
     """Query DataBC API to find WFS table/layer name for given package"""
     package = package.lower()  # package names are lowercase
     r = _package_show(package)
-    if r.status_code != 200:
-        raise ValueError("{d} is not present in DataBC API list".format(d=package))
     result = r.json()["result"]
     # Because the object_name in the result json is not a 100% reliable key
     # for WFS requests, parse URL in WMS resource(s).

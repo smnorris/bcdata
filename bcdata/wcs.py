@@ -3,12 +3,17 @@ from math import trunc
 
 import rasterio
 import requests
+import stamina
 
 import bcdata
 
 log = logging.getLogger(__name__)
 
 WCS_URL = "https://openmaps.gov.bc.ca/om/wcs"
+
+
+class ServiceException(Exception):
+    pass
 
 
 def align_bounds(bounds):
@@ -19,6 +24,28 @@ def align_bounds(bounds):
     ll = [((trunc(b / 100) * 100) - 12.5) for b in bounds[:2]]
     ur = [(((trunc(b / 100) + 1) * 100) + 87.5) for b in bounds[2:]]
     return (ll[0], ll[1], ur[0], ur[1])
+
+
+@stamina.retry(on=requests.HTTPError, timeout=60)
+def make_request(payload):
+    r = requests.get(
+        WCS_URL,
+        params=payload,
+        headers={"User-Agent": "bcdata.py ({bcdata.__version__})"},
+    )
+    log.debug(r.url)
+    if r.status_code == 200:
+        return r
+    elif r.status_code in [400, 401, 404]:
+        log.error(f"HTTP error {r.status_code}")
+        log.error(f"Response headers: {r.headers}")
+        log.error(f"Response text: {r.text}")
+        raise ServiceException(r.text)  # presumed request error
+    elif r.status_code in [500, 502, 503, 504]:  # presumed serivce error, retry
+        log.warning(f"HTTP error: {r.status_code}, retrying")
+        log.warning(f"Response headers: {r.headers}")
+        log.warning(f"Response text: {r.text}")
+        r.raise_for_status()
 
 
 def get_dem(
@@ -87,35 +114,22 @@ def get_dem(
 
     # request data from WCS
     log.debug(payload)
-    r = requests.get(
-        WCS_URL,
-        params=payload,
-        headers={"User-Agent": "bcdata.py ({bcdata.__version__})"},
-    )
-    log.debug(r.headers)
-    if r.status_code == 200:
-        if r.headers["Content-Type"] == "image/tiff":
-            with open(out_file, "wb") as file:
-                file.write(r.content)
-        elif r.headers["Content-Type"] == "application/vnd.ogc.se_xml;charset=UTF-8":
-            raise RuntimeError(
-                "WCS request {} failed with error {}".format(
-                    r.url, str(r.content.decode("utf-8"))
-                )
-            )
-        else:
-            raise RuntimeError(
-                "WCS request {} failed, content type {}".format(
-                    r.url, str(r.headers["Content-Type"])
-                )
-            )
-    else:
+    r = make_request(payload)
+    if r.headers["Content-Type"] == "image/tiff":
+        with open(out_file, "wb") as file:
+            file.write(r.content)
+    elif r.headers["Content-Type"] == "application/vnd.ogc.se_xml;charset=UTF-8":
         raise RuntimeError(
-            "WCS request {} failed with status code {}".format(
-                r.url, str(r.status_code)
+            "WCS request {} failed with error {}".format(
+                r.url, str(r.content.decode("utf-8"))
             )
         )
-
+    else:
+        raise RuntimeError(
+            "WCS request {} failed, content type {}".format(
+                r.url, str(r.headers["Content-Type"])
+            )
+        )
     if as_rasterio:
         return rasterio.open(out_file, "r")
     else:

@@ -12,13 +12,10 @@ from urllib.parse import urlencode
 
 import geopandas as gpd
 import requests
+import stamina
 from owslib.feature import schema as wfs_schema
 from owslib.feature import wfs200
 from owslib.wfs import WebFeatureService
-from tenacity import retry
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random_exponential
 
 import bcdata
 
@@ -26,6 +23,10 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 log = logging.getLogger(__name__)
+
+
+class ServiceException(Exception):
+    pass
 
 
 class BCWFS(object):
@@ -85,39 +86,26 @@ class BCWFS(object):
             else:
                 return False
 
-    @retry(
-        stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
-    )
+    @stamina.retry(on=requests.HTTPError, timeout=60)
     def _request_schema(self, table):
-        try:
-            schema = wfs_schema.get_schema(
-                "https://openmaps.gov.bc.ca/geo/pub/ows",
-                typename=table,
-                version="2.0.0",
-            )
-        except Exception:
-            log.debug("WFS/network error")
+        schema = wfs_schema.get_schema(
+            "https://openmaps.gov.bc.ca/geo/pub/ows",
+            typename=table,
+            version="2.0.0",
+        )
         return schema
 
-    @retry(
-        stop=stop_after_delay(120), wait=wait_random_exponential(multiplier=1, max=60)
-    )
+    @stamina.retry(on=requests.HTTPError, timeout=60)
     def _request_capabilities(self):
-        try:
-            capabilities = ET.tostring(
-                wfs200.WebFeatureService_2_0_0(
-                    self.ows_url, "2.0.0", None, False
-                )._capabilities,
-                encoding="unicode",
-            )
-        except Exception:
-            log.debug("WFS/network error")
+        capabilities = ET.tostring(
+            wfs200.WebFeatureService_2_0_0(
+                self.ows_url, "2.0.0", None, False
+            )._capabilities,
+            encoding="unicode",
+        )
         return capabilities
 
-    @retry(
-        stop=stop_after_delay(120),
-        wait=wait_random_exponential(multiplier=1, max=60),
-    )
+    @stamina.retry(on=requests.HTTPError, timeout=60)
     def _request_count(
         self, table, query=None, bounds=None, bounds_crs=None, geom_column=None
     ):
@@ -136,39 +124,37 @@ class BCWFS(object):
                 bounds_crs=bounds_crs,
                 geom_column=geom_column,
             )
-        try:
-            r = requests.get(self.wfs_url, params=payload, headers=self.request_headers)
-            log.debug(r.url)
-            log.debug(r.headers)
-            r.raise_for_status()  # check status code is 200
-            count = int(ET.fromstring(r.text).attrib["numberMatched"])
-            # because table name has been validated, a count should always be returned
-            # if empty count returned, presume network/service error and retry
-            if not count:
-                raise ValueError("No count returned")
-        except Exception:
-            log.debug("WFS/network error")
-        return count
 
-    @retry(
-        stop=stop_after_delay(120),
-        wait=wait_random_exponential(multiplier=1, max=60),
-    )
+        r = requests.get(self.wfs_url, params=payload, headers=self.request_headers)
+        log.debug(r.url)
+        if r.status_code in [400, 401, 404]:
+            log.error(f"HTTP error {r.status_code}")
+            log.error(f"Response headers: {r.headers}")
+            log.error(f"Response text: {r.text}")
+            raise ServiceException(r.text)  # presumed request error
+        elif r.status_code in [500, 502, 503, 504]:  # presumed serivce error, retry
+            log.warning(f"HTTP error: {r.status_code}, retrying")
+            log.warning(f"Response headers: {r.headers}")
+            log.warning(f"Response text: {r.text}")
+            r.raise_for_status()
+        return int(ET.fromstring(r.text).attrib["numberMatched"])
+
+    @stamina.retry(on=requests.HTTPError, timeout=60)
     def _request_features(self, url):
         """Submit a getfeature request to DataBC WFS and return features"""
-        try:
-            r = requests.get(url, headers=self.request_headers)
-            log.info(r.url)
-            log.debug(r.headers)
-            r.raise_for_status()  # check status code is 200, otherwise HTTPError is raised
-            features = r.json()["features"]
-            # because table name has been validated, features should always be returned
-            # if features element is empty, presume network/service error and retry
-            if not features:
-                raise ValueError("No features returned")
-        except Exception:
-            log.debug("WFS/network error")
-        return features
+        r = requests.get(url, headers=self.request_headers)
+        log.info(r.url)
+        if r.status_code in [400, 401, 404]:
+            log.error(f"HTTP error {r.status_code}")
+            log.error(f"Response headers: {r.headers}")
+            log.error(f"Response text: {r.text}")
+            raise ServiceException(r.text)  # presumed request error
+        elif r.status_code in [500, 502, 503, 504]:  # presumed serivce error, retry
+            log.warning(f"HTTP error: {r.status_code}")
+            log.warning(f"Response headers: {r.headers}")
+            log.warning(f"Response text: {r.text}")
+            r.raise_for_status()
+        return r.json()["features"]
 
     def build_bounds_filter(self, query, bounds, bounds_crs, geom_column):
         """The bbox param shortcut is mutually exclusive with CQL_FILTER,
@@ -218,7 +204,6 @@ class BCWFS(object):
             bounds_crs=bounds_crs,
             geom_column=geom_column,
         )
-        log.info(self._request_count.retry.statistics)
         return count
 
     def get_schema(self, table):
@@ -359,34 +344,12 @@ class BCWFS(object):
             urls.append(self.wfs_url + "?" + urlencode(request, doseq=True))
         return urls
 
-    def get_data(
-        self,
-        dataset,
-        query=None,
-        crs="epsg:4326",
-        bounds=None,
-        bounds_crs="epsg:3005",
-        count=None,
-        sortby=None,
-        as_gdf=False,
-        lowercase=False,
-    ):
-        """Request features from DataBC WFS and return GeoJSON featurecollection or geodataframe"""
-        urls = self.define_requests(
-            dataset,
-            query=query,
-            crs=crs,
-            bounds=bounds,
-            bounds_crs=bounds_crs,
-            count=count,
-            sortby=sortby,
-        )
-        # loop through requests
+    def make_requests(self, urls, as_gdf=False, crs="epsg4326", lowercase=False):
+        """turn urls into data"""
+        # loop through urls
         results = []
         for url in urls:
             results.append(self._request_features(url))
-            log.info(self._request_features.retry.statistics)
-
         outjson = dict(type="FeatureCollection", features=[])
         for result in results:
             outjson["features"] += result
@@ -412,6 +375,30 @@ class BCWFS(object):
             else:
                 gdf = gpd.GeoDataFrame()
             return gdf
+
+    def get_data(
+        self,
+        dataset,
+        query=None,
+        crs="epsg:4326",
+        bounds=None,
+        bounds_crs="epsg:3005",
+        count=None,
+        sortby=None,
+        as_gdf=False,
+        lowercase=False,
+    ):
+        """Request features from DataBC WFS and return GeoJSON featurecollection or geodataframe"""
+        urls = self.define_requests(
+            dataset,
+            query=query,
+            crs=crs,
+            bounds=bounds,
+            bounds_crs=bounds_crs,
+            count=count,
+            sortby=sortby,
+        )
+        return self.make_requests(urls, as_gdf, crs, lowercase)
 
     def get_features(
         self,
@@ -443,7 +430,6 @@ class BCWFS(object):
                         k.lower(): v for k, v in feature["properties"].items()
                     }
                 yield feature
-            log.info(self._request_features.retry.statistics)
 
 
 # abstract away the WFS object
