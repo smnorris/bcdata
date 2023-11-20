@@ -46,7 +46,7 @@ Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port
 
 To reduce the volume of requests, information about data requested is cached locally. 
 Schemas of individual layers that have previously been requested are cached with the cache file name matching the object/table name.
-Location of the cache defaults to `~/.bcdata` but can be moditified by setting the `BCDATA_CACHE` environment variable:
+Location of the cache defaults to `~/.bcdata` but can be modified by setting the `BCDATA_CACHE` environment variable:
 
 `export BCDATA_CACHE=/path/to/bcdata_cache`
 
