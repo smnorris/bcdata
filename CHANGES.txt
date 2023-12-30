@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.9.1 ()
+------------------
+- fix problem with multiple-resource bcdc packages (#153)
+
 0.9.0 (2023-11-17)
 ------------------
 - use default pagesize provided by server and remove pagesize option from all functions and commands (#90)

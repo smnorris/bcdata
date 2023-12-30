@@ -40,3 +40,12 @@ def test_get_table_definition_format_multi():
     assert table_definition["description"]
     assert table_definition["comments"]
     assert table_definition["schema"]
+
+
+def test_get_table_definition_format_multi_nopreview():
+    table_definition = bcdc.get_table_definition(
+        "WHSE_BASEMAPPING.FWA_NAMED_POINT_FEATURES_SP"
+    )
+    assert table_definition["description"]
+    assert table_definition["comments"]
+    assert table_definition["schema"]

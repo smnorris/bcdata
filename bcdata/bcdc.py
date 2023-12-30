@@ -109,16 +109,25 @@ def get_table_definition(table_name):
                 # multiple format resource
                 elif resource["format"] == "multiple":
                     # if multiple format, check for table name match in this location
-                    if json.loads(resource["preview_info"])["layer_name"] == table_name:
-                        if "object_table_comments" in resource.keys():
-                            table_comments = resource["object_table_comments"]
-                        else:
-                            table_comments = None
-                        # only add to matches if schema details found
-                        if "details" in resource.keys() and resource["details"] != "":
-                            table_details = resource["details"]
-                            matches.append((notes, table_comments, table_details))
-                            log.debug(resource)
+                    if resource[
+                        "preview_info"
+                    ]:  # first check that the key is not empty
+                        if (
+                            json.loads(resource["preview_info"])["layer_name"]
+                            == table_name
+                        ):
+                            if "object_table_comments" in resource.keys():
+                                table_comments = resource["object_table_comments"]
+                            else:
+                                table_comments = None
+                            # only add to matches if schema details found
+                            if (
+                                "details" in resource.keys()
+                                and resource["details"] != ""
+                            ):
+                                table_details = resource["details"]
+                                matches.append((notes, table_comments, table_details))
+                                log.debug(resource)
 
         # uniquify the result
         if len(matches) > 0:
