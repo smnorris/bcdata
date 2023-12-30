@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.9.1 ()
+0.9.1 (2023-12-30)
 ------------------
 - fix problem with multiple-resource bcdc packages (#153)
 
