@@ -110,9 +110,9 @@ def bc2pg(
                 df_temp.has_z.unique()[0]
             ):  # geopandas does not include Z in geom_type string
                 geometry_type = geometry_type + "Z"
-            # drop the last request url to free up memory
+            # drop the last request dataframe to free up memory
             del(df_temp)
-            
+
         # ensure geom type is valid
         geometry_type = geometry_type.upper()
         if geometry_type not in SUPPORTED_TYPES:
