@@ -10,4 +10,4 @@ from .wfs import (
     validate_name,
 )
 
-__version__ = "0.9.1"
+__version__ = "0.9.2dev0"
