@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.9.2 ()
+------------------
+- bc2pg geometry type inspection - look for geometries at bottom of dataset when none present at top (#158)
+
 0.9.1 (2023-12-30)
 ------------------
 - fix problem with multiple-resource bcdc packages (#153)

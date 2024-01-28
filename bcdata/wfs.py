@@ -140,10 +140,13 @@ class BCWFS(object):
         return int(ET.fromstring(r.text).attrib["numberMatched"])
 
     @stamina.retry(on=requests.HTTPError, timeout=60)
-    def _request_features(self, url):
+    def _request_features(self, url, silent=False):
         """Submit a getfeature request to DataBC WFS and return features"""
         r = requests.get(url, headers=self.request_headers)
-        log.info(r.url)
+        if not silent:
+            log.info(r.url)
+        else:
+            log.debug(r.url)
         if r.status_code in [400, 401, 404]:
             log.error(f"HTTP error {r.status_code}")
             log.error(f"Response headers: {r.headers}")
@@ -344,12 +347,14 @@ class BCWFS(object):
             urls.append(self.wfs_url + "?" + urlencode(request, doseq=True))
         return urls
 
-    def make_requests(self, urls, as_gdf=False, crs="epsg4326", lowercase=False):
+    def make_requests(
+        self, urls, as_gdf=False, crs="epsg4326", lowercase=False, silent=False
+    ):
         """turn urls into data"""
         # loop through urls
         results = []
         for url in urls:
-            results.append(self._request_features(url))
+            results.append(self._request_features(url, silent))
         outjson = dict(type="FeatureCollection", features=[])
         for result in results:
             outjson["features"] += result
