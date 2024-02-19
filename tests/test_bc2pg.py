@@ -103,6 +103,24 @@ def test_bc2pg_primary_key():
     DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
 
 
+def test_bc2pg_primary_key_default():
+    bcdata.bc2pg(ASSESSMENTS_TABLE, DB_URL, count=100)
+    assert ASSESSMENTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query(
+        """
+        SELECT a.attname FROM pg_index i
+        JOIN pg_class c ON c.oid = i.indrelid
+        JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = any(i.indkey)
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE relname = 'pscis_assessment_svw'
+        AND nspname = 'whse_fish'
+        AND indisprimary
+        """
+    )
+    assert r[0][0] == "stream_crossing_id"
+    DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
+
+
 def test_bc2pg_filter():
     bcdata.bc2pg(
         AIRPORTS_TABLE,
