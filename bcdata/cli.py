@@ -8,6 +8,7 @@ import click
 from cligj import compact_opt, indent_opt, quiet_opt, verbose_opt
 
 import bcdata
+from bcdata.database import Database
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
@@ -385,6 +386,18 @@ def bc2pg(
         timestamp = False
     else:
         timestamp = True
+    if refresh and append:
+        raise ValueError("Options append and refresh are not compatible")
+    if refresh and (schema == "bcdata"):
+        raise ValueError(
+            "Refreshing tables in bcdata schema is not supported, use another schema"
+        )
+    elif refresh and schema:
+        schema_target = schema
+    elif refresh and not schema:
+        schema_target, t = bcdata.validate_name(dataset).lower().split(".")
+    if refresh:
+        schema = "bcdata"
     out_table = bcdata.bc2pg(
         dataset,
         db_url,
@@ -398,6 +411,13 @@ def bc2pg(
         timestamp=timestamp,
         schema_only=schema_only,
         append=append,
-        refresh=refresh,
     )
+
+    # if refreshing, flush from temp bcdata schema to target schema
+    if refresh:
+        db = Database(db_url)
+        s, table = out_table.split(".")
+        db.refresh(schema_target, table)
+        out_table = schema_target + "." + table
+
     log.info("Load of {} to {} in {} complete".format(dataset, out_table, db_url))

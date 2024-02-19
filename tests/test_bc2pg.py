@@ -103,6 +103,29 @@ def test_bc2pg_primary_key():
     DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
 
 
+def test_bc2pg_get_primary_keys():
+    primary_keys = bcdata.get_primary_keys()
+    assert primary_keys[ASSESSMENTS_TABLE] == "stream_crossing_id"
+
+
+def test_bc2pg_primary_key_default():
+    bcdata.bc2pg(ASSESSMENTS_TABLE, DB_URL, count=100)
+    assert ASSESSMENTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query(
+        """
+        SELECT a.attname FROM pg_index i
+        JOIN pg_class c ON c.oid = i.indrelid
+        JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = any(i.indkey)
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE relname = 'pscis_assessment_svw'
+        AND nspname = 'whse_fish'
+        AND indisprimary
+        """
+    )
+    assert r[0][0] == "stream_crossing_id"
+    DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
+
+
 def test_bc2pg_filter():
     bcdata.bc2pg(
         AIRPORTS_TABLE,
@@ -164,21 +187,3 @@ def test_bc2pg_append_to_other():
     r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.arpt")
     assert len(r) == 2
     DB_CONNECTION.execute("drop table whse_imagery_and_base_maps.arpt")
-
-
-def test_bc2pg_refresh():
-    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL)
-    bcdata.bc2pg(
-        AIRPORTS_TABLE,
-        DB_URL,
-        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
-    )
-    bcdata.bc2pg(
-        AIRPORTS_TABLE,
-        DB_URL,
-        query="AIRPORT_NAME='Victoria International Airport'",
-        refresh=True,
-    )
-    r = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
-    assert len(r) == 1
-    DB_CONNECTION.execute("drop table whse_imagery_and_base_maps.gsr_airports_svw")

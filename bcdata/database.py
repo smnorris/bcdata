@@ -92,14 +92,34 @@ class Database(object):
             )
             self.execute(dbq)
 
-    def truncate(self, schema, table):
+    def refresh(self, schema, table):
+        # move data from temp table to target table
         if schema + "." + table in self.tables:
-            log.warning(f"Truncating table {schema}.{table}")
+            log.warning(
+                f"Truncating table {schema}.{table} and refreshing from bcdata.{table}"
+            )
             dbq = sql.SQL("TRUNCATE {schema}.{table}").format(
                 schema=sql.Identifier(schema),
                 table=sql.Identifier(table),
             )
             self.execute(dbq)
+            columns = list(
+                set(self.get_columns("bcdata", table)).intersection(
+                    self.get_columns(schema, table)
+                )
+            )
+            identifiers = [sql.Identifier(c) for c in columns]
+            dbq = sql.SQL(
+                """INSERT INTO {schema}.{table}
+                ({columns})
+                SELECT {columns} FROM bcdata.{table}"""
+            ).format(
+                schema=sql.Identifier(schema),
+                table=sql.Identifier(table),
+                columns=sql.SQL(",").join(identifiers),
+            )
+            self.execute(dbq)
+            self.drop_table("bcdata", table)
 
     def define_table(
         self,
