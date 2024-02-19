@@ -222,17 +222,22 @@ class BCWFS(object):
     def get_sortkey(self, table):
         """Check data for unique columns available for sorting paged requests"""
         columns = list(self.get_schema(table)["properties"].keys())
-        # use OBJECTID as default sort key, if present
-        if "OBJECTID" in columns:
+        # use known primary key if it is present in the bcdata repository
+        known_primary_keys = bcdata.get_primary_keys()
+        if table.lower() in known_primary_keys:
+            return known_primary_keys[table.lower()].upper()
+        # if pk not known, use OBJECTID as default sort key when present
+        elif "OBJECTID" in columns:
             return "OBJECTID"
         # if OBJECTID is not present (several GSR tables), use SEQUENCE_ID
         elif "SEQUENCE_ID" in columns:
             return "SEQUENCE_ID"
-        # otherwise, it should be safe to presume first column is the primary key
-        # (WHSE_FOREST_VEGETATION.VEG_COMP_LYR_R1_POLY's FEATURE_ID appears to be
-        # the only public case, and very large veg downloads are likely better
-        # accessed via some other channel)
+        # otherwise, presume first column is best value to sort by
+        # (in some cases this will be incorrect)
         else:
+            log.warning(
+                f"Reliable sort key for {table} cannot be determined, defaulting to first column {columns[0]}"
+            )
             return columns[0]
 
     def list_tables(self):
@@ -523,6 +528,12 @@ def get_features(
         lowercase=lowercase,
         check_count=check_count,
     )
+
+
+def get_sortkey(dataset):
+    WFS = BCWFS()
+    table = WFS.validate_name(dataset)
+    return WFS.get_sortkey(table)
 
 
 def list_tables(refresh=False):
