@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.10.0 (2024-02-19)
+------------------
+- store known primary keys in repository (data/primary_keys.json)
+- add new function bcdata.get_primary_keys(), use remote url as default primary key lookup for bc2pg (#163)
+- --refresh option cleanup, now available only via CLI
+
 0.9.2 (2024-02-18)
 ------------------
 - bc2pg geometry type inspection - look for geometries at bottom of dataset when none present at top (#158)
