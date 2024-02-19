@@ -420,4 +420,6 @@ def bc2pg(
         db.refresh(schema_target, table)
         out_table = schema_target + "." + table
 
-    log.info("Load of {} to {} in {} complete".format(dataset, out_table, db_url))
+    # do not notify of data load completion when no data load has occured
+    if not schema_only:
+        log.info("Load of {} to {} in {} complete".format(dataset, out_table, db_url))
