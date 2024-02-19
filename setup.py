@@ -42,7 +42,7 @@ setup(
     author="Simon Norris",
     author_email="snorris@hillcrestgeo.ca",
     url="https://github.com/smnorris/bcdata",
-    license="Apache",
+    license="MIT",
     packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
     include_package_data=True,
     zip_safe=False,
