@@ -17,7 +17,7 @@
     "whse_basemapping.trim_ebm_ocean": "objectid",
     "whse_basemapping.utmg_utm_zones_sp": "utm_zone",
     "whse_environmental_monitoring.envcan_hydrometric_stn_sp": "hydrometric_station_id",
-    "whse_fish.fiss_stream_sample_sites_sp": "stream_sample_site_id ",
+    "whse_fish.fiss_stream_sample_sites_sp": "stream_sample_site_id",
     "whse_fish.pscis_assessment_svw": "stream_crossing_id",
     "whse_forest_tenure.ften_managed_licence_poly_svw": "objectid",
     "whse_forest_tenure.ften_range_poly_svw": "objectid",
