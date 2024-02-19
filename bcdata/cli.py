@@ -395,9 +395,16 @@ def bc2pg(
     elif refresh and schema:
         schema_target = schema
     elif refresh and not schema:
-        schema_target, t = bcdata.validate_name(dataset).lower().split(".")
+        schema_target, table = bcdata.validate_name(dataset).lower().split(".")
     if refresh:
+        db = Database(db_url)
         schema = "bcdata"
+        if not table:
+            table = bcdata.validate_name(dataset).lower().split(".")
+        if schema_target + "." + table not in db.tables:
+            raise ValueError(
+                f"Cannot refresh, {schema_target}.{table} not found in database"
+            )
     out_table = bcdata.bc2pg(
         dataset,
         db_url,

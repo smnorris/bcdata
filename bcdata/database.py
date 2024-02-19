@@ -120,6 +120,10 @@ class Database(object):
             )
             self.execute(dbq)
             self.drop_table("bcdata", table)
+        else:
+            raise ValueError(
+                f"Target table {schema}.{table} does not exist in database"
+            )
 
     def define_table(
         self,
