@@ -103,6 +103,11 @@ def test_bc2pg_primary_key():
     DB_CONNECTION.execute("drop table " + ASSESSMENTS_TABLE)
 
 
+def test_bc2pg_get_primary_keys():
+    primary_keys = bcdata.get_primary_keys()
+    assert primary_keys[ASSESSMENTS_TABLE] == "stream_crossing_id"
+
+
 def test_bc2pg_primary_key_default():
     bcdata.bc2pg(ASSESSMENTS_TABLE, DB_URL, count=100)
     assert ASSESSMENTS_TABLE in DB_CONNECTION.tables
