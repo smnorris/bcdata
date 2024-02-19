@@ -81,11 +81,10 @@ def bc2pg(  # noqa: C901
     timestamp=True,
     schema_only=False,
     append=False,
-    refresh=False,
 ):
     """Request table definition from bcdc and replicate in postgres"""
-    if append and refresh:
-        raise ValueError("Options append and refresh are not compatible")
+    if schema_only and append:
+        raise ValueError("Options schema_only and append are not compatible")
 
     dataset = bcdata.validate_name(dataset)
     schema_name, table_name = dataset.lower().split(".")
@@ -111,18 +110,14 @@ def bc2pg(  # noqa: C901
 
     df = None  # just for tracking if first download is done by geometry type check
 
-    # if appending or refreshing, get column names from db, make sure table exists
-    if append or refresh:
+    # if appending, get column names from db, make sure table exists
+    if append:
         if schema_name + "." + table_name not in db.tables:
             raise ValueError(f"{schema_name}.{table_name} does not exist")
         column_names = db.get_columns(schema_name, table_name)
 
-    # clear existing data if directed by refresh option
-    if refresh:
-        db.truncate(schema_name, table_name)
-
-    # if not appending/refreshing, define and create table
-    if not append or refresh:
+    # if not appending, define and create table
+    if not append:
         # get info about the table from catalogue
         table_definition = bcdata.get_table_definition(dataset)
 

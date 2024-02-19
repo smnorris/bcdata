@@ -79,3 +79,36 @@ def test_bc2pg():
     assert result.exit_code == 0
     assert AIRPORTS_TABLE.lower() in DB_CONNECTION.tables
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE.lower())
+
+
+def test_bc2pg_refresh():
+    runner = CliRunner()
+    r1 = runner.invoke(
+        cli,
+        [
+            "bc2pg",
+            AIRPORTS_TABLE,
+            "--db_url",
+            DB_URL,
+            "--query",
+            "AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
+        ],
+    )
+    r2 = runner.invoke(
+        cli,
+        [
+            "bc2pg",
+            AIRPORTS_TABLE,
+            "--db_url",
+            DB_URL,
+            "--refresh",
+            "--query",
+            "AIRPORT_NAME='Victoria International Airport'",
+        ],
+    )
+    q = DB_CONNECTION.query("select * from whse_imagery_and_base_maps.gsr_airports_svw")
+    assert r1.exit_code == 0
+    assert r2.exit_code == 0
+    assert AIRPORTS_TABLE.lower() in DB_CONNECTION.tables
+    assert len(q) == 1
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE.lower())
