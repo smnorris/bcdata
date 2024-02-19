@@ -112,3 +112,20 @@ def test_bc2pg_refresh():
     assert AIRPORTS_TABLE.lower() in DB_CONNECTION.tables
     assert len(q) == 1
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE.lower())
+
+
+def test_bc2pg_refresh_fails_table_does_not_exist():
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "bc2pg",
+            AIRPORTS_TABLE,
+            "--db_url",
+            DB_URL,
+            "--count",
+            "1",
+            "--refresh",
+        ],
+    )
+    assert result.exit_code == 1

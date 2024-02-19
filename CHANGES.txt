@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.10.1 (2024-02-19)
+------------------
+- check that table to be refreshed exists when using bc2pg --refresh (#167)
+
 0.10.0 (2024-02-19)
 ------------------
 - store known primary keys in repository (data/primary_keys.json)
