@@ -133,6 +133,7 @@ Options:
   -s, --sortby TEXT       Name of sort field
   -e, --schema_only       Create empty table from catalogue schema
   -a, --append            Append to existing table
+  -r, --refresh           Truncate from existing table before load
   -t, --no_timestamp      Do not log download to bcdata.log
   -v, --verbose           Increase verbosity.
   -q, --quiet             Decrease verbosity.

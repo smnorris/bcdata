@@ -32,7 +32,7 @@ SUPPORTED_TYPES = [
 ]
 
 
-def bc2pg(
+def bc2pg(  # noqa: C901
     dataset,
     db_url,
     table=None,
@@ -45,8 +45,12 @@ def bc2pg(
     timestamp=True,
     schema_only=False,
     append=False,
+    refresh=False,
 ):
     """Request table definition from bcdc and replicate in postgres"""
+    if append and refresh:
+        raise ValueError("Options append and refresh are not compatible")
+
     dataset = bcdata.validate_name(dataset)
     schema_name, table_name = dataset.lower().split(".")
     if schema:
@@ -71,17 +75,18 @@ def bc2pg(
 
     df = None  # just for tracking if first download is done by geometry type check
 
-    # if appending, get column names from db
-    if append:
-        # make sure table actually exists
+    # if appending or refreshing, get column names from db, make sure table exists
+    if append or refresh:
         if schema_name + "." + table_name not in db.tables:
-            raise ValueError(
-                f"{schema_name}.{table_name} does not exist, nothing to append to"
-            )
+            raise ValueError(f"{schema_name}.{table_name} does not exist")
         column_names = db.get_columns(schema_name, table_name)
 
-    # if not appending, define and create table
-    else:
+    # clear existing data if directed by refresh option
+    if refresh:
+        db.truncate(schema_name, table_name)
+
+    # if not appending/refreshing, define and create table
+    if not append or refresh:
         # get info about the table from catalogue
         table_definition = bcdata.get_table_definition(dataset)
 
@@ -104,15 +109,21 @@ def bc2pg(
         if not geometry_type:
             if not urls[-1] == urls[0]:
                 df_temp = WFS.make_requests(
-                    [urls[-1]], as_gdf=True, crs="epsg:3005", lowercase=True, silent=True
+                    [urls[-1]],
+                    as_gdf=True,
+                    crs="epsg:3005",
+                    lowercase=True,
+                    silent=True,
                 )
-                geometry_type = df_temp.geom_type.unique()[0]  # keep only the first type
+                geometry_type = df_temp.geom_type.unique()[
+                    0
+                ]  # keep only the first type
                 if numpy.any(
                     df_temp.has_z.unique()[0]
                 ):  # geopandas does not include Z in geom_type string
                     geometry_type = geometry_type + "Z"
                 # drop the last request dataframe to free up memory
-                del(df_temp)
+                del df_temp
 
         # ensure geom type is valid
         geometry_type = geometry_type.upper()
@@ -134,7 +145,6 @@ def bc2pg(
             geometry_type,
             table_definition["comments"],
             primary_key,
-            append,
         )
         column_names = [c.name for c in table.columns]
 
@@ -195,7 +205,7 @@ def bc2pg(
             )
             df = None
 
-        # once load complete, note date/time of load completion in public.bcdata
+        # once load complete, note date/time of load completion in bcdata.log
         if timestamp:
             log.info("Logging download date to bcdata.log")
             db.execute(

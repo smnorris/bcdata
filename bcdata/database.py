@@ -92,6 +92,15 @@ class Database(object):
             )
             self.execute(dbq)
 
+    def truncate(self, schema, table):
+        if schema + "." + table in self.tables:
+            log.warning(f"Truncating table {schema}.{table}")
+            dbq = sql.SQL("TRUNCATE {schema}.{table}").format(
+                schema=sql.Identifier(schema),
+                table=sql.Identifier(table),
+            )
+            self.execute(dbq)
+
     def define_table(
         self,
         schema_name,
@@ -100,7 +109,6 @@ class Database(object):
         geom_type,
         table_comments=None,
         primary_key=None,
-        append=False,
     ):
         """build sqlalchemy table definition from bcdc provided json definitions"""
         # remove columns of unsupported types, redundant columns
@@ -161,9 +169,9 @@ class Database(object):
         if schema_name not in self.schemas:
             self.create_schema(schema_name)
 
-        # drop existing table if append is not flagged
-        if schema_name + "." + table_name in self.tables and not append:
-            log.info(f"Table {schema_name}.{table_name} exists, overwriting")
+        # drop existing table
+        if schema_name + "." + table_name in self.tables:
+            log.warning(f"Table {schema_name}.{table_name} exists, overwriting")
             self.drop_table(schema_name, table_name)
 
         # create the table

@@ -341,6 +341,12 @@ def clear_cache(verbose, quiet):
     help="Append to existing table",
 )
 @click.option(
+    "--refresh",
+    "-r",
+    is_flag=True,
+    help="Truncate from existing table before load",
+)
+@click.option(
     "--no_timestamp",
     "-t",
     is_flag=True,
@@ -361,6 +367,7 @@ def bc2pg(
     no_timestamp,
     schema_only,
     append,
+    refresh,
     verbose,
     quiet,
 ):
@@ -391,5 +398,6 @@ def bc2pg(
         timestamp=timestamp,
         schema_only=schema_only,
         append=append,
+        refresh=refresh,
     )
     log.info("Load of {} to {} in {} complete".format(dataset, out_table, db_url))

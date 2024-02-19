@@ -4,6 +4,7 @@ Changes
 0.9.2 ()
 ------------------
 - bc2pg geometry type inspection - look for geometries at bottom of dataset when none present at top (#158)
+- add refresh option to bc2pg command, truncating existing table (#160)
 
 0.9.1 (2023-12-30)
 ------------------
