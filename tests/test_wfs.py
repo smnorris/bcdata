@@ -63,6 +63,14 @@ def test_get_count_bounds():
     )
 
 
+def test_get_sortkey_known():
+    assert bcdata.get_sortkey(ASSESSMENTS_TABLE) == "STREAM_CROSSING_ID"
+
+
+def test_get_sortkey_unknown():
+    assert bcdata.get_sortkey(AIRPORTS_TABLE) == "SEQUENCE_ID"
+
+
 def test_get_data_asgdf():
     gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True)
     assert type(gdf) is GeoDataFrame

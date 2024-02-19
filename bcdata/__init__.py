@@ -6,6 +6,7 @@ from .wfs import (
     get_count,
     get_data,
     get_features,
+    get_sortkey,
     list_tables,
     validate_name,
 )
