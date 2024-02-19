@@ -105,7 +105,9 @@ def bc2pg(  # noqa: C901
                 df.has_z.unique()[0]
             ):  # geopandas does not include Z in geom_type string
                 geometry_type = geometry_type + "Z"
-                # if geometry type is still not populated try the last request incase all entrys with geom are near the bottom
+
+        # if geometry type is still not populated try the last request
+        # (in case all entrys with geom are near the bottom)
         if not geometry_type:
             if not urls[-1] == urls[0]:
                 df_temp = WFS.make_requests(
