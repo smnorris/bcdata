@@ -16,6 +16,7 @@
     "whse_basemapping.trim_ebm_airfields": "objectid",
     "whse_basemapping.trim_ebm_ocean": "objectid",
     "whse_basemapping.utmg_utm_zones_sp": "utm_zone",
+    "whse_cadastre.pmbc_parcel_fabric_poly_svw": "parcel_fabric_poly_id",
     "whse_environmental_monitoring.envcan_hydrometric_stn_sp": "hydrometric_station_id",
     "whse_fish.fiss_stream_sample_sites_sp": "stream_sample_site_id",
     "whse_fish.pscis_assessment_svw": "stream_crossing_id",
