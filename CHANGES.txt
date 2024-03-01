@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.10.2 (2024-03-01)
+------------------
+- improve connection management for better stability (#171)
+
 0.10.1 (2024-02-19)
 ------------------
 - check that table to be refreshed exists when using bc2pg --refresh (#167)
