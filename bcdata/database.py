@@ -1,9 +1,8 @@
 import logging
 import os
 
-import psycopg2
 from geoalchemy2 import Geometry
-from psycopg2 import sql
+from psycopg2 import errors, sql
 from sqlalchemy import Column, MetaData, Table, create_engine
 from sqlalchemy.dialects.postgresql import DATE, NUMERIC, VARCHAR
 
@@ -11,18 +10,20 @@ log = logging.getLogger(__name__)
 
 
 class Database(object):
-    """Wrapper around psycopg2 and sqlachemy"""
+    """Wrapper around sqlalchemy"""
 
     def __init__(self, url=os.environ.get("DATABASE_URL")):
         self.url = url
         self.engine = create_engine(url)
-        self.conn = psycopg2.connect(url)
         # make sure postgis is available
         try:
             self.query("SELECT postgis_full_version()")
-        except psycopg2.errors.UndefinedFunction:
-            log.error("Cannot find PostGIS, is extension added to database %s ?", url)
-            raise psycopg2.errors.UndefinedFunction
+        except errors.UndefinedFunction:
+            log.error(
+                "Cannot find PostGIS, has extension been installed on database %s ?",
+                url,
+            )
+            raise errors.UndefinedFunction
 
         # supported oracle/wfs to postgres types
         self.supported_types = {
@@ -56,24 +57,26 @@ class Database(object):
 
     def query(self, sql, params=None):
         """Execute sql and return all results"""
-        with self.conn:
-            with self.conn.cursor() as curs:
-                curs.execute(sql, params)
-                result = curs.fetchall()
+        conn = self.engine.raw_connection()
+        with conn.cursor() as curs:
+            curs.execute(sql, params)
+            result = curs.fetchall()
         return result
 
     def execute(self, sql, params=None):
         """Execute sql and return only whether the query was successful"""
-        with self.conn:
-            with self.conn.cursor() as curs:
-                result = curs.execute(sql, params)
+        conn = self.engine.raw_connection()
+        with conn.cursor() as curs:
+            result = curs.execute(sql, params)
+            conn.commit()
         return result
 
     def execute_many(self, sql, params):
         """Execute many sql"""
-        with self.conn:
-            with self.conn.cursor() as curs:
-                curs.executemany(sql, params)
+        conn = self.engine.raw_connection()
+        with conn.cursor() as curs:
+            curs.executemany(sql, params)
+            conn.commit()
 
     def create_schema(self, schema):
         if schema not in self.schemas:
