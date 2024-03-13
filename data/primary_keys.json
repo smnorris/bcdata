@@ -24,6 +24,7 @@
     "whse_forest_tenure.ften_range_poly_svw": "objectid",
     "whse_forest_tenure.ften_range_poly_svw": "objectid",
     "whse_forest_vegetation.ogsr_priority_def_area_cur_sp": "ogsr_pdac_sysid",
+    "whse_forest_vegetation.veg_comp_lyr_r1_poly": "feature_id",
     "whse_forest_vegetation.veg_consolidated_cut_blocks_sp": "veg_consolidated_cut_block_id",
     "whse_imagery_and_base_maps.mot_road_structure_sp": "hwy_structure_class_id",
     "whse_legal_admin_boundaries.abms_municipalities_sp": "lgl_admin_area_id",
