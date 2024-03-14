@@ -320,6 +320,13 @@ def clear_cache(verbose, quiet):
     "--query",
     help="A valid CQL or ECQL query",
 )
+@bounds_opt
+@click.option(
+    "--bounds-crs",
+    "--bounds_crs",
+    help="CRS of provided bounds",
+    default="EPSG:3005",
+)
 @click.option(
     "--count",
     "-c",
@@ -362,6 +369,8 @@ def bc2pg(
     schema,
     geometry_type,
     query,
+    bounds,
+    bounds_crs,
     count,
     primary_key,
     sortby,
@@ -411,6 +420,8 @@ def bc2pg(
         table=table,
         schema=schema,
         query=query,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
         geometry_type=geometry_type,
         count=count,
         primary_key=primary_key,
