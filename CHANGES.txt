@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.10.3 ()
+------------------
+- add missing --bounds option to bc2pg (#173)
+
 0.10.2 (2024-03-01)
 ------------------
 - improve connection management for better stability (#171)
