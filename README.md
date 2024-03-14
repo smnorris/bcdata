@@ -122,22 +122,27 @@ Usage: bcdata bc2pg [OPTIONS] DATASET
    $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
 
 Options:
-  -db, --db_url TEXT      Target database url, defaults to $DATABASE_URL
-                          environment variable if set
-  --table TEXT            Destination table name
-  --schema TEXT           Destination schema name
-  --geometry_type TEXT    Spatial type of geometry column
-  --query TEXT            A valid CQL or ECQL query
-  -c, --count INTEGER     Total number of features to load
-  -k, --primary_key TEXT  Primary key of dataset
-  -s, --sortby TEXT       Name of sort field
-  -e, --schema_only       Create empty table from catalogue schema
-  -a, --append            Append to existing table
-  -r, --refresh           Truncate from existing table before load
-  -t, --no_timestamp      Do not log download to bcdata.log
-  -v, --verbose           Increase verbosity.
-  -q, --quiet             Decrease verbosity.
-  --help                  Show this message and exit.
+  -db, --db_url TEXT              Target database url, defaults to
+                                  $DATABASE_URL environment variable if set
+  --table TEXT                    Destination table name
+  --schema TEXT                   Destination schema name
+  --geometry_type TEXT            Spatial type of geometry column
+  --query TEXT                    A valid CQL or ECQL query
+  --bounds TEXT                   Bounds: "left bottom right top" or "[left,
+                                  bottom, right, top]". Coordinates are BC
+                                  Albers (default) or --bounds_crs
+  --bounds-crs, --bounds_crs TEXT
+                                  CRS of provided bounds
+  -c, --count INTEGER             Total number of features to load
+  -k, --primary_key TEXT          Primary key of dataset
+  -s, --sortby TEXT               Name of sort field
+  -e, --schema_only               Create empty table from catalogue schema
+  -a, --append                    Append to existing table
+  -r, --refresh                   Truncate from existing table before load
+  -t, --no_timestamp              Do not log download to bcdata.log
+  -v, --verbose                   Increase verbosity.
+  -q, --quiet                     Decrease verbosity.
+  --help                          Show this message and exit.
 ```
 
 #### cat
