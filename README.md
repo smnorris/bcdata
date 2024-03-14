@@ -119,7 +119,7 @@ Usage: bcdata bc2pg [OPTIONS] DATASET
 
   Download a DataBC WFS layer to postgres
 
-   $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
+   $ bcdata bc2pg whse_imagery_and_base_maps.gsr_airports_svw
 
 Options:
   -db, --db_url TEXT              Target database url, defaults to

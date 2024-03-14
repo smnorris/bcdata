@@ -381,10 +381,10 @@ def bc2pg(
     verbose,
     quiet,
 ):
-    """Download a DataBC WFS layer to postgres
+    """Load a DataBC WFS layer to a postgres db
 
     \b
-     $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
+     $ bcdata bc2pg whse_imagery_and_base_maps.gsr_airports_svw
     """
     # for this command, default to INFO level logging
     verbosity = verbose - quiet
