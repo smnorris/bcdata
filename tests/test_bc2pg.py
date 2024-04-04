@@ -38,6 +38,28 @@ def test_bc2pg_count():
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 
+def test_bc2pg_bounds():
+    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, bounds=[1188000, 377051, 1207437, 390361])
+    assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query(
+        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
+    )
+    assert len(r) == 8
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+
+def test_bc2pg_bounds_count():
+    bcdata.bc2pg(
+        AIRPORTS_TABLE, DB_URL, bounds=[1188000, 377051, 1207437, 390361], count=6
+    )
+    assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query(
+        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
+    )
+    assert len(r) == 6
+    DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
+
+
 def test_bc2pg_table():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, table="testtable")
     assert "whse_imagery_and_base_maps.testtable" in DB_CONNECTION.tables

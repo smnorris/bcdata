@@ -54,6 +54,8 @@ def bc2pg(  # noqa: C901
     schema=None,
     geometry_type=None,
     query=None,
+    bounds=None,
+    bounds_crs=None,
     count=None,
     sortby=None,
     primary_key=None,
@@ -82,6 +84,8 @@ def bc2pg(  # noqa: C901
     urls = bcdata.define_requests(
         dataset,
         query=query,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
         count=count,
         sortby=sortby,
         crs="epsg:3005",

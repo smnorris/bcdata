@@ -320,6 +320,13 @@ def clear_cache(verbose, quiet):
     "--query",
     help="A valid CQL or ECQL query",
 )
+@bounds_opt
+@click.option(
+    "--bounds-crs",
+    "--bounds_crs",
+    help="CRS of provided bounds",
+    default="EPSG:3005",
+)
 @click.option(
     "--count",
     "-c",
@@ -362,6 +369,8 @@ def bc2pg(
     schema,
     geometry_type,
     query,
+    bounds,
+    bounds_crs,
     count,
     primary_key,
     sortby,
@@ -372,10 +381,10 @@ def bc2pg(
     verbose,
     quiet,
 ):
-    """Download a DataBC WFS layer to postgres
+    """Load a DataBC WFS layer to a postgres db
 
     \b
-     $ bcdata bc2pg bc-airports --db_url postgresql://postgres:postgres@localhost:5432/postgis
+     $ bcdata bc2pg whse_imagery_and_base_maps.gsr_airports_svw
     """
     # for this command, default to INFO level logging
     verbosity = verbose - quiet
@@ -411,6 +420,8 @@ def bc2pg(
         table=table,
         schema=schema,
         query=query,
+        bounds=bounds,
+        bounds_crs=bounds_crs,
         geometry_type=geometry_type,
         count=count,
         primary_key=primary_key,
