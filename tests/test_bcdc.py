@@ -58,3 +58,12 @@ def test_get_table_definition_format_multi_nolayer():
     assert table_definition["description"]
     assert table_definition["comments"]
     assert table_definition["schema"]
+
+
+def test_get_table_definition_format_oracle_sde():
+    table_definition = bcdc.get_table_definition(
+        "WHSE_LAND_USE_PLANNING.RMP_LANDSCAPE_RSRV_DESIGN_SP"
+    )
+    assert table_definition["description"]
+    assert table_definition["comments"]
+    assert table_definition["schema"]
