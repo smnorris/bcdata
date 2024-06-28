@@ -1,9 +1,12 @@
 Changes
 =======
 
-0.10.3 ()
+0.10.3 (2024-06-28)
 ------------------
-- add missing --bounds option to bc2pg (#173)
+- bc2pg - fix logging error on data refresh (#184)
+- fix failures on specific tables due to API quirks (#179/#181)
+- bc2pg - add missing --bounds option (#173)
+
 
 0.10.2 (2024-03-01)
 ------------------
