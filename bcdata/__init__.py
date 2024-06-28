@@ -15,4 +15,4 @@ PRIMARY_KEY_DB_URL = (
     "https://raw.githubusercontent.com/smnorris/bcdata/main/data/primary_keys.json"
 )
 
-__version__ = "0.10.4dev0"
+__version__ = "0.10.5dev0"

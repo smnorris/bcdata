@@ -438,7 +438,8 @@ def bc2pg(
         s, table = out_table.split(".")
         db.refresh(schema_target, table)
         out_table = schema_target + "." + table
-        db.log(schema_target, table)
+        if timestamp:
+            db.log(schema_target, table)
 
     # do not notify of data load completion when no data load has occured
     if not schema_only:
