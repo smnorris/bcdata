@@ -212,3 +212,21 @@ class Database(object):
         metadata_obj = MetaData(schema=schema)
         table = Table(table, metadata_obj, schema=schema, autoload_with=self.engine)
         return list(table.columns.keys())
+
+    def log(self, schema_name, table_name):
+        log.info("Logging download date to bcdata.log")
+        self.execute(
+            """CREATE SCHEMA IF NOT EXISTS bcdata;
+               CREATE TABLE IF NOT EXISTS bcdata.log (
+                 table_name text PRIMARY KEY,
+                 latest_download timestamp WITH TIME ZONE
+               );
+            """
+        )
+        self.execute(
+            """INSERT INTO bcdata.log (table_name, latest_download)
+               SELECT %s as table_name, NOW() as latest_download
+               ON CONFLICT (table_name) DO UPDATE SET latest_download = NOW();
+            """,
+            (schema_name + "." + table_name,),
+        )

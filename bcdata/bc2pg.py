@@ -62,6 +62,7 @@ def bc2pg(  # noqa: C901
     timestamp=True,
     schema_only=False,
     append=False,
+    refresh=False,
 ):
     """Request table definition from bcdc and replicate in postgres"""
     if schema_only and append:
@@ -228,22 +229,8 @@ def bc2pg(  # noqa: C901
             df = None
 
         # once load complete, note date/time of load completion in bcdata.log
-        if timestamp:
-            log.info("Logging download date to bcdata.log")
-            db.execute(
-                """CREATE SCHEMA IF NOT EXISTS bcdata;
-                   CREATE TABLE IF NOT EXISTS bcdata.log (
-                     table_name text PRIMARY KEY,
-                     latest_download timestamp WITH TIME ZONE
-                   );
-                """
-            )
-            db.execute(
-                """INSERT INTO bcdata.log (table_name, latest_download)
-                   SELECT %s as table_name, NOW() as latest_download
-                   ON CONFLICT (table_name) DO UPDATE SET latest_download = NOW();
-                """,
-                (schema_name + "." + table_name,),
-            )
+        # do not log refreshes here, they called by cli once loaded to target table
+        if timestamp and not refresh:
+            db.log(schema_name, table_name)
 
     return schema_name + "." + table_name

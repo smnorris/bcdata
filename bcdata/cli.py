@@ -429,6 +429,7 @@ def bc2pg(
         timestamp=timestamp,
         schema_only=schema_only,
         append=append,
+        refresh=refresh,
     )
 
     # if refreshing, flush from temp bcdata schema to target schema
@@ -437,6 +438,7 @@ def bc2pg(
         s, table = out_table.split(".")
         db.refresh(schema_target, table)
         out_table = schema_target + "." + table
+        db.log(schema_target, table)
 
     # do not notify of data load completion when no data load has occured
     if not schema_only:
