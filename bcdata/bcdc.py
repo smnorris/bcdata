@@ -9,7 +9,7 @@ import bcdata
 
 log = logging.getLogger(__name__)
 
-BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
+BCDC_API_URL = "https://toyger.data.gov.bc.ca/api/3/action/"
 
 
 class ServiceException(Exception):
@@ -119,15 +119,12 @@ def get_table_definition(table_name):  # noqa: C901
 
                 # multiple format resource
                 elif resource["format"] == "multiple":
-                    # if multiple format, check for table name match in this location
+                    # if multiple format, check for table name match in the preview info
                     if resource["preview_info"]:
                         # check that layer_name key is present
-                        if "layer_name" in json.loads(resource["preview_info"]):
+                        if "layer_name" in resource["preview_info"][0].keys():
                             # then check if it matches the table name
-                            if (
-                                json.loads(resource["preview_info"])["layer_name"]
-                                == table_name
-                            ):
+                            if resource["preview_info"][0]["layer_name"] == table_name:
                                 if "object_table_comments" in resource.keys():
                                     table_comments = resource["object_table_comments"]
                                 else:
@@ -143,13 +140,12 @@ def get_table_definition(table_name):  # noqa: C901
                                     )
                                     log.debug(resource)
 
-        # uniquify the result
         if len(matches) > 0:
-            matched = list(set(matches))[0]
+            matched = matches[0]  # just retain the first match
             return {
                 "description": matched[0],  # notes=description
                 "comments": matched[1],
-                "schema": json.loads(matched[2]),
+                "schema": matched[2],
             }
         else:
             raise ValueError(
