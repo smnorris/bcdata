@@ -1,8 +1,10 @@
 Changes
 =======
 
-0.10.5 ()
+0.11.0 (2024-07-29)
 ------------------
+- upgrade dependencies
+- note bcgov uptime monitor in readme
 
 0.10.4 (2024-06-28)
 ------------------
