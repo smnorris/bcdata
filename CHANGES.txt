@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.12.0 ()
+------------------
+- support Data Catalogue API changes (#188)
+
 0.11.0 (2024-07-29)
 ------------------
 - upgrade dependencies
