@@ -36,7 +36,10 @@ def _package_show(package):
 
 @stamina.retry(on=requests.HTTPError, timeout=60)
 def _table_definition(table_name):
-    r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
+    r = requests.get(
+        BCDC_API_URL + "package_search",
+        params={"q": "res_extras_object_name:" + table_name},
+    )
     if r.status_code != 200:
         log.warning(r.headers)
     if r.status_code in [400, 401, 404]:
@@ -66,7 +69,7 @@ def get_table_name(package):
     return layer_names[0]
 
 
-def get_table_definition(table_name):  # noqa: C901
+def get_table_definition(table_name):
     """
     Given a table/object name, search BCDC for the first package/resource with a matching "object_name",
     returns dict: {"comments": <>, "notes": <>, "schema": {<schema dict>} }
@@ -84,7 +87,11 @@ def get_table_definition(table_name):  # noqa: C901
         log.warning(
             f"BC Data Catalouge API search provides no results for: {table_name}"
         )
-        return []
+        return {
+            "description": None,
+            "comments": None,
+            "schema": None,
+        }
     else:
         matches = []
         # iterate through results of search (packages)
@@ -92,53 +99,18 @@ def get_table_definition(table_name):  # noqa: C901
             notes = result["notes"]
             # iterate through resources associated with each package
             for resource in result["resources"]:
-                # where to find schema details depends on format type
-                if resource["format"] == "wms":
-                    if urlparse(resource["url"]).path.split("/")[3] == table_name:
-                        if "object_table_comments" in resource.keys():
-                            table_comments = resource["object_table_comments"]
-                        else:
-                            table_comments = None
-                        # only add to matches if schema details found
-                        if "details" in resource.keys() and resource["details"] != "":
-                            table_details = resource["details"]
-                            matches.append((notes, table_comments, table_details))
-                            log.debug(resource)
-                # oracle sde format type
-                if resource["format"] == "oracle_sde":
-                    if resource["object_name"] == table_name:
-                        if "object_table_comments" in resource.keys():
-                            table_comments = resource["object_table_comments"]
-                        else:
-                            table_comments = None
-                        # only add to matches if schema details found
-                        if "details" in resource.keys() and resource["details"] != "":
-                            table_details = resource["details"]
-                            matches.append((notes, table_comments, table_details))
-                            log.debug(resource)
-
-                # multiple format resource
-                elif resource["format"] == "multiple":
-                    # if multiple format, check for table name match in the preview info
-                    if resource["preview_info"]:
-                        # check that layer_name key is present
-                        if "layer_name" in resource["preview_info"][0].keys():
-                            # then check if it matches the table name
-                            if resource["preview_info"][0]["layer_name"] == table_name:
-                                if "object_table_comments" in resource.keys():
-                                    table_comments = resource["object_table_comments"]
-                                else:
-                                    table_comments = None
-                                # only add to matches if schema details found
-                                if (
-                                    "details" in resource.keys()
-                                    and resource["details"] != ""
-                                ):
-                                    table_details = resource["details"]
-                                    matches.append(
-                                        (notes, table_comments, table_details)
-                                    )
-                                    log.debug(resource)
+                log.debug(resource)
+                if "object_table_comments" in resource.keys():
+                    table_comments = resource["object_table_comments"]
+                else:
+                    table_comments = None
+                if "details" in resource.keys() and resource["details"] != "":
+                    table_details = resource["details"]
+                else:
+                    table_details = None
+                # require schema but not description
+                if table_details:
+                    matches.append((notes, table_comments, table_details))
 
         if len(matches) > 0:
             matched = matches[0]  # just retain the first match
