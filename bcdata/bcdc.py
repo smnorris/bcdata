@@ -36,7 +36,10 @@ def _package_show(package):
 
 @stamina.retry(on=requests.HTTPError, timeout=60)
 def _table_definition(table_name):
-    r = requests.get(BCDC_API_URL + "package_search", params={"q": table_name})
+    r = requests.get(
+        BCDC_API_URL + "package_search",
+        params={"q": "res_extras_object_name:" + table_name},
+    )
     if r.status_code != 200:
         log.warning(r.headers)
     if r.status_code in [400, 401, 404]:
@@ -66,7 +69,7 @@ def get_table_name(package):
     return layer_names[0]
 
 
-def get_table_definition(table_name):  # noqa: C901
+def get_table_definition(table_name):
     """
     Given a table/object name, search BCDC for the first package/resource with a matching "object_name",
     returns dict: {"comments": <>, "notes": <>, "schema": {<schema dict>} }
@@ -77,81 +80,46 @@ def get_table_definition(table_name):  # noqa: C901
         raise ValueError(
             f"Only tables available via WFS are supported, {table_name} not found"
         )
+
     # search the api for the provided table
     r = _table_definition(table_name)
+
+    # start with an empty table definition dict
+    table_definition = {
+        "description": None,
+        "comments": None,
+        "schema": [],
+        "primary_key": None,
+    }
+
     # if there are no matching results, let the user know
     if r.json()["result"]["count"] == 0:
         log.warning(
             f"BC Data Catalouge API search provides no results for: {table_name}"
         )
-        return []
     else:
-        matches = []
         # iterate through results of search (packages)
         for result in r.json()["result"]["results"]:
-            notes = result["notes"]
+            # description is at top level, same for all resources
+            table_definition["description"] = result["notes"]
             # iterate through resources associated with each package
             for resource in result["resources"]:
-                # where to find schema details depends on format type
-                if resource["format"] == "wms":
-                    if urlparse(resource["url"]).path.split("/")[3] == table_name:
-                        if "object_table_comments" in resource.keys():
-                            table_comments = resource["object_table_comments"]
-                        else:
-                            table_comments = None
-                        # only add to matches if schema details found
-                        if "details" in resource.keys() and resource["details"] != "":
-                            table_details = resource["details"]
-                            matches.append((notes, table_comments, table_details))
-                            log.debug(resource)
-                # oracle sde format type
-                if resource["format"] == "oracle_sde":
-                    if resource["object_name"] == table_name:
-                        if "object_table_comments" in resource.keys():
-                            table_comments = resource["object_table_comments"]
-                        else:
-                            table_comments = None
-                        # only add to matches if schema details found
-                        if "details" in resource.keys() and resource["details"] != "":
-                            table_details = resource["details"]
-                            matches.append((notes, table_comments, table_details))
-                            log.debug(resource)
+                # presume description and details are the same for all resources
+                # (below only retains the final schema/comments if there is more than one
+                # package with this information)
+                if "details" in resource.keys() and resource["details"] != "":
+                    table_definition["schema"] = json.loads(resource["details"])
+                    # look for comments only if details/schema is present
+                    if "object_table_comments" in resource.keys():
+                        table_definition["comments"] = resource["object_table_comments"]
 
-                # multiple format resource
-                elif resource["format"] == "multiple":
-                    # if multiple format, check for table name match in this location
-                    if resource["preview_info"]:
-                        # check that layer_name key is present
-                        if "layer_name" in json.loads(resource["preview_info"]):
-                            # then check if it matches the table name
-                            if (
-                                json.loads(resource["preview_info"])["layer_name"]
-                                == table_name
-                            ):
-                                if "object_table_comments" in resource.keys():
-                                    table_comments = resource["object_table_comments"]
-                                else:
-                                    table_comments = None
-                                # only add to matches if schema details found
-                                if (
-                                    "details" in resource.keys()
-                                    and resource["details"] != ""
-                                ):
-                                    table_details = resource["details"]
-                                    matches.append(
-                                        (notes, table_comments, table_details)
-                                    )
-                                    log.debug(resource)
+    if not table_definition["schema"]:
+        raise log.warning(
+            f"BC Data Catalouge API search provides no schema for: {table_name}"
+        )
 
-        # uniquify the result
-        if len(matches) > 0:
-            matched = list(set(matches))[0]
-            return {
-                "description": matched[0],  # notes=description
-                "comments": matched[1],
-                "schema": json.loads(matched[2]),
-            }
-        else:
-            raise ValueError(
-                f"BCDC search for {table_name} does not return a table schema"
-            )
+    # add primary key if present in bcdata.primary_keys
+    if table_name.lower() in bcdata.primary_keys:
+        table_definition["primary_key"] = bcdata.primary_keys[table_name.lower()]
+
+    return table_definition

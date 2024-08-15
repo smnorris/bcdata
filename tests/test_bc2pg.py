@@ -126,8 +126,7 @@ def test_bc2pg_primary_key():
 
 
 def test_bc2pg_get_primary_keys():
-    primary_keys = bcdata.get_primary_keys()
-    assert primary_keys[ASSESSMENTS_TABLE] == "stream_crossing_id"
+    assert bcdata.primary_keys[ASSESSMENTS_TABLE] == "stream_crossing_id"
 
 
 def test_bc2pg_primary_key_default():
