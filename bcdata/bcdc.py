@@ -80,46 +80,46 @@ def get_table_definition(table_name):
         raise ValueError(
             f"Only tables available via WFS are supported, {table_name} not found"
         )
+
     # search the api for the provided table
     r = _table_definition(table_name)
+
+    # start with an empty table definition dict
+    table_definition = {
+        "description": None,
+        "comments": None,
+        "schema": [],
+        "primary_key": None,
+    }
+
     # if there are no matching results, let the user know
     if r.json()["result"]["count"] == 0:
         log.warning(
             f"BC Data Catalouge API search provides no results for: {table_name}"
         )
-        return {
-            "description": None,
-            "comments": None,
-            "schema": None,
-        }
     else:
-        matches = []
         # iterate through results of search (packages)
         for result in r.json()["result"]["results"]:
-            notes = result["notes"]
+            # description is at top level, same for all resources
+            table_definition["description"] = result["notes"]
             # iterate through resources associated with each package
             for resource in result["resources"]:
-                log.debug(resource)
-                if "object_table_comments" in resource.keys():
-                    table_comments = resource["object_table_comments"]
-                else:
-                    table_comments = None
+                # presume description and details are the same for all resources
+                # (below only retains the final schema/comments if there is more than one
+                # package with this information)
                 if "details" in resource.keys() and resource["details"] != "":
-                    table_details = resource["details"]
-                else:
-                    table_details = None
-                # require schema but not description
-                if table_details:
-                    matches.append((notes, table_comments, table_details))
+                    table_definition["schema"] = json.loads(resource["details"])
+                    # look for comments only if details/schema is present
+                    if "object_table_comments" in resource.keys():
+                        table_definition["comments"] = resource["object_table_comments"]
 
-        if len(matches) > 0:
-            matched = matches[0]  # just retain the first match
-            return {
-                "description": matched[0],  # notes=description
-                "comments": matched[1],
-                "schema": matched[2],
-            }
-        else:
-            raise ValueError(
-                f"BCDC search for {table_name} does not return a table schema"
-            )
+    if not table_definition["schema"]:
+        raise log.warning(
+            f"BC Data Catalouge API search provides no schema for: {table_name}"
+        )
+
+    # add primary key if present in bcdata.primary_keys
+    if table_name.lower() in bcdata.primary_keys:
+        table_definition["primary_key"] = bcdata.primary_keys[table_name.lower()]
+
+    return table_definition

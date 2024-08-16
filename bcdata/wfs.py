@@ -223,9 +223,8 @@ class BCWFS(object):
         """Check data for unique columns available for sorting paged requests"""
         columns = list(self.get_schema(table)["properties"].keys())
         # use known primary key if it is present in the bcdata repository
-        known_primary_keys = bcdata.get_primary_keys()
-        if table.lower() in known_primary_keys:
-            return known_primary_keys[table.lower()].upper()
+        if table.lower() in bcdata.primary_keys:
+            return bcdata.primary_keys[table.lower()].upper()
         # if pk not known, use OBJECTID as default sort key when present
         elif "OBJECTID" in columns:
             return "OBJECTID"

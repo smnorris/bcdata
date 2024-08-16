@@ -34,19 +34,6 @@ SUPPORTED_TYPES = [
 ]
 
 
-def get_primary_keys():
-    """download primary key data file"""
-    response = requests.get(bcdata.PRIMARY_KEY_DB_URL)
-    if response.status_code == 200:
-        primary_keys = response.json()
-    else:
-        log.warning(
-            f"Failed to download primary key database at {bcdata.PRIMARY_KEY_DB_URL}"
-        )
-        primary_keys = {}
-    return primary_keys
-
-
 def bc2pg(  # noqa: C901
     dataset,
     db_url,
@@ -148,9 +135,8 @@ def bc2pg(  # noqa: C901
             raise ValueError("Geometry type {geometry_type} is not supported")
 
         # if primary key is not supplied, use default (if present in list)
-        primary_keys = get_primary_keys()
-        if not primary_key and dataset.lower() in primary_keys:
-            primary_key = primary_keys[dataset.lower()]
+        if not primary_key and dataset.lower() in bcdata.primary_keys:
+            primary_key = bcdata.primary_keys[dataset.lower()]
 
         # fail if specified primary key is not in the table
         if primary_key and primary_key.upper() not in [

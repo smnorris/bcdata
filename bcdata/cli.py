@@ -131,14 +131,9 @@ def info(dataset, indent, meta_member, verbose, quiet):
     verbosity = verbose - quiet
     configure_logging(verbosity)
     dataset = bcdata.validate_name(dataset)
-    info = {}
+    info = bcdata.get_table_definition(dataset)
     info["name"] = dataset
     info["count"] = bcdata.get_count(dataset)
-    table_definition = bcdata.get_table_definition(dataset)
-    info["description"] = table_definition["description"]
-    info["table_comments"] = table_definition["comments"]
-    info["schema"] = table_definition["schema"]
-
     if meta_member:
         click.echo(info[meta_member])
     else:
