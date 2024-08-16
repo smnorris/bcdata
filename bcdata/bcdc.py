@@ -104,14 +104,23 @@ def get_table_definition(table_name):
             table_definition["description"] = result["notes"]
             # iterate through resources associated with each package
             for resource in result["resources"]:
-                # presume description and details are the same for all resources
-                # (below only retains the final schema/comments if there is more than one
-                # package with this information)
-                if "details" in resource.keys() and resource["details"] != "":
-                    table_definition["schema"] = json.loads(resource["details"])
-                    # look for comments only if details/schema is present
-                    if "object_table_comments" in resource.keys():
-                        table_definition["comments"] = resource["object_table_comments"]
+                # only examine geographic resources with object name key
+                if (
+                    "object_name" in resource.keys()
+                    and resource["bcdc_type"] == "geographic"
+                ):
+                    # confirm that object name matches table name and schema is present
+                    if (
+                        resource["object_name"] == table_name
+                        and "details" in resource.keys()
+                        and resource["details"] != ""
+                    ):
+                        table_definition["schema"] = json.loads(resource["details"])
+                        # look for comments only if details/schema was found
+                        if "object_table_comments" in resource.keys():
+                            table_definition["comments"] = resource[
+                                "object_table_comments"
+                            ]
 
     if not table_definition["schema"]:
         log.warning(

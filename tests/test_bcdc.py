@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+import bcdata
 from bcdata import bcdc
 
 AIRPORTS_PACKAGE = "bc-airports"
@@ -40,6 +41,13 @@ def test_get_table_definition_format_multi():
     assert table_definition["description"]
     assert table_definition["comments"]
     assert table_definition["schema"]
+    columns = [c["column_name"] for c in table_definition["schema"]]
+    assert (
+        bcdata.primary_keys[
+            "whse_forest_vegetation.ogsr_priority_def_area_cur_sp"
+        ].upper()
+        in columns
+    )
 
 
 def test_get_table_definition_format_multi_nopreview():
