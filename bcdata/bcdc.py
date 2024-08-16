@@ -9,7 +9,7 @@ import bcdata
 
 log = logging.getLogger(__name__)
 
-BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
+BCDC_API_URL = "https://toyger.data.gov.bc.ca/api/3/action/"
 
 
 class ServiceException(Exception):
@@ -107,8 +107,8 @@ def get_table_definition(table_name):
                 # presume description and details are the same for all resources
                 # (below only retains the final schema/comments if there is more than one
                 # package with this information)
-                if "details" in resource.keys() and resource["details"] != "":
-                    table_definition["schema"] = json.loads(resource["details"])
+                if "details" in resource.keys() and resource["details"] != []:
+                    table_definition["schema"] = resource["details"]
                     # look for comments only if details/schema is present
                     if "object_table_comments" in resource.keys():
                         table_definition["comments"] = resource["object_table_comments"]
