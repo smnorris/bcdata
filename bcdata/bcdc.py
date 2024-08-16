@@ -129,6 +129,8 @@ def get_table_definition(table_name):
 
     # add primary key if present in bcdata.primary_keys
     if table_name.lower() in bcdata.primary_keys:
-        table_definition["primary_key"] = bcdata.primary_keys[table_name.lower()]
+        table_definition["primary_key"] = bcdata.primary_keys[
+            table_name.lower()
+        ].upper()
 
     return table_definition
