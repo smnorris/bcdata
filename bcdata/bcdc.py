@@ -108,13 +108,13 @@ def get_table_definition(table_name):
                 # (below only retains the final schema/comments if there is more than one
                 # package with this information)
                 if "details" in resource.keys() and resource["details"] != "":
-                    table_definition["schema"] = json.loads(resource["details"])
+                    table_definition["schema"] = resource["details"]
                     # look for comments only if details/schema is present
                     if "object_table_comments" in resource.keys():
                         table_definition["comments"] = resource["object_table_comments"]
 
     if not table_definition["schema"]:
-        raise log.warning(
+        log.warning(
             f"BC Data Catalouge API search provides no schema for: {table_name}"
         )
 
