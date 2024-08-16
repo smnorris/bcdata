@@ -114,7 +114,7 @@ def get_table_definition(table_name):
                         table_definition["comments"] = resource["object_table_comments"]
 
     if not table_definition["schema"]:
-        raise log.warning(
+        log.warning(
             f"BC Data Catalouge API search provides no schema for: {table_name}"
         )
 
