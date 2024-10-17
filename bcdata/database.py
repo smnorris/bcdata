@@ -134,6 +134,7 @@ class Database(object):
         table_name,
         table_details,
         geom_type,
+        promote_to_multi=True,
         table_comments=None,
         primary_key=None,
     ):
@@ -181,7 +182,7 @@ class Database(object):
 
         # make everything multipart
         # (some datasets have mixed singlepart/multipart geometries)
-        if geom_type[:5] != "MULTI":
+        if promote_to_multi and geom_type[:5] != "MULTI":
             geom_type = "MULTI" + geom_type
         columns.append(Column("geom", Geometry(geom_type, srid=3005)))
         metadata_obj = MetaData()
