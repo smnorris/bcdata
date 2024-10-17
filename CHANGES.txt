@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.12.3 ()
+------------------
+- ensure --geometry_type option is used correctly (#198)
+
 0.12.2 (2024-08-15)
 ------------------
 - fix error where incorrect schema returned for datasets with multiple resources (#196)
