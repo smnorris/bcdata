@@ -19,6 +19,13 @@ STREAMS_TABLE = "whse_basemapping.fwa_stream_networks_sp"
 def test_bc2pg():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    # ensure the data is defaulting to multipart
+    r = DB_CONNECTION.query(
+        """
+        SELECT ST_geometrytype(geom) from whse_imagery_and_base_maps.gsr_airports_svw limit 1
+        """
+    )
+    assert r[0][0] == "ST_MultiPoint"
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 
@@ -74,7 +81,12 @@ def test_bc2pg_schema():
 
 def test_bc2pg_geometry_type():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10, geometry_type="POINT")
-    assert AIRPORTS_TABLE in DB_CONNECTION.tables
+    r = DB_CONNECTION.query(
+        """
+        SELECT ST_geometrytype(geom) from whse_imagery_and_base_maps.gsr_airports_svw limit 1
+        """
+    )
+    assert r[0][0] == "ST_Point"
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 

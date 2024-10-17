@@ -62,6 +62,16 @@ def bc2pg(  # noqa: C901
     if table:
         table_name = table.lower()
 
+    # take note if geometry type is specified as option
+    geometry_type_opt = geometry_type
+
+    # do not promote to multi if singlepart specified,
+    # otherwise default to always promoting to multipart in case mixed types are returned
+    if geometry_type_opt and geometry_type_opt.upper() in ["POINT", "LINE", "POLYGON"]:
+        promote_to_multi = False
+    else:
+        promote_to_multi = True
+
     # connect to target db
     db = Database(db_url)
 
@@ -152,6 +162,7 @@ def bc2pg(  # noqa: C901
             table_name,
             table_definition["schema"],
             geometry_type,
+            promote_to_multi,
             table_definition["comments"],
             primary_key,
         )
@@ -187,20 +198,22 @@ def bc2pg(  # noqa: C901
             # cast to everything multipart because responses can have mixed types
             # geopandas does not have a built in function:
             # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
-            df["geom"] = [
-                MultiPoint([feature]) if isinstance(feature, Point) else feature
-                for feature in df["geom"]
-            ]
-            df["geom"] = [
-                MultiLineString([feature])
-                if isinstance(feature, LineString)
-                else feature
-                for feature in df["geom"]
-            ]
-            df["geom"] = [
-                MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
-                for feature in df["geom"]
-            ]
+            # (but only cast if geometry_type is not specified to be singlepart)
+            if promote_to_multi:
+                df["geom"] = [
+                    MultiPoint([feature]) if isinstance(feature, Point) else feature
+                    for feature in df["geom"]
+                ]
+                df["geom"] = [
+                    MultiLineString([feature])
+                    if isinstance(feature, LineString)
+                    else feature
+                    for feature in df["geom"]
+                ]
+                df["geom"] = [
+                    MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
+                    for feature in df["geom"]
+                ]
 
             # run the load in two parts, one with geoms, one with no geoms
             log.info(f"Writing {dataset} to database as {schema_name}.{table_name}")
