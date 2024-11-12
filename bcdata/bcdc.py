@@ -110,10 +110,10 @@ def get_table_definition(table_name):
                     and resource["bcdc_type"] == "geographic"
                 ):
                     # confirm that object name matches table name and schema is present
-                    # (or in case of nr districts, the object name *almost* equals the requested table name)
                     if (
                         (
                             table_name == resource["object_name"]
+                            # hack to handle object name / table name mismatch for NR Districts
                             or (
                                 table_name
                                 == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
