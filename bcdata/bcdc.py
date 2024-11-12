@@ -95,7 +95,7 @@ def get_table_definition(table_name):
     # if there are no matching results, let the user know
     if r.json()["result"]["count"] == 0:
         log.warning(
-            f"BC Data Catalouge API search provides no results for: {table_name}"
+            f"BC Data Catalogue API search provides no results for: {table_name}"
         )
     else:
         # iterate through results of search (packages)
