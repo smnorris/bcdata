@@ -111,7 +111,16 @@ def get_table_definition(table_name):
                 ):
                     # confirm that object name matches table name and schema is present
                     if (
-                        resource["object_name"] == table_name
+                        (
+                            table_name == resource["object_name"]
+                            # hack to handle object name / table name mismatch for NR Districts
+                            or (
+                                table_name
+                                == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
+                                and resource["object_name"]
+                                == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SP"
+                            )
+                        )
                         and "details" in resource.keys()
                         and resource["details"] != ""
                     ):

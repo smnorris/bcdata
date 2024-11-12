@@ -75,3 +75,12 @@ def test_get_table_definition_format_oracle_sde():
     assert table_definition["description"]
     assert table_definition["comments"]
     assert table_definition["schema"]
+
+
+def test_get_table_definition_nr_districts():
+    table_definition = bcdc.get_table_definition(
+        "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
+    )
+    assert table_definition["description"]
+    assert table_definition["comments"]
+    assert table_definition["schema"]
