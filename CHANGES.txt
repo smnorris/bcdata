@@ -1,9 +1,10 @@
 Changes
 =======
 
-0.12.3 ()
+0.12.3 (2024-11-12)
 ------------------
 - ensure --geometry_type option is used correctly (#198)
+- handle WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG/WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SP (#200)
 
 0.12.2 (2024-08-15)
 ------------------
