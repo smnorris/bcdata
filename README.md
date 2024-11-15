@@ -335,8 +335,8 @@ Note that this will not work if the source data has mixed geometry types.
 
 Load to parquet on s3:
 
-    $ bcdata cat bc-airports --dst-crs EPSG:3005 \
-      | ogr2ogr -f Parquet /vsis3/<bucket>/airports.parquet /vsistdin/
+    $ bcdata dump bc-airports \
+      | ogr2ogr -f Parquet /vsis3/$BUCKET/airports.parquet -s_srs EPSG:4326 -t_srs EPSG:3005 /vsistdin/
 
 Load data to postgres and run a spatial query:
 
