@@ -333,6 +333,11 @@ Save a layer to a geopackage in BC Albers:
 
 Note that this will not work if the source data has mixed geometry types.
 
+Load to parquet on s3:
+
+    $ bcdata cat bc-airports --dst-crs EPSG:3005 \
+      | ogr2ogr -f Parquet /vsis3/<bucket>/airports.parquet /vsistdin/
+
 Load data to postgres and run a spatial query:
 
     $ bcdata bc2pg bc-airports \
