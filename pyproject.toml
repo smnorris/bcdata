@@ -27,7 +27,7 @@ dependencies = [
     "geoalchemy2",
     "geopandas",
     "owslib",
-    "psycopg2",
+    "psycopg2-binary",
     "rasterio",
     "requests",
     "sqlalchemy",
