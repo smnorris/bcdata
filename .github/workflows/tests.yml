@@ -6,20 +6,18 @@ on:
     paths:
       - '.github/workflows/tests.yaml'
       - 'requirements*.txt'
-      - 'setup.py'
       - 'MANIFEST.in'
       - 'pyproject.toml'
-      - 'bcdata/**'
+      - 'src/bcdata/**'
       - 'tests/**'
   pull_request:
     branches: [ main ]
     paths:
       - '.github/workflows/tests.yaml'
       - 'requirements*.txt'
-      - 'setup.py'
       - 'MANIFEST.in'
       - 'pyproject.toml'
-      - 'bcdata/**'
+      - 'src/bcdata/**'
       - 'tests/**'
 
 jobs:
@@ -78,16 +76,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python${{ matrix.python-version }} -m venv testenv
-          . testenv/bin/activate
+          python${{ matrix.python-version }} -m venv .venv
+          . .venv/bin/activate
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
-          python setup.py clean
-          python -m pip install --no-deps --force-reinstall -e .[test]
+          python -m pip install .[test]
 
       - name: Run tests
         run: |
-          . testenv/bin/activate
+          . .venv/bin/activate
           python -m pytest -v -rxXs
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
