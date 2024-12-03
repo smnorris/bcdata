@@ -1,21 +1,18 @@
 import requests
 
-from .bc2pg import bc2pg
-from .bcdc import get_table_definition, get_table_name
-from .wcs import get_dem
-from .wfs import (
-    define_requests,
-    get_count,
-    get_data,
-    get_features,
-    get_sortkey,
-    list_tables,
-    validate_name,
-)
+from .bc2pg import bc2pg as bc2pg
+from .bcdc import get_table_definition as get_table_definition
+from .bcdc import get_table_name as get_table_name
+from .wcs import get_dem as get_dem
+from .wfs import define_requests as define_requests
+from .wfs import get_count as get_count
+from .wfs import get_data as get_data
+from .wfs import get_features as get_features
+from .wfs import get_sortkey as get_sortkey
+from .wfs import list_tables as list_tables
+from .wfs import validate_name as validate_name
 
-PRIMARY_KEY_DB_URL = (
-    "https://raw.githubusercontent.com/smnorris/bcdata/main/data/primary_keys.json"
-)
+PRIMARY_KEY_DB_URL = "https://raw.githubusercontent.com/smnorris/bcdata/main/data/primary_keys.json"
 
 # BCDC does not indicate which column in the schema is the primary key.
 # In this absence, bcdata maintains its own dictionary of {table: primary_key},

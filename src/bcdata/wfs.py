@@ -5,7 +5,6 @@ import os
 import sys
 import warnings
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
@@ -34,9 +33,7 @@ class BCWFS(object):
 
     def __init__(self, refresh=False):
         self.wfs_url = "https://openmaps.gov.bc.ca/geo/pub/wfs"
-        self.ows_url = (
-            "http://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities"
-        )
+        self.ows_url = "http://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities"
 
         # point to cache path
         if "BCDATA_CACHE" in os.environ:
@@ -63,9 +60,7 @@ class BCWFS(object):
             ".//{http://www.opengis.net/ows/1.1}Constraint[@name='CountDefault']"
         )[0]
         self.pagesize = int(
-            countdefault.find(
-                "ows:DefaultValue", {"ows": "http://www.opengis.net/ows/1.1"}
-            ).text
+            countdefault.find("ows:DefaultValue", {"ows": "http://www.opengis.net/ows/1.1"}).text
         )
 
         self.request_headers = {"User-Agent": "bcdata.py ({bcdata.__version__})"}
@@ -98,17 +93,13 @@ class BCWFS(object):
     @stamina.retry(on=requests.HTTPError, timeout=60)
     def _request_capabilities(self):
         capabilities = ET.tostring(
-            wfs200.WebFeatureService_2_0_0(
-                self.ows_url, "2.0.0", None, False
-            )._capabilities,
+            wfs200.WebFeatureService_2_0_0(self.ows_url, "2.0.0", None, False)._capabilities,
             encoding="unicode",
         )
         return capabilities
 
     @stamina.retry(on=requests.HTTPError, timeout=60)
-    def _request_count(
-        self, table, query=None, bounds=None, bounds_crs=None, geom_column=None
-    ):
+    def _request_count(self, table, query=None, bounds=None, bounds_crs=None, geom_column=None):
         payload = {
             "service": "WFS",
             "version": "2.0.0",
@@ -194,9 +185,7 @@ class BCWFS(object):
         with open(os.path.join(self.cache_path, "capabilities.xml"), "r") as f:
             return f.read()
 
-    def get_count(
-        self, dataset, query=None, bounds=None, bounds_crs="EPSG:3005", geom_column=None
-    ):
+    def get_count(self, dataset, query=None, bounds=None, bounds_crs="EPSG:3005", geom_column=None):
         """Ask DataBC WFS how many features there are in a table/query/bounds"""
         table = self.validate_name(dataset)
         geom_column = self.get_schema(table)["geometry_column"]
@@ -244,9 +233,7 @@ class BCWFS(object):
         return [
             i.strip("pub:")
             for i in list(
-                WebFeatureService(
-                    self.ows_url, version="2.0.0", xml=self.capabilities
-                ).contents
+                WebFeatureService(self.ows_url, version="2.0.0", xml=self.capabilities).contents
             )
         ]
 
@@ -351,9 +338,7 @@ class BCWFS(object):
             urls.append(self.wfs_url + "?" + urlencode(request, doseq=True))
         return urls
 
-    def make_requests(
-        self, urls, as_gdf=False, crs="epsg4326", lowercase=False, silent=False
-    ):
+    def make_requests(self, urls, as_gdf=False, crs="epsg4326", lowercase=False, silent=False):
         """turn urls into data"""
         # loop through urls
         results = []
@@ -365,17 +350,15 @@ class BCWFS(object):
         # if specified, lowercasify all properties
         if lowercase:
             for feature in outjson["features"]:
-                feature["properties"] = {
-                    k.lower(): v for k, v in feature["properties"].items()
-                }
+                feature["properties"] = {k.lower(): v for k, v in feature["properties"].items()}
         if not as_gdf:
             # If output crs is specified, include the crs object in the json
             # But as default, we prefer to default to 4326 and RFC7946 (no crs)
             if crs.lower() != "epsg:4326":
                 crs_int = crs.split(":")[1]
-                outjson[
-                    "crs"
-                ] = f"""{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}"""
+                outjson["crs"] = (
+                    f"""{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}"""
+                )
             return outjson
         else:
             if len(outjson["features"]) > 0:
@@ -435,9 +418,7 @@ class BCWFS(object):
         for url in urls:
             for feature in self._request_features(url):
                 if lowercase:
-                    feature["properties"] = {
-                        k.lower(): v for k, v in feature["properties"].items()
-                    }
+                    feature["properties"] = {k.lower(): v for k, v in feature["properties"].items()}
                 yield feature
 
 

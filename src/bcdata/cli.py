@@ -73,9 +73,7 @@ bounds_opt_dem = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-dst_crs_opt = click.option(
-    "--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS"
-)
+dst_crs_opt = click.option("--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS")
 
 lowercase_opt = click.option(
     "--lowercase", "-l", is_flag=True, help="Write column/properties names as lowercase"
@@ -393,9 +391,7 @@ def bc2pg(
     if refresh and append:
         raise ValueError("Options append and refresh are not compatible")
     if refresh and (schema == "bcdata"):
-        raise ValueError(
-            "Refreshing tables in bcdata schema is not supported, use another schema"
-        )
+        raise ValueError("Refreshing tables in bcdata schema is not supported, use another schema")
     elif refresh and schema:
         schema_target = schema
     elif refresh and not schema:
@@ -406,9 +402,7 @@ def bc2pg(
         if not table:
             table = bcdata.validate_name(dataset).lower().split(".")
         if schema_target + "." + table not in db.tables:
-            raise ValueError(
-                f"Cannot refresh, {schema_target}.{table} not found in database"
-            )
+            raise ValueError(f"Cannot refresh, {schema_target}.{table} not found in database")
     out_table = bcdata.bc2pg(
         dataset,
         db_url,

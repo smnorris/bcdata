@@ -43,17 +43,13 @@ def test_get_table_definition_format_multi():
     assert table_definition["schema"]
     columns = [c["column_name"] for c in table_definition["schema"]]
     assert (
-        bcdata.primary_keys[
-            "whse_forest_vegetation.ogsr_priority_def_area_cur_sp"
-        ].upper()
+        bcdata.primary_keys["whse_forest_vegetation.ogsr_priority_def_area_cur_sp"].upper()
         in columns
     )
 
 
 def test_get_table_definition_format_multi_nopreview():
-    table_definition = bcdc.get_table_definition(
-        "WHSE_BASEMAPPING.FWA_NAMED_POINT_FEATURES_SP"
-    )
+    table_definition = bcdc.get_table_definition("WHSE_BASEMAPPING.FWA_NAMED_POINT_FEATURES_SP")
     assert table_definition["description"]
     assert table_definition["comments"]
     assert table_definition["schema"]
@@ -78,9 +74,7 @@ def test_get_table_definition_format_oracle_sde():
 
 
 def test_get_table_definition_nr_districts():
-    table_definition = bcdc.get_table_definition(
-        "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
-    )
+    table_definition = bcdc.get_table_definition("WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG")
     assert table_definition["description"]
     assert table_definition["comments"]
     assert table_definition["schema"]
