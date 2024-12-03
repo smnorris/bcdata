@@ -35,7 +35,7 @@ def test_dem_align(tmpdir):
 
 def test_dem_rasterio(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
-    src = bcdata.get_dem(bounds, as_rasterio=True)
+    src = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem_rasterio.tif"), as_rasterio=True)
     stats = [
         {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())} for b in src.read()
     ]
