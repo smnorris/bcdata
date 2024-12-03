@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bcdata"
+dynamic = ["version"]
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+  {name="Simon Norris", email="snorris@hillcrestgeo.ca"},
+]
+description = "Download open data, monitor and report on changes"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "geoalchemy2",
+    "geopandas",
+    "owslib",
+    "psycopg2",
+    "rasterio",
+    "requests",
+    "sqlalchemy",
+    "stamina"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pre-commit",
+  "requests-mock"
+]
+
+[project.scripts]
+bcdata = "bcdata.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/smnorris/bcdata"
+Issues = "https://github.com/smnorris/bcdata"
+
+[tool.setuptools.dynamic]
+version = {attr = "bcdata.__version__"}
+
+[tool.ruff]
+line-length = 100
