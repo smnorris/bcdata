@@ -4,7 +4,6 @@ import sys
 
 import bcdata
 
-
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
 with open("primary_keys.json", "r") as file:

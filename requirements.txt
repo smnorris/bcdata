@@ -1,8 +1,8 @@
-geoalchemy2==0.15.*
-geopandas==1.0.*
-owslib==0.31.*
-psycopg2-binary==2.9.*
-rasterio==1.3.*
-requests==2.32.*
-sqlalchemy==2.0.*
-stamina==24.2.*
+geoalchemy2>=0.15
+geopandas>=1.0
+owslib>=0.31
+psycopg2-binary>=2.9
+rasterio>=1.3
+requests>=2.32
+sqlalchemy>=2.0
+stamina>=24.2

@@ -25,9 +25,7 @@ def test_dem(tmpdir):
 
 def test_dem_align(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
-    out_file = bcdata.get_dem(
-        bounds, os.path.join(tmpdir, "test_dem_align.tif"), align=True
-    )
+    out_file = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem_align.tif"), align=True)
     assert os.path.exists(out_file)
     with rasterio.open(out_file) as src:
         bounds = src.bounds
@@ -37,10 +35,9 @@ def test_dem_align(tmpdir):
 
 def test_dem_rasterio(tmpdir):
     bounds = [1046891, 704778, 1055345, 709629]
-    src = bcdata.get_dem(bounds, as_rasterio=True)
+    src = bcdata.get_dem(bounds, os.path.join(tmpdir, "test_dem_rasterio.tif"), as_rasterio=True)
     stats = [
-        {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())}
-        for b in src.read()
+        {"min": float(b.min()), "max": float(b.max()), "mean": float(b.mean())} for b in src.read()
     ]
     assert stats[0]["max"] == 3982
 

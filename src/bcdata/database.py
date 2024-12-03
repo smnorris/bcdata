@@ -81,9 +81,7 @@ class Database(object):
     def create_schema(self, schema):
         if schema not in self.schemas:
             log.info(f"Schema {schema} does not exist, creating it")
-            dbq = sql.SQL("CREATE SCHEMA {schema}").format(
-                schema=sql.Identifier(schema)
-            )
+            dbq = sql.SQL("CREATE SCHEMA {schema}").format(schema=sql.Identifier(schema))
             self.execute(dbq)
 
     def drop_table(self, schema, table):
@@ -98,18 +96,14 @@ class Database(object):
     def refresh(self, schema, table):
         # move data from temp table to target table
         if schema + "." + table in self.tables:
-            log.warning(
-                f"Truncating table {schema}.{table} and refreshing from bcdata.{table}"
-            )
+            log.warning(f"Truncating table {schema}.{table} and refreshing from bcdata.{table}")
             dbq = sql.SQL("TRUNCATE {schema}.{table}").format(
                 schema=sql.Identifier(schema),
                 table=sql.Identifier(table),
             )
             self.execute(dbq)
             columns = list(
-                set(self.get_columns("bcdata", table)).intersection(
-                    self.get_columns(schema, table)
-                )
+                set(self.get_columns("bcdata", table)).intersection(self.get_columns(schema, table))
             )
             identifiers = [sql.Identifier(c) for c in columns]
             dbq = sql.SQL(
@@ -124,9 +118,7 @@ class Database(object):
             self.execute(dbq)
             self.drop_table("bcdata", table)
         else:
-            raise ValueError(
-                f"Target table {schema}.{table} does not exist in database"
-            )
+            raise ValueError(f"Target table {schema}.{table} does not exist in database")
 
     def define_table(
         self,
@@ -140,9 +132,7 @@ class Database(object):
     ):
         """build sqlalchemy table definition from bcdc provided json definitions"""
         # remove columns of unsupported types, redundant columns
-        table_details = [
-            c for c in table_details if c["data_type"] in self.supported_types.keys()
-        ]
+        table_details = [c for c in table_details if c["data_type"] in self.supported_types.keys()]
         table_details = [
             c
             for c in table_details

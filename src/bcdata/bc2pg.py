@@ -1,12 +1,6 @@
-import json
 import logging
-import os
 
-import geopandas as gpd
 import numpy
-import stamina
-from geoalchemy2 import Geometry
-import requests
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry.multipoint import MultiPoint
@@ -103,19 +97,13 @@ def bc2pg(  # noqa: C901
         table_definition = bcdata.get_table_definition(dataset)
 
         if not table_definition["schema"]:
-            raise ValueError(
-                "Cannot create table, schema details not found via bcdc api"
-            )
+            raise ValueError("Cannot create table, schema details not found via bcdc api")
 
         # if geometry type is not provided, determine type by making the first request
         if not geometry_type:
-            df = WFS.make_requests(
-                [urls[0]], as_gdf=True, crs="epsg:3005", lowercase=True
-            )
+            df = WFS.make_requests([urls[0]], as_gdf=True, crs="epsg:3005", lowercase=True)
             geometry_type = df.geom_type.unique()[0]  # keep only the first type
-            if numpy.any(
-                df.has_z.unique()[0]
-            ):  # geopandas does not include Z in geom_type string
+            if numpy.any(df.has_z.unique()[0]):  # geopandas does not include Z in geom_type string
                 geometry_type = geometry_type + "Z"
 
         # if geometry type is still not populated try the last request
@@ -129,9 +117,7 @@ def bc2pg(  # noqa: C901
                     lowercase=True,
                     silent=True,
                 )
-                geometry_type = df_temp.geom_type.unique()[
-                    0
-                ]  # keep only the first type
+                geometry_type = df_temp.geom_type.unique()[0]  # keep only the first type
                 if numpy.any(
                     df_temp.has_z.unique()[0]
                 ):  # geopandas does not include Z in geom_type string
@@ -170,9 +156,7 @@ def bc2pg(  # noqa: C901
 
     # check if column provided in sortby option is present in dataset
     if sortby and sortby.lower() not in column_names:
-        raise ValueError(
-            f"Specified sortby column {sortby} is not present in {dataset}"
-        )
+        raise ValueError(f"Specified sortby column {sortby} is not present in {dataset}")
 
     # load the data
     if not schema_only:
@@ -180,9 +164,7 @@ def bc2pg(  # noqa: C901
         for n, url in enumerate(urls):
             # if first url not downloaded above when checking geom type, do now
             if df is None:
-                df = WFS.make_requests(
-                    [url], as_gdf=True, crs="epsg:3005", lowercase=True
-                )
+                df = WFS.make_requests([url], as_gdf=True, crs="epsg:3005", lowercase=True)
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify
@@ -205,9 +187,7 @@ def bc2pg(  # noqa: C901
                     for feature in df["geom"]
                 ]
                 df["geom"] = [
-                    MultiLineString([feature])
-                    if isinstance(feature, LineString)
-                    else feature
+                    MultiLineString([feature]) if isinstance(feature, LineString) else feature
                     for feature in df["geom"]
                 ]
                 df["geom"] = [

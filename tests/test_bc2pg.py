@@ -38,9 +38,7 @@ def test_bc2pg_50kgrid():
 def test_bc2pg_count():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query(
-        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
-    )
+    r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 10
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
@@ -48,21 +46,15 @@ def test_bc2pg_count():
 def test_bc2pg_bounds():
     bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, bounds=[1188000, 377051, 1207437, 390361])
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query(
-        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
-    )
+    r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 8
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
 
 def test_bc2pg_bounds_count():
-    bcdata.bc2pg(
-        AIRPORTS_TABLE, DB_URL, bounds=[1188000, 377051, 1207437, 390361], count=6
-    )
+    bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, bounds=[1188000, 377051, 1207437, 390361], count=6)
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query(
-        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
-    )
+    r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 6
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
 
@@ -102,9 +94,7 @@ def test_bc2pg_geometry_type_invalid():
 
 def test_bc2pg_primary_key_invalid():
     with pytest.raises(Exception):
-        bcdata.bc2pg(
-            AIRPORTS_TABLE, DB_URL, count=10, primary_key="airport_primary_key"
-        )
+        bcdata.bc2pg(AIRPORTS_TABLE, DB_URL, count=10, primary_key="airport_primary_key")
 
 
 def test_bc2pg_z():
@@ -166,9 +156,7 @@ def test_bc2pg_filter():
         query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
     )
     assert AIRPORTS_TABLE in DB_CONNECTION.tables
-    r = DB_CONNECTION.query(
-        "select airport_name from whse_imagery_and_base_maps.gsr_airports_svw"
-    )
+    r = DB_CONNECTION.query("select airport_name from whse_imagery_and_base_maps.gsr_airports_svw")
     assert len(r) == 1
     assert r[0][0] == "Terrace (Northwest Regional) Airport"
     DB_CONNECTION.execute("drop table " + AIRPORTS_TABLE)
