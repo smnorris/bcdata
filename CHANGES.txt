@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.13.0 ()
+------------------
+- support Data Catalogue API changes (#188)
+- bump dependencies
+
 0.12.3 (2024-11-12)
 ------------------
 - ensure --geometry_type option is used correctly (#198)

@@ -384,13 +384,12 @@ Load data to postgres and run a spatial query:
 
 Create virtualenv and install `bcdata` in development mode:
 
-    $ mkdir bcdata_env
-    $ virtualenv bcdata_env
-    $ source bcdata_env/bin/activate
-    (bcdata_env)$ git clone git@github.com:smnorris/bcdata.git
-    (bcdata_env)$ cd bcdata
-    (bcdata_env)$ pip install -e .[test]
-    (bcdata_env)$ py.test
+    $ git clone git@github.com:smnorris/bcdata.git
+    $ cd bcdata
+    $ python -m venv .venv
+    $ source .venv/bin/activate
+    (.venv)$ pip install -e .[test]
+    (.venv)$ py.test
 
 
 ## Other implementations
