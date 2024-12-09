@@ -195,10 +195,7 @@ def bc2pg(  # noqa: C901
             df_nulls = df_nulls.drop(columns=["geom"])
             # remove rows with null geometry from geodataframe
             df = df[df["geom"].notna()]
-            # cast to everything multipart because responses can have mixed types
-            # geopandas does not have a built in function:
-            # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
-            # (but only cast if geometry_type is not specified to be singlepart)
+            # promote to multipart
             if promote_to_multi:
                 df["geom"] = [
                     MultiPoint([feature]) if isinstance(feature, Point) else feature
