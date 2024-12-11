@@ -6,6 +6,12 @@ import sys
 
 import click
 from cligj import compact_opt, indent_opt, quiet_opt, verbose_opt
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry.multipoint import MultiPoint
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.point import Point
+from shapely.geometry.polygon import Polygon
 
 import bcdata
 from bcdata.database import Database
@@ -20,7 +26,6 @@ def configure_logging(verbosity):
 
 def complete_dataset_names(ctx, param, incomplete):
     return [k for k in bcdata.list_tables() if k.startswith(incomplete)]
-
 
 # bounds handling direct from rasterio
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/options.py
@@ -204,10 +209,17 @@ def dem(
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
+@click.option(
+    "--no-clean",
+    "-nc",
+    help="Do not do any data standardization",
+    is_flag=True,
+    default=True,
+)
 @lowercase_opt
 @verbose_opt
 @quiet_opt
-def dump(dataset, query, out_file, bounds, bounds_crs, lowercase, verbose, quiet):
+def dump(dataset, query, out_file, bounds, bounds_crs, no_clean, lowercase, verbose, quiet):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -223,8 +235,12 @@ def dump(dataset, query, out_file, bounds, bounds_crs, lowercase, verbose, quiet
     verbosity = verbose - quiet
     configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
+    if no_clean:
+        clean = False
+    else:
+        clean = True
     data = bcdata.get_data(
-        table, query=query, bounds=bounds, bounds_crs=bounds_crs, lowercase=lowercase
+        table, query=query, bounds=bounds, bounds_crs=bounds_crs, lowercase=lowercase, clean=clean
     )
     if out_file:
         with open(out_file, "w") as sink:

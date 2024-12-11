@@ -36,7 +36,7 @@ def bc2pg(  # noqa: C901
     geometry_type=None,
     query=None,
     bounds=None,
-    bounds_crs=None,
+    bounds_crs="EPSG:3005",
     count=None,
     sortby=None,
     primary_key=None,
@@ -101,7 +101,7 @@ def bc2pg(  # noqa: C901
 
         # if geometry type is not provided, determine type by making the first request
         if not geometry_type:
-            df = WFS.make_requests([urls[0]], as_gdf=True, crs="epsg:3005", lowercase=True)
+            df = WFS.make_requests(dataset=dataset, urls=[urls[0]], as_gdf=True, crs="epsg:3005", lowercase=True)
             geometry_type = df.geom_type.unique()[0]  # keep only the first type
             if numpy.any(df.has_z.unique()[0]):  # geopandas does not include Z in geom_type string
                 geometry_type = geometry_type + "Z"
@@ -111,7 +111,8 @@ def bc2pg(  # noqa: C901
         if not geometry_type:
             if not urls[-1] == urls[0]:
                 df_temp = WFS.make_requests(
-                    [urls[-1]],
+                    dataset=dataset,
+                    urls=[urls[-1]],
                     as_gdf=True,
                     crs="epsg:3005",
                     lowercase=True,
@@ -164,7 +165,7 @@ def bc2pg(  # noqa: C901
         for n, url in enumerate(urls):
             # if first url not downloaded above when checking geom type, do now
             if df is None:
-                df = WFS.make_requests([url], as_gdf=True, crs="epsg:3005", lowercase=True)
+                df = WFS.make_requests(dataset=dataset, urls=[url], as_gdf=True, crs="epsg:3005", lowercase=True)
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify
@@ -177,10 +178,7 @@ def bc2pg(  # noqa: C901
             df_nulls = df_nulls.drop(columns=["geom"])
             # remove rows with null geometry from geodataframe
             df = df[df["geom"].notna()]
-            # cast to everything multipart because responses can have mixed types
-            # geopandas does not have a built in function:
-            # https://gis.stackexchange.com/questions/311320/casting-geometry-to-multi-using-geopandas
-            # (but only cast if geometry_type is not specified to be singlepart)
+            # promote to multipart
             if promote_to_multi:
                 df["geom"] = [
                     MultiPoint([feature]) if isinstance(feature, Point) else feature

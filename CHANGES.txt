@@ -5,6 +5,7 @@ Changes
 ------------------
 - support Data Catalogue API changes (#188)
 - bump dependencies
+- default to slightly cleaning/standardizing features returned from bcdata.get_data() / bcdata dump
 
 0.12.3 (2024-11-12)
 ------------------

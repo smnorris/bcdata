@@ -8,7 +8,7 @@ import bcdata
 
 log = logging.getLogger(__name__)
 
-BCDC_API_URL = "https://toyger.data.gov.bc.ca/api/3/action/"
+BCDC_API_URL = "https://catalogue.data.gov.bc.ca/api/3/action/"
 
 
 class ServiceException(Exception):

@@ -15,6 +15,12 @@ import stamina
 from owslib.feature import schema as wfs_schema
 from owslib.feature import wfs200
 from owslib.wfs import WebFeatureService
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry.multipoint import MultiPoint
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.point import Point
+from shapely.geometry.polygon import Polygon
 
 import bcdata
 
@@ -23,6 +29,26 @@ if not sys.warnoptions:
 
 log = logging.getLogger(__name__)
 
+
+def ensure_single_geometry_type(df):
+    """If mix of single/multi part geometries are present, promote all geometries to multipart"""
+    geomtypes = sorted(
+        [t.upper() for t in df.geometry.geom_type.dropna(axis=0, how="all").unique()], key=len
+    )
+    if len(geomtypes) > 1 and geomtypes[1] == "MULTI" + geomtypes[0]:
+        df.geometry = [
+            MultiPoint([feature]) if isinstance(feature, Point) else feature
+            for feature in df.geometry
+        ]
+        df.geometry = [
+            MultiLineString([feature]) if isinstance(feature, LineString) else feature
+            for feature in df.geometry
+        ]
+        df.geometry = [
+            MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
+            for feature in df.geometry
+        ]
+    return df
 
 class ServiceException(Exception):
     pass
@@ -338,7 +364,9 @@ class BCWFS(object):
             urls.append(self.wfs_url + "?" + urlencode(request, doseq=True))
         return urls
 
-    def make_requests(self, urls, as_gdf=False, crs="epsg4326", lowercase=False, silent=False):
+    def make_requests(
+        self, dataset, urls, as_gdf=False, crs="epsg4326", lowercase=False, silent=False, clean=True
+    ):
         """turn urls into data"""
         # loop through urls
         results = []
@@ -347,26 +375,41 @@ class BCWFS(object):
         outjson = dict(type="FeatureCollection", features=[])
         for result in results:
             outjson["features"] += result
+
         # if specified, lowercasify all properties
         if lowercase:
             for feature in outjson["features"]:
-                feature["properties"] = {k.lower(): v for k, v in feature["properties"].items()}
-        if not as_gdf:
-            # If output crs is specified, include the crs object in the json
-            # But as default, we prefer to default to 4326 and RFC7946 (no crs)
-            if crs.lower() != "epsg:4326":
-                crs_int = crs.split(":")[1]
-                outjson["crs"] = (
-                    f"""{{"type":"name","properties":{{"name":"urn:ogc:def:crs:EPSG::{crs_int}"}}}}"""
-                )
-            return outjson
+                feature["properties"] = {
+                    k.lower(): v for k, v in feature["properties"].items()
+                }
+
+        # load to geodataframe, standardize data slightly
+        if len(outjson["features"]) > 0:
+            gdf = gpd.GeoDataFrame.from_features(outjson)
+            gdf.crs = crs
+            # minor data cleaning as default
+            if clean:
+                if gdf.geometry.name != "geometry":
+                    gdf = gdf.rename_geometry("geometry")
+                gdf = ensure_single_geometry_type(gdf)
+                table_definition = bcdata.get_table_definition(dataset)
+                column_names = [
+                    c["column_name"]
+                    for c in table_definition["schema"]
+                    if c["column_name"] not in ["FEATURE_AREA_SQM", "FEATURE_LENGTH_M"]
+                    and c["data_type"] in ["NUMBER", "VARCHAR2", "DATE"]
+                ]
+                if lowercase:
+                    column_names = [c.lower() for c in column_names]
+                gdf = gdf[column_names + ["geometry"]]
         else:
-            if len(outjson["features"]) > 0:
-                gdf = gpd.GeoDataFrame.from_features(outjson)
-                gdf.crs = crs
-            else:
-                gdf = gpd.GeoDataFrame()
+            gdf = gpd.GeoDataFrame()
+
+        if as_gdf:
             return gdf
+
+        else:
+            return json.loads(gdf.to_json())
 
     def get_data(
         self,
@@ -379,8 +422,10 @@ class BCWFS(object):
         sortby=None,
         as_gdf=False,
         lowercase=False,
+        clean=True
     ):
         """Request features from DataBC WFS and return GeoJSON featurecollection or geodataframe"""
+        dataset = self.validate_name(dataset)
         urls = self.define_requests(
             dataset,
             query=query,
@@ -390,7 +435,7 @@ class BCWFS(object):
             count=count,
             sortby=sortby,
         )
-        return self.make_requests(urls, as_gdf, crs, lowercase)
+        return self.make_requests(dataset, urls, as_gdf=as_gdf, crs=crs, lowercase=lowercase, clean=clean)
 
     def get_features(
         self,
@@ -441,6 +486,7 @@ def define_requests(
         query=query,
         crs=crs,
         bounds=bounds,
+        bounds_crs=bounds_crs,
         count=count,
         sortby=sortby,
         check_count=check_count,
@@ -470,6 +516,7 @@ def get_data(
     sortby=None,
     as_gdf=False,
     lowercase=False,
+    clean=True
 ):
     WFS = BCWFS()
     return WFS.get_data(
@@ -482,6 +529,7 @@ def get_data(
         sortby=sortby,
         as_gdf=as_gdf,
         lowercase=lowercase,
+        clean=clean
     )
 
 
