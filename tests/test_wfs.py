@@ -1,5 +1,4 @@
 import pytest
-import json
 import requests
 import requests_mock
 import stamina
@@ -94,9 +93,7 @@ def test_get_data_lowercase():
 
 def test_get_data_crs():
     data = bcdata.get_data(AIRPORTS_TABLE, crs="EPSG:3005")
-    assert (
-        data["crs"]["properties"]["name"] == 'urn:ogc:def:crs:EPSG::3005'
-    )
+    assert data["crs"]["properties"]["name"] == "urn:ogc:def:crs:EPSG::3005"
 
 
 def test_get_features():
@@ -159,8 +156,6 @@ def test_clean():
 
 def test_no_clean():
     data = bcdata.get_data(
-        AIRPORTS_TABLE,
-        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
-        clean=False
+        AIRPORTS_TABLE, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'", clean=False
     )
     assert "SE_ANNO_CAD_DATA" in data["features"][0]["properties"].keys()

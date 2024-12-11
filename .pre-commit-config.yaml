@@ -4,6 +4,7 @@ repos:
   hooks:
     - id: ruff
       name: lint with ruff
+      args: [--fix]
     - id: ruff
       name: sort imports with ruff
       args: [--select, I, --fix]

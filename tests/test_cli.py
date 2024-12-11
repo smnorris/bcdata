@@ -1,3 +1,4 @@
+import json
 import os
 
 from click.testing import CliRunner
@@ -71,6 +72,14 @@ def test_cat_bounds_ll():
     )
     assert result.exit_code == 0
     assert len(result.output.split("\n")) == 4
+
+
+def test_dump():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["dump", AIRPORTS_TABLE, "--count", 1])
+    assert result.exit_code == 0
+    assert json.loads(result.output)["type"] == "FeatureCollection"
+    assert len(json.loads(result.output)["features"]) == 1
 
 
 def test_bc2pg():
