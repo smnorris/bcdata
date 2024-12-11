@@ -217,6 +217,7 @@ Usage: bcdata dump [OPTIONS] DATASET
 Options:
   --query TEXT                    A valid CQL or ECQL query
   -o, --out_file TEXT             Output file
+  -c, --count INTEGER             Number of features to request and dump
   --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                   bottom, right, top]". Coordinates are BC
                                   Albers (default) or --bounds_crs
