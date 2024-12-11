@@ -50,6 +50,7 @@ def ensure_single_geometry_type(df):
         ]
     return df
 
+
 class ServiceException(Exception):
     pass
 
@@ -379,9 +380,7 @@ class BCWFS(object):
         # if specified, lowercasify all properties
         if lowercase:
             for feature in outjson["features"]:
-                feature["properties"] = {
-                    k.lower(): v for k, v in feature["properties"].items()
-                }
+                feature["properties"] = {k.lower(): v for k, v in feature["properties"].items()}
 
         # load to geodataframe, standardize data slightly
         if len(outjson["features"]) > 0:
@@ -422,7 +421,7 @@ class BCWFS(object):
         sortby=None,
         as_gdf=False,
         lowercase=False,
-        clean=True
+        clean=True,
     ):
         """Request features from DataBC WFS and return GeoJSON featurecollection or geodataframe"""
         dataset = self.validate_name(dataset)
@@ -435,7 +434,9 @@ class BCWFS(object):
             count=count,
             sortby=sortby,
         )
-        return self.make_requests(dataset, urls, as_gdf=as_gdf, crs=crs, lowercase=lowercase, clean=clean)
+        return self.make_requests(
+            dataset, urls, as_gdf=as_gdf, crs=crs, lowercase=lowercase, clean=clean
+        )
 
     def get_features(
         self,
@@ -516,7 +517,7 @@ def get_data(
     sortby=None,
     as_gdf=False,
     lowercase=False,
-    clean=True
+    clean=True,
 ):
     WFS = BCWFS()
     return WFS.get_data(
@@ -529,7 +530,7 @@ def get_data(
         sortby=sortby,
         as_gdf=as_gdf,
         lowercase=lowercase,
-        clean=clean
+        clean=clean,
     )
 
 
