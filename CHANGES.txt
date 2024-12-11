@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.13.0 ()
+0.13.0 (2024-12-11)
 ------------------
 - support Data Catalogue API changes (#188)
 - bump dependencies
