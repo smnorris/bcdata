@@ -222,6 +222,7 @@ Options:
                                   Albers (default) or --bounds_crs
   --bounds-crs, --bounds_crs TEXT
                                   CRS of provided bounds
+  -nc, --no-clean                 Do not do any data standardization
   -l, --lowercase                 Write column/properties names as lowercase
   -v, --verbose                   Increase verbosity.
   -q, --quiet                     Decrease verbosity.
