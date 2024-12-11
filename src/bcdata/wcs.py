@@ -5,8 +5,6 @@ import rasterio
 import requests
 import stamina
 
-import bcdata
-
 log = logging.getLogger(__name__)
 
 WCS_URL = "https://openmaps.gov.bc.ca/om/wcs"
@@ -120,15 +118,11 @@ def get_dem(
             file.write(r.content)
     elif r.headers["Content-Type"] == "application/vnd.ogc.se_xml;charset=UTF-8":
         raise RuntimeError(
-            "WCS request {} failed with error {}".format(
-                r.url, str(r.content.decode("utf-8"))
-            )
+            "WCS request {} failed with error {}".format(r.url, str(r.content.decode("utf-8")))
         )
     else:
         raise RuntimeError(
-            "WCS request {} failed, content type {}".format(
-                r.url, str(r.headers["Content-Type"])
-            )
+            "WCS request {} failed, content type {}".format(r.url, str(r.headers["Content-Type"]))
         )
     if as_rasterio:
         return rasterio.open(out_file, "r")

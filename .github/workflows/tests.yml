@@ -6,20 +6,18 @@ on:
     paths:
       - '.github/workflows/tests.yaml'
       - 'requirements*.txt'
-      - 'setup.py'
       - 'MANIFEST.in'
       - 'pyproject.toml'
-      - 'bcdata/**'
+      - 'src/bcdata/**'
       - 'tests/**'
   pull_request:
     branches: [ main ]
     paths:
       - '.github/workflows/tests.yaml'
       - 'requirements*.txt'
-      - 'setup.py'
       - 'MANIFEST.in'
       - 'pyproject.toml'
-      - 'bcdata/**'
+      - 'src/bcdata/**'
       - 'tests/**'
 
 jobs:
@@ -29,7 +27,7 @@ jobs:
     container: ghcr.io/osgeo/gdal:ubuntu-small-${{ matrix.gdal-version }}
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        image: postgis/postgis:17-3.5
         env:
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
@@ -51,7 +49,11 @@ jobs:
           - python-version: '3.11'
             gdal-version: '3.7.3'
           - python-version: '3.12'
-            gdal-version: '3.9.1'
+            gdal-version: '3.9.3'
+          - python-version: '3.12'
+            gdal-version: '3.10.0'
+          - python-version: '3.13'
+            gdal-version: '3.10.0'
 
     steps:
       - uses: actions/checkout@v4
@@ -74,16 +76,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python${{ matrix.python-version }} -m venv testenv
-          . testenv/bin/activate
+          python${{ matrix.python-version }} -m venv .venv
+          . .venv/bin/activate
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
-          python setup.py clean
-          python -m pip install --no-deps --force-reinstall -e .[test]
+          python -m pip install .[test]
 
       - name: Run tests
         run: |
-          . testenv/bin/activate
+          . .venv/bin/activate
           python -m pytest -v -rxXs
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres

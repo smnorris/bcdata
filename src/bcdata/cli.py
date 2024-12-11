@@ -6,6 +6,12 @@ import sys
 
 import click
 from cligj import compact_opt, indent_opt, quiet_opt, verbose_opt
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry.multipoint import MultiPoint
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.point import Point
+from shapely.geometry.polygon import Polygon
 
 import bcdata
 from bcdata.database import Database
@@ -20,7 +26,6 @@ def configure_logging(verbosity):
 
 def complete_dataset_names(ctx, param, incomplete):
     return [k for k in bcdata.list_tables() if k.startswith(incomplete)]
-
 
 # bounds handling direct from rasterio
 # https://github.com/mapbox/rasterio/blob/master/rasterio/rio/options.py
@@ -73,9 +78,7 @@ bounds_opt_dem = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-dst_crs_opt = click.option(
-    "--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS"
-)
+dst_crs_opt = click.option("--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS")
 
 lowercase_opt = click.option(
     "--lowercase", "-l", is_flag=True, help="Write column/properties names as lowercase"
@@ -206,10 +209,17 @@ def dem(
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
+@click.option(
+    "--no-clean",
+    "-nc",
+    help="Do not do any data standardization",
+    is_flag=True,
+    default=True,
+)
 @lowercase_opt
 @verbose_opt
 @quiet_opt
-def dump(dataset, query, out_file, bounds, bounds_crs, lowercase, verbose, quiet):
+def dump(dataset, query, out_file, bounds, bounds_crs, no_clean, lowercase, verbose, quiet):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -225,8 +235,12 @@ def dump(dataset, query, out_file, bounds, bounds_crs, lowercase, verbose, quiet
     verbosity = verbose - quiet
     configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
+    if no_clean:
+        clean = False
+    else:
+        clean = True
     data = bcdata.get_data(
-        table, query=query, bounds=bounds, bounds_crs=bounds_crs, lowercase=lowercase
+        table, query=query, bounds=bounds, bounds_crs=bounds_crs, lowercase=lowercase, clean=clean
     )
     if out_file:
         with open(out_file, "w") as sink:
@@ -393,9 +407,7 @@ def bc2pg(
     if refresh and append:
         raise ValueError("Options append and refresh are not compatible")
     if refresh and (schema == "bcdata"):
-        raise ValueError(
-            "Refreshing tables in bcdata schema is not supported, use another schema"
-        )
+        raise ValueError("Refreshing tables in bcdata schema is not supported, use another schema")
     elif refresh and schema:
         schema_target = schema
     elif refresh and not schema:
@@ -406,9 +418,7 @@ def bc2pg(
         if not table:
             table = bcdata.validate_name(dataset).lower().split(".")
         if schema_target + "." + table not in db.tables:
-            raise ValueError(
-                f"Cannot refresh, {schema_target}.{table} not found in database"
-            )
+            raise ValueError(f"Cannot refresh, {schema_target}.{table} not found in database")
     out_table = bcdata.bc2pg(
         dataset,
         db_url,

@@ -1,4 +1,3 @@
-import json
 import logging
 from urllib.parse import urlparse
 
@@ -77,9 +76,7 @@ def get_table_definition(table_name):
     # only allow searching for tables present in WFS list
     table_name = table_name.upper()
     if table_name not in bcdata.list_tables():
-        raise ValueError(
-            f"Only tables available via WFS are supported, {table_name} not found"
-        )
+        raise ValueError(f"Only tables available via WFS are supported, {table_name} not found")
 
     # search the api for the provided table
     r = _table_definition(table_name)
@@ -94,9 +91,7 @@ def get_table_definition(table_name):
 
     # if there are no matching results, let the user know
     if r.json()["result"]["count"] == 0:
-        log.warning(
-            f"BC Data Catalogue API search provides no results for: {table_name}"
-        )
+        log.warning(f"BC Data Catalogue API search provides no results for: {table_name}")
     else:
         # iterate through results of search (packages)
         for result in r.json()["result"]["results"]:
@@ -105,41 +100,31 @@ def get_table_definition(table_name):
             # iterate through resources associated with each package
             for resource in result["resources"]:
                 # only examine geographic resources with object name key
-                if (
-                    "object_name" in resource.keys()
-                    and resource["bcdc_type"] == "geographic"
-                ):
+                if "object_name" in resource.keys() and resource["bcdc_type"] == "geographic":
                     # confirm that object name matches table name and schema is present
                     if (
                         (
                             table_name == resource["object_name"]
                             # hack to handle object name / table name mismatch for NR Districts
                             or (
-                                table_name
-                                == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
+                                table_name == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SPG"
                                 and resource["object_name"]
                                 == "WHSE_ADMIN_BOUNDARIES.ADM_NR_DISTRICTS_SP"
                             )
                         )
                         and "details" in resource.keys()
-                        and resource["details"] != ""
+                        and resource["details"] != []
                     ):
-                        table_definition["schema"] = json.loads(resource["details"])
+                        table_definition["schema"] = resource["details"]
                         # look for comments only if details/schema was found
                         if "object_table_comments" in resource.keys():
-                            table_definition["comments"] = resource[
-                                "object_table_comments"
-                            ]
+                            table_definition["comments"] = resource["object_table_comments"]
 
     if not table_definition["schema"]:
-        log.warning(
-            f"BC Data Catalouge API search provides no schema for: {table_name}"
-        )
+        log.warning(f"BC Data Catalouge API search provides no schema for: {table_name}")
 
     # add primary key if present in bcdata.primary_keys
     if table_name.lower() in bcdata.primary_keys:
-        table_definition["primary_key"] = bcdata.primary_keys[
-            table_name.lower()
-        ].upper()
+        table_definition["primary_key"] = bcdata.primary_keys[table_name.lower()].upper()
 
     return table_definition

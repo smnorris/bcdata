@@ -1,13 +1,11 @@
-import os
-
 import pytest
+import json
 import requests
 import requests_mock
 import stamina
 from geopandas.geodataframe import GeoDataFrame
 
 import bcdata
-from bcdata.wfs import ServiceException
 
 AIRPORTS_PACKAGE = "bc-airports"
 AIRPORTS_TABLE = "WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW"
@@ -58,9 +56,7 @@ def test_get_count_filtered():
 
 
 def test_get_count_bounds():
-    assert (
-        bcdata.get_count(AIRPORTS_TABLE, bounds=[1188000, 377051, 1207437, 390361]) == 8
-    )
+    assert bcdata.get_count(AIRPORTS_TABLE, bounds=[1188000, 377051, 1207437, 390361]) == 8
 
 
 def test_get_sortkey_known():
@@ -77,9 +73,7 @@ def test_get_data_asgdf():
 
 
 def test_get_data_asgdf_crs():
-    gdf = bcdata.get_data(
-        UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True, crs="EPSG:3005"
-    )
+    gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True, crs="EPSG:3005")
     assert gdf.crs == "EPSG:3005"
 
 
@@ -101,8 +95,7 @@ def test_get_data_lowercase():
 def test_get_data_crs():
     data = bcdata.get_data(AIRPORTS_TABLE, crs="EPSG:3005")
     assert (
-        data["crs"]
-        == """{"type":"name","properties":{"name":"urn:ogc:def:crs:EPSG::3005"}}"""
+        data["crs"]["properties"]["name"] == 'urn:ogc:def:crs:EPSG::3005'
     )
 
 
@@ -136,8 +129,7 @@ def test_cql_filter():
     )
     assert len(data["features"]) == 1
     assert (
-        data["features"][0]["properties"]["AIRPORT_NAME"]
-        == "Terrace (Northwest Regional) Airport"
+        data["features"][0]["properties"]["AIRPORT_NAME"] == "Terrace (Northwest Regional) Airport"
     )
 
 
@@ -154,7 +146,21 @@ def test_cql_bounds_filter():
         bounds_crs="EPSG:3005",
     )
     assert len(data["features"]) == 1
-    assert (
-        data["features"][0]["properties"]["AIRPORT_NAME"]
-        == "Victoria International Airport"
+    assert data["features"][0]["properties"]["AIRPORT_NAME"] == "Victoria International Airport"
+
+
+def test_clean():
+    data = bcdata.get_data(
+        AIRPORTS_TABLE,
+        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
     )
+    assert "SE_ANNO_CAD_DATA" not in data["features"][0]["properties"].keys()
+
+
+def test_no_clean():
+    data = bcdata.get_data(
+        AIRPORTS_TABLE,
+        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
+        clean=False
+    )
+    assert "SE_ANNO_CAD_DATA" in data["features"][0]["properties"].keys()
