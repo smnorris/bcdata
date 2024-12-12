@@ -8,6 +8,7 @@ import click
 from cligj import compact_opt, indent_opt, quiet_opt, verbose_opt
 
 import bcdata
+from bcdata import BCWFS
 from bcdata.database import Database
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
@@ -196,7 +197,6 @@ def dem(
     "--query",
     help="A valid CQL or ECQL query",
 )
-@click.option("--out_file", "-o", help="Output file")
 @click.option(
     "--count",
     "-c",
@@ -212,16 +212,16 @@ def dem(
     default="EPSG:3005",
 )
 @click.option(
-    "--no-clean",
-    "-nc",
-    help="Do not do any data standardization",
+    "--promote-to-multi",
+    "-m",
+    help="Promote features to multipart",
     is_flag=True,
-    default=True,
+    default=False,
 )
 @lowercase_opt
 @verbose_opt
 @quiet_opt
-def dump(dataset, query, out_file, count, bounds, bounds_crs, no_clean, lowercase, verbose, quiet):
+def dump(dataset, query, count, bounds, bounds_crs, lowercase, promote_to_multi, verbose, quiet):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -237,25 +237,25 @@ def dump(dataset, query, out_file, count, bounds, bounds_crs, no_clean, lowercas
     verbosity = verbose - quiet
     configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
-    if no_clean:
-        clean = False
-    else:
-        clean = True
-    data = bcdata.get_data(
+
+    urls = bcdata.define_requests(
         table,
         query=query,
         count=count,
         bounds=bounds,
         bounds_crs=bounds_crs,
-        lowercase=lowercase,
-        clean=clean,
     )
-    if out_file:
-        with open(out_file, "w") as sink:
-            sink.write(json.dumps(data))
-    else:
+    WFS = BCWFS()
+    for url in urls:
+        gdf = WFS.make_requests(
+            dataset=dataset,
+            urls=[url],
+            as_gdf=True,
+            lowercase=lowercase,
+            silent=True,
+        )
         sink = click.get_text_stream("stdout")
-        sink.write(json.dumps(data))
+        sink.write(json.dumps(json.loads(gdf.to_json())))
 
 
 @cli.command()

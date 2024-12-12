@@ -366,7 +366,14 @@ class BCWFS(object):
         return urls
 
     def make_requests(
-        self, dataset, urls, as_gdf=False, crs="epsg4326", lowercase=False, silent=False, clean=True
+        self,
+        dataset,
+        urls,
+        as_gdf=False,
+        crs="epsg:4326",
+        lowercase=False,
+        silent=False,
+        clean=True,
     ):
         """turn urls into data"""
         # loop through urls
