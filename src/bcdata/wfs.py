@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import geopandas as gpd
+import pandas as pd
 import requests
 import stamina
 from owslib.feature import schema as wfs_schema
@@ -28,6 +29,22 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 log = logging.getLogger(__name__)
+
+
+def promote_gdf_to_multi(df):
+    """Promote all features to multipart"""
+    df.geometry = [
+        MultiPoint([feature]) if isinstance(feature, Point) else feature for feature in df.geometry
+    ]
+    df.geometry = [
+        MultiLineString([feature]) if isinstance(feature, LineString) else feature
+        for feature in df.geometry
+    ]
+    df.geometry = [
+        MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
+        for feature in df.geometry
+    ]
+    return df
 
 
 def ensure_single_geometry_type(df):
@@ -159,7 +176,7 @@ class BCWFS(object):
 
     @stamina.retry(on=requests.HTTPError, timeout=60)
     def _request_features(self, url, silent=False):
-        """Submit a getfeature request to DataBC WFS and return features"""
+        """Submit a getfeature request to DataBC WFS and return feature collection"""
         r = requests.get(url, headers=self.request_headers)
         if not silent:
             log.info(r.url)
@@ -176,6 +193,26 @@ class BCWFS(object):
             log.warning(f"Response text: {r.text}")
             r.raise_for_status()
         return r.json()["features"]
+
+    @stamina.retry(on=requests.HTTPError, timeout=60)
+    def _request_featurecollection(self, url, silent=False):
+        """Submit a getfeature request to DataBC WFS and return feature collection"""
+        r = requests.get(url, headers=self.request_headers)
+        if not silent:
+            log.info(r.url)
+        else:
+            log.debug(r.url)
+        if r.status_code in [400, 401, 404]:
+            log.error(f"HTTP error {r.status_code}")
+            log.error(f"Response headers: {r.headers}")
+            log.error(f"Response text: {r.text}")
+            raise ServiceException(r.text)  # presumed request error
+        elif r.status_code in [500, 502, 503, 504]:  # presumed serivce error, retry
+            log.warning(f"HTTP error: {r.status_code}")
+            log.warning(f"Response headers: {r.headers}")
+            log.warning(f"Response text: {r.text}")
+            r.raise_for_status()
+        return r.json()
 
     def build_bounds_filter(self, query, bounds, bounds_crs, geom_column):
         """The bbox param shortcut is mutually exclusive with CQL_FILTER,
@@ -275,7 +312,6 @@ class BCWFS(object):
         self,
         dataset,
         query=None,
-        crs="epsg:4326",
         bounds=None,
         bounds_crs="EPSG:3005",
         count=None,
@@ -343,7 +379,7 @@ class BCWFS(object):
                 "request": "GetFeature",
                 "typeName": table,
                 "outputFormat": "json",
-                "SRSNAME": crs,
+                "SRSNAME": "EPSG:4326",
             }
             if sortby:
                 request["sortby"] = sortby.upper()
@@ -365,153 +401,37 @@ class BCWFS(object):
             urls.append(self.wfs_url + "?" + urlencode(request, doseq=True))
         return urls
 
-    def make_requests(
+    def request_features(
         self,
-        dataset,
-        urls,
+        url,
         as_gdf=False,
-        crs="epsg:4326",
+        crs="EPSG:4326",
         lowercase=False,
-        silent=False,
-        clean=True,
+        promote_to_multi=False,
     ):
-        """turn urls into data"""
-        # loop through urls
-        results = []
-        for url in urls:
-            results.append(self._request_features(url, silent))
-        outjson = dict(type="FeatureCollection", features=[])
-        for result in results:
-            outjson["features"] += result
+        """Make a request to WFS and return data as a FeatureCollection or a GeoDataFrame"""
+        # get the data
+        featurecollection = self._request_featurecollection(url)
 
-        # if specified, lowercasify all properties
-        if lowercase:
-            for feature in outjson["features"]:
-                feature["properties"] = {k.lower(): v for k, v in feature["properties"].items()}
-
-        # load to geodataframe, standardize data slightly
-        if len(outjson["features"]) > 0:
-            gdf = gpd.GeoDataFrame.from_features(outjson)
-            gdf.crs = crs
-            # minor data cleaning as default
-            if clean:
-                if gdf.geometry.name != "geometry":
-                    gdf = gdf.rename_geometry("geometry")
-                gdf = ensure_single_geometry_type(gdf)
-                table_definition = bcdata.get_table_definition(dataset)
-                column_names = [
-                    c["column_name"]
-                    for c in table_definition["schema"]
-                    if c["column_name"] not in ["FEATURE_AREA_SQM", "FEATURE_LENGTH_M"]
-                    and c["data_type"] in ["NUMBER", "VARCHAR2", "DATE"]
-                ]
-                if lowercase:
-                    column_names = [c.lower() for c in column_names]
-                gdf = gdf[column_names + ["geometry"]]
+        # load to gdf for reprojection/minor data cleaning
+        if len(featurecollection["features"]) > 0:
+            gdf = gpd.GeoDataFrame.from_features(featurecollection)
+            gdf = gdf.set_crs("EPSG:4326")
+            if crs != "EPSG:4326":
+                gdf = gdf.to_crs(crs)
+            if gdf.geometry.name != "geometry":
+                gdf = gdf.rename_geometry("geometry")
+            if lowercase:
+                gdf.columns = [c.lower() for c in gdf.columns]
+            if promote_to_multi:
+                gdf = promote_gdf_to_multi(gdf)
         else:
             gdf = gpd.GeoDataFrame()
 
         if as_gdf:
             return gdf
-
         else:
             return json.loads(gdf.to_json())
-
-    def get_data(
-        self,
-        dataset,
-        query=None,
-        crs="epsg:4326",
-        bounds=None,
-        bounds_crs="epsg:3005",
-        count=None,
-        sortby=None,
-        as_gdf=False,
-        lowercase=False,
-        clean=True,
-    ):
-        """Request features from DataBC WFS and return GeoJSON featurecollection or geodataframe"""
-        dataset = self.validate_name(dataset)
-        urls = self.define_requests(
-            dataset,
-            query=query,
-            crs=crs,
-            bounds=bounds,
-            bounds_crs=bounds_crs,
-            count=count,
-            sortby=sortby,
-        )
-        return self.make_requests(
-            dataset, urls, as_gdf=as_gdf, crs=crs, lowercase=lowercase, clean=clean
-        )
-
-    def get_features(
-        self,
-        dataset,
-        query=None,
-        crs="epsg:4326",
-        bounds=None,
-        bounds_crs="epsg:3005",
-        count=None,
-        sortby=None,
-        lowercase=False,
-        check_count=True,
-    ):
-        """Yield features from DataBC WFS"""
-        urls = self.define_requests(
-            dataset,
-            query=query,
-            crs=crs,
-            bounds=bounds,
-            bounds_crs=bounds_crs,
-            count=count,
-            sortby=sortby,
-            check_count=check_count,
-        )
-        for url in urls:
-            for feature in self._request_features(url):
-                if lowercase:
-                    feature["properties"] = {k.lower(): v for k, v in feature["properties"].items()}
-                yield feature
-
-
-# abstract away the WFS object
-
-
-def define_requests(
-    dataset,
-    query=None,
-    crs="epsg:4326",
-    bounds=None,
-    bounds_crs="EPSG:3005",
-    count=None,
-    sortby=None,
-    check_count=True,
-):
-    WFS = BCWFS()
-    return WFS.define_requests(
-        dataset,
-        query=query,
-        crs=crs,
-        bounds=bounds,
-        bounds_crs=bounds_crs,
-        count=count,
-        sortby=sortby,
-        check_count=check_count,
-    )
-
-
-def get_count(dataset, query=None, bounds=None, bounds_crs="EPSG:3005"):
-    WFS = BCWFS()
-    table = WFS.validate_name(dataset)
-    geom_column = WFS.get_schema(table)["geometry_column"]
-    return WFS.get_count(
-        dataset,
-        query=query,
-        bounds=bounds,
-        bounds_crs=bounds_crs,
-        geom_column=geom_column,
-    )
 
 
 def get_data(
@@ -524,45 +444,48 @@ def get_data(
     sortby=None,
     as_gdf=False,
     lowercase=False,
-    clean=True,
+    promote_to_multi=False,
 ):
+    """Request features from DataBC WFS, returning GeoJSON featurecollection or geodataframe"""
     WFS = BCWFS()
-    return WFS.get_data(
-        dataset,
+    table = WFS.validate_name(dataset)
+    urls = WFS.define_requests(
+        table,
         query=query,
-        crs=crs,
         bounds=bounds,
         bounds_crs=bounds_crs,
         count=count,
         sortby=sortby,
-        as_gdf=as_gdf,
-        lowercase=lowercase,
-        clean=clean,
     )
+    results = []
+    for url in urls:
+        results.append(
+            WFS.request_features(
+                url, crs=crs, as_gdf=True, lowercase=lowercase, promote_to_multi=promote_to_multi
+            )
+        )
+    if len(results) > 1:
+        gdf = pd.concat(results)
+    elif len(results) == 1:
+        gdf = results[0]
+    else:
+        gdf = gpd.GeoDataFrame()
+    if as_gdf:
+        return gdf
+    else:
+        return json.loads(gdf.to_json())
 
 
-def get_features(
-    dataset,
-    query=None,
-    crs="epsg:4326",
-    bounds=None,
-    bounds_crs="epsg:3005",
-    count=None,
-    sortby=None,
-    lowercase=False,
-    check_count=True,
-):
+def get_count(dataset, query=None, bounds=None, bounds_crs="EPSG:3005"):
     WFS = BCWFS()
-    return WFS.get_features(
+    table = WFS.validate_name(dataset)
+    geom_column = WFS.get_schema(table)["geometry_column"]
+    return WFS.get_count(
         dataset,
         query=query,
-        crs=crs,
         bounds=bounds,
         bounds_crs=bounds_crs,
-        count=count,
-        sortby=sortby,
-        lowercase=lowercase,
-        check_count=check_count,
+        geom_column=geom_column,
     )
 
 

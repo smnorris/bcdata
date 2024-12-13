@@ -8,7 +8,6 @@ import click
 from cligj import compact_opt, indent_opt, quiet_opt, verbose_opt
 
 import bcdata
-from bcdata import BCWFS
 from bcdata.database import Database
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
@@ -237,25 +236,18 @@ def dump(dataset, query, count, bounds, bounds_crs, lowercase, promote_to_multi,
     verbosity = verbose - quiet
     configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
-
-    urls = bcdata.define_requests(
+    data = bcdata.get_data(
         table,
         query=query,
         count=count,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        lowercase=lowercase,
+        promote_to_multi=promote_to_multi,
+        as_gdf=False,
     )
-    WFS = BCWFS()
-    for url in urls:
-        gdf = WFS.make_requests(
-            dataset=dataset,
-            urls=[url],
-            as_gdf=True,
-            lowercase=lowercase,
-            silent=True,
-        )
-        sink = click.get_text_stream("stdout")
-        sink.write(json.dumps(json.loads(gdf.to_json())))
+    sink = click.get_text_stream("stdout")
+    sink.write(json.dumps(data))
 
 
 @cli.command()
@@ -264,23 +256,38 @@ def dump(dataset, query, count, bounds, bounds_crs, lowercase, promote_to_multi,
     "--query",
     help="A valid CQL or ECQL query",
 )
+@click.option(
+    "--count",
+    "-c",
+    default=None,
+    type=int,
+    help="Number of features to request and dump",
+)
 @bounds_opt
-@indent_opt
-@compact_opt
-@dst_crs_opt
-@click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--bounds-crs",
     "--bounds_crs",
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
+@indent_opt
+@compact_opt
+@dst_crs_opt
+@click.option("--sortby", "-s", help="Name of sort field")
 @lowercase_opt
+@click.option(
+    "--promote-to-multi",
+    "-m",
+    help="Promote features to multipart",
+    is_flag=True,
+    default=False,
+)
 @verbose_opt
 @quiet_opt
 def cat(
     dataset,
     query,
+    count,
     bounds,
     bounds_crs,
     indent,
@@ -288,6 +295,7 @@ def cat(
     dst_crs,
     sortby,
     lowercase,
+    promote_to_multi,
     verbose,
     quiet,
 ):
@@ -303,16 +311,23 @@ def cat(
     if compact:
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
-    for feat in bcdata.get_features(
+    WFS = bcdata.wfs.BCWFS()
+    for url in WFS.define_requests(
         table,
         query=query,
+        count=count,
         bounds=bounds,
         bounds_crs=bounds_crs,
-        sortby=sortby,
-        crs=dst_crs,
-        lowercase=lowercase,
     ):
-        click.echo(json.dumps(feat, **dump_kwds))
+        featurecollection = WFS.request_features(
+            url=url,
+            as_gdf=False,
+            lowercase=lowercase,
+            crs=dst_crs,
+            promote_to_multi=promote_to_multi,
+        )
+        for feat in featurecollection["features"]:
+            click.echo(json.dumps(feat, **dump_kwds))
 
 
 @cli.command()
