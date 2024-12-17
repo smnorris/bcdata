@@ -210,6 +210,8 @@ def dem(
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
+@click.option("--sortby", "-s", help="Name of sort field")
+@lowercase_opt
 @click.option(
     "--promote-to-multi",
     "-m",
@@ -217,10 +219,11 @@ def dem(
     is_flag=True,
     default=False,
 )
-@lowercase_opt
 @verbose_opt
 @quiet_opt
-def dump(dataset, query, count, bounds, bounds_crs, lowercase, promote_to_multi, verbose, quiet):
+def dump(
+    dataset, query, count, bounds, bounds_crs, sortby, lowercase, promote_to_multi, verbose, quiet
+):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -242,6 +245,7 @@ def dump(dataset, query, count, bounds, bounds_crs, lowercase, promote_to_multi,
         count=count,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        sortby=sortby,
         lowercase=lowercase,
         promote_to_multi=promote_to_multi,
         as_gdf=False,
@@ -328,13 +332,6 @@ def cat(
         )
         for feat in featurecollection["features"]:
             click.echo(json.dumps(feat, **dump_kwds))
-
-
-@cli.command()
-@verbose_opt
-@quiet_opt
-def clear_cache(verbose, quiet):
-    bcdata.clear_cache()
 
 
 @cli.command()

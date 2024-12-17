@@ -47,27 +47,6 @@ def promote_gdf_to_multi(df):
     return df
 
 
-def ensure_single_geometry_type(df):
-    """If mix of single/multi part geometries are present, promote all geometries to multipart"""
-    geomtypes = sorted(
-        [t.upper() for t in df.geometry.geom_type.dropna(axis=0, how="all").unique()], key=len
-    )
-    if len(geomtypes) > 1 and geomtypes[1] == "MULTI" + geomtypes[0]:
-        df.geometry = [
-            MultiPoint([feature]) if isinstance(feature, Point) else feature
-            for feature in df.geometry
-        ]
-        df.geometry = [
-            MultiLineString([feature]) if isinstance(feature, LineString) else feature
-            for feature in df.geometry
-        ]
-        df.geometry = [
-            MultiPolygon([feature]) if isinstance(feature, Polygon) else feature
-            for feature in df.geometry
-        ]
-    return df
-
-
 class ServiceException(Exception):
     pass
 

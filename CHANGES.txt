@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.14.0 (2024-12-17)
+------------------
+- simplify WFS module, standardize cat/dump options
+
 0.13.0 (2024-12-11)
 ------------------
 - support Data Catalogue API changes (#188)
