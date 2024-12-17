@@ -4,10 +4,8 @@ from .bc2pg import bc2pg as bc2pg
 from .bcdc import get_table_definition as get_table_definition
 from .bcdc import get_table_name as get_table_name
 from .wcs import get_dem as get_dem
-from .wfs import define_requests as define_requests
 from .wfs import get_count as get_count
 from .wfs import get_data as get_data
-from .wfs import get_features as get_features
 from .wfs import get_sortkey as get_sortkey
 from .wfs import list_tables as list_tables
 from .wfs import validate_name as validate_name
@@ -24,4 +22,4 @@ else:
     raise Exception(f"Failed to download primary key database at {PRIMARY_KEY_DB_URL}")
     primary_keys = {}
 
-__version__ = "0.14.0dev0"
+__version__ = "0.14.0"

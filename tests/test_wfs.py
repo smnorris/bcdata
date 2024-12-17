@@ -96,11 +96,6 @@ def test_get_data_crs():
     assert data["crs"]["properties"]["name"] == "urn:ogc:def:crs:EPSG::3005"
 
 
-def test_get_features():
-    data = [f for f in bcdata.get_features(AIRPORTS_TABLE)]
-    assert len(data) == 455
-
-
 def test_get_data_count():
     data = bcdata.get_data(AIRPORTS_TABLE, count=100)
     assert len(data["features"]) == 100
@@ -144,18 +139,3 @@ def test_cql_bounds_filter():
     )
     assert len(data["features"]) == 1
     assert data["features"][0]["properties"]["AIRPORT_NAME"] == "Victoria International Airport"
-
-
-def test_clean():
-    data = bcdata.get_data(
-        AIRPORTS_TABLE,
-        query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'",
-    )
-    assert "SE_ANNO_CAD_DATA" not in data["features"][0]["properties"].keys()
-
-
-def test_no_clean():
-    data = bcdata.get_data(
-        AIRPORTS_TABLE, query="AIRPORT_NAME='Terrace (Northwest Regional) Airport'", clean=False
-    )
-    assert "SE_ANNO_CAD_DATA" in data["features"][0]["properties"].keys()

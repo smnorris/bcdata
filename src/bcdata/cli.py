@@ -196,7 +196,6 @@ def dem(
     "--query",
     help="A valid CQL or ECQL query",
 )
-@click.option("--out_file", "-o", help="Output file")
 @click.option(
     "--count",
     "-c",
@@ -211,17 +210,20 @@ def dem(
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
-@click.option(
-    "--no-clean",
-    "-nc",
-    help="Do not do any data standardization",
-    is_flag=True,
-    default=True,
-)
+@click.option("--sortby", "-s", help="Name of sort field")
 @lowercase_opt
+@click.option(
+    "--promote-to-multi",
+    "-m",
+    help="Promote features to multipart",
+    is_flag=True,
+    default=False,
+)
 @verbose_opt
 @quiet_opt
-def dump(dataset, query, out_file, count, bounds, bounds_crs, no_clean, lowercase, verbose, quiet):
+def dump(
+    dataset, query, count, bounds, bounds_crs, sortby, lowercase, promote_to_multi, verbose, quiet
+):
     """Write DataBC features to stdout as GeoJSON feature collection.
 
     \b
@@ -237,25 +239,19 @@ def dump(dataset, query, out_file, count, bounds, bounds_crs, no_clean, lowercas
     verbosity = verbose - quiet
     configure_logging(verbosity)
     table = bcdata.validate_name(dataset)
-    if no_clean:
-        clean = False
-    else:
-        clean = True
     data = bcdata.get_data(
         table,
         query=query,
         count=count,
         bounds=bounds,
         bounds_crs=bounds_crs,
+        sortby=sortby,
         lowercase=lowercase,
-        clean=clean,
+        promote_to_multi=promote_to_multi,
+        as_gdf=False,
     )
-    if out_file:
-        with open(out_file, "w") as sink:
-            sink.write(json.dumps(data))
-    else:
-        sink = click.get_text_stream("stdout")
-        sink.write(json.dumps(data))
+    sink = click.get_text_stream("stdout")
+    sink.write(json.dumps(data))
 
 
 @cli.command()
@@ -264,23 +260,38 @@ def dump(dataset, query, out_file, count, bounds, bounds_crs, no_clean, lowercas
     "--query",
     help="A valid CQL or ECQL query",
 )
+@click.option(
+    "--count",
+    "-c",
+    default=None,
+    type=int,
+    help="Number of features to request and dump",
+)
 @bounds_opt
-@indent_opt
-@compact_opt
-@dst_crs_opt
-@click.option("--sortby", "-s", help="Name of sort field")
 @click.option(
     "--bounds-crs",
     "--bounds_crs",
     help="CRS of provided bounds",
     default="EPSG:3005",
 )
+@indent_opt
+@compact_opt
+@dst_crs_opt
+@click.option("--sortby", "-s", help="Name of sort field")
 @lowercase_opt
+@click.option(
+    "--promote-to-multi",
+    "-m",
+    help="Promote features to multipart",
+    is_flag=True,
+    default=False,
+)
 @verbose_opt
 @quiet_opt
 def cat(
     dataset,
     query,
+    count,
     bounds,
     bounds_crs,
     indent,
@@ -288,6 +299,7 @@ def cat(
     dst_crs,
     sortby,
     lowercase,
+    promote_to_multi,
     verbose,
     quiet,
 ):
@@ -303,23 +315,23 @@ def cat(
     if compact:
         dump_kwds["separators"] = (",", ":")
     table = bcdata.validate_name(dataset)
-    for feat in bcdata.get_features(
+    WFS = bcdata.wfs.BCWFS()
+    for url in WFS.define_requests(
         table,
         query=query,
+        count=count,
         bounds=bounds,
         bounds_crs=bounds_crs,
-        sortby=sortby,
-        crs=dst_crs,
-        lowercase=lowercase,
     ):
-        click.echo(json.dumps(feat, **dump_kwds))
-
-
-@cli.command()
-@verbose_opt
-@quiet_opt
-def clear_cache(verbose, quiet):
-    bcdata.clear_cache()
+        featurecollection = WFS.request_features(
+            url=url,
+            as_gdf=False,
+            lowercase=lowercase,
+            crs=dst_crs,
+            promote_to_multi=promote_to_multi,
+        )
+        for feat in featurecollection["features"]:
+            click.echo(json.dumps(feat, **dump_kwds))
 
 
 @cli.command()

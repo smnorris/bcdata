@@ -91,7 +91,8 @@ AERODROME_STATUS AIRCRAFT_ACCESS_IND                          AIRPORT_NAME      
 ```
 
 ### CLI
-Commands available via the bcdata command line interface are documented with the `--help` option:
+
+Commands available via the bcdata command line interface are documented with the --help option
 
 ```
 
@@ -104,7 +105,7 @@ Options:
   --help     Show this message and exit.
 
 Commands:
-  bc2pg  Download a DataBC WFS layer to postgres
+  bc2pg  Load a DataBC WFS layer to a postgres db
   cat    Write DataBC features to stdout as GeoJSON feature objects.
   dem    Dump BC DEM to TIFF
   dump   Write DataBC features to stdout as GeoJSON feature collection.
@@ -119,7 +120,7 @@ $ bcdata bc2pg --help
 
 Usage: bcdata bc2pg [OPTIONS] DATASET
 
-  Download a DataBC WFS layer to postgres
+  Load a DataBC WFS layer to a postgres db
 
    $ bcdata bc2pg whse_imagery_and_base_maps.gsr_airports_svw
 
@@ -158,16 +159,18 @@ Usage: bcdata cat [OPTIONS] DATASET
 
 Options:
   --query TEXT                    A valid CQL or ECQL query
+  -c, --count INTEGER             Number of features to request and dump
   --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                   bottom, right, top]". Coordinates are BC
                                   Albers (default) or --bounds_crs
+  --bounds-crs, --bounds_crs TEXT
+                                  CRS of provided bounds
   --indent INTEGER                Indentation level for JSON output
   --compact / --not-compact       Use compact separators (',', ':').
   --dst-crs, --dst_crs TEXT       Destination CRS
   -s, --sortby TEXT               Name of sort field
-  --bounds-crs, --bounds_crs TEXT
-                                  CRS of provided bounds
   -l, --lowercase                 Write column/properties names as lowercase
+  -m, --promote-to-multi          Promote features to multipart
   -v, --verbose                   Increase verbosity.
   -q, --quiet                     Decrease verbosity.
   --help                          Show this message and exit.
@@ -187,9 +190,8 @@ Options:
   --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                   bottom, right, top]". Coordinates are BC
                                   Albers (default) or --bounds_crs  [required]
-  --dst-crs, --dst_crs TEXT       Destination CRS
-  --bounds-crs, --bounds_crs TEXT
-                                  CRS of provided bounds
+  --dst-crs TEXT                  CRS of output file
+  --bounds-crs TEXT               CRS of provided bounds
   -r, --resolution INTEGER
   -a, --align                     Align provided bounds to provincial standard
   -i, --interpolation [nearest|bilinear|bicubic]
@@ -211,20 +213,20 @@ Usage: bcdata dump [OPTIONS] DATASET
     $ bcdata dump bc-airports --query "AIRPORT_NAME='Victoria Harbour (Shoal Point) Heliport'"
     $ bcdata dump bc-airports --bounds xmin ymin xmax ymax
 
-   It can also be combined to read bounds of a feature dataset using Fiona:
+   It can also be combined to read bounds of a feature dataset using Fiona: 
    $ bcdata dump bc-airports --bounds $(fio info aoi.shp --bounds)
 
 Options:
   --query TEXT                    A valid CQL or ECQL query
-  -o, --out_file TEXT             Output file
   -c, --count INTEGER             Number of features to request and dump
   --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                   bottom, right, top]". Coordinates are BC
                                   Albers (default) or --bounds_crs
   --bounds-crs, --bounds_crs TEXT
                                   CRS of provided bounds
-  -nc, --no-clean                 Do not do any data standardization
+  -s, --sortby TEXT               Name of sort field
   -l, --lowercase                 Write column/properties names as lowercase
+  -m, --promote-to-multi          Promote features to multipart
   -v, --verbose                   Increase verbosity.
   -q, --quiet                     Decrease verbosity.
   --help                          Show this message and exit.
@@ -261,6 +263,7 @@ Usage: bcdata list [OPTIONS]
   List DataBC layers available via WFS
 
 Options:
+  -r, --refresh  Refresh the cached list
   --help         Show this message and exit.
 ```
 
