@@ -72,7 +72,7 @@ def test_get_data_asgdf():
 
 
 def test_get_data_asgdf_crs():
-    gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True, crs="EPSG:3005")
+    gdf = bcdata.get_data(UTMZONES_KEY, query="UTM_ZONE=10", as_gdf=True)
     assert gdf.crs == "EPSG:3005"
 
 
@@ -86,19 +86,19 @@ def test_get_data_small():
     assert data["type"] == "FeatureCollection"
 
 
+def test_get_data_count():
+    data = bcdata.get_data(AIRPORTS_TABLE, count=100)
+    assert len(data["features"]) == 100
+
+
 def test_get_data_lowercase():
-    data = bcdata.get_data(AIRPORTS_TABLE, lowercase=True)
+    data = bcdata.get_data(AIRPORTS_TABLE, lowercase=True, count=1)
     assert "airport_name" in data["features"][0]["properties"].keys()
 
 
 def test_get_data_crs():
-    data = bcdata.get_data(AIRPORTS_TABLE, crs="EPSG:3005")
+    data = bcdata.get_data(AIRPORTS_TABLE, count=1)
     assert data["crs"]["properties"]["name"] == "urn:ogc:def:crs:EPSG::3005"
-
-
-def test_get_data_count():
-    data = bcdata.get_data(AIRPORTS_TABLE, count=100)
-    assert len(data["features"]) == 100
 
 
 # this presumes the page size will always be less than the total number of wells

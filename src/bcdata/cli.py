@@ -73,7 +73,6 @@ bounds_opt_dem = click.option(
     help='Bounds: "left bottom right top" or "[left, bottom, right, top]". Coordinates are BC Albers (default) or --bounds_crs',
 )
 
-dst_crs_opt = click.option("--dst-crs", "--dst_crs", default="epsg:4326", help="Destination CRS")
 
 lowercase_opt = click.option(
     "--lowercase", "-l", is_flag=True, help="Write column/properties names as lowercase"
@@ -142,11 +141,6 @@ def info(dataset, indent, meta_member, verbose, quiet):
 @click.option("--out_file", "-o", help="Output file", default="dem25.tif")
 @bounds_opt_dem
 @click.option(
-    "--dst-crs",
-    help="CRS of output file",
-    default="EPSG:3005",
-)
-@click.option(
     "--bounds-crs",
     help="CRS of provided bounds",
     default="EPSG:3005",
@@ -169,7 +163,6 @@ def dem(
     bounds,
     bounds_crs,
     align,
-    dst_crs,
     out_file,
     resolution,
     interpolation,
@@ -184,7 +177,6 @@ def dem(
         out_file=out_file,
         align=align,
         src_crs=bounds_crs,
-        dst_crs=dst_crs,
         resolution=resolution,
         interpolation=interpolation,
     )
@@ -276,7 +268,6 @@ def dump(
 )
 @indent_opt
 @compact_opt
-@dst_crs_opt
 @click.option("--sortby", "-s", help="Name of sort field")
 @lowercase_opt
 @click.option(
@@ -296,7 +287,6 @@ def cat(
     bounds_crs,
     indent,
     compact,
-    dst_crs,
     sortby,
     lowercase,
     promote_to_multi,
@@ -327,7 +317,6 @@ def cat(
             url=url,
             as_gdf=False,
             lowercase=lowercase,
-            crs=dst_crs,
             promote_to_multi=promote_to_multi,
         )
         for feat in featurecollection["features"]:

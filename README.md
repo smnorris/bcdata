@@ -16,26 +16,18 @@ Note that this tool depends on BC Open Geospatial Web Services API at [openmaps.
 **Disclaimer**  
 *It is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)*
 
-## Dependencies and installation
+## Installation and dependencies
 
-`bcdata` requires `gdal`. If working with an OS such as linux or MacOS, with `gdal` already installed to a known location, install with `pip`:
+Install with `pip`:
 
     $ pip install bcdata
 
-Alternatively, `conda` can be used to install/manage the required dependencies as per the [GeoPandas guide](https://geopandas.org/en/stable/getting_started/install.html):
+Note that `bcdata` requires `gdal` to already be installed to a known location.
+If this is not the case on your system, the [GeoPandas guide](https://geopandas.org/en/stable/getting_started/install.html) is useful for setting up a stand alone environment with `conda`.
 
-    $ conda create --name bcdataenv
-    $ conda activate bcdataenv
-    $ conda config --env --add channels conda-forge
-    $ conda config --env --set channel_priority strict
-    $ conda install python=3 geopandas
-    $ conda install rasterio
-    $ pip install bcdata
+## Configuration
 
-
-### Configuration
-
-#### Default PostgreSQL database
+### Default PostgreSQL database
 
 The default target database connection (used by `bc2pg`) can be set via the `DATABASE_URL` environment variable (the password parameter should not be required if using a [.pgpass file](https://www.postgresql.org/docs/current/libpq-pgpass.html))
 
@@ -44,7 +36,7 @@ Linux/Mac: `export DATABASE_URL=postgresql://{username}:{password}@{hostname}:{p
 Windows:   `SET DATABASE_URL=postgresql://{username}:{password}@{hostname}:{port}/{database}`
 
 
-#### Layer list / layer schema cache
+### Layer list / layer schema cache
 
 To reduce the volume of requests, information about data requested is cached locally. 
 Schemas of individual layers that have previously been requested are cached with the cache file name matching the object/table name.
@@ -91,7 +83,6 @@ AERODROME_STATUS AIRCRAFT_ACCESS_IND                          AIRPORT_NAME      
 ```
 
 ### CLI
-
 Commands available via the bcdata command line interface are documented with the --help option
 
 ```
@@ -167,7 +158,6 @@ Options:
                                   CRS of provided bounds
   --indent INTEGER                Indentation level for JSON output
   --compact / --not-compact       Use compact separators (',', ':').
-  --dst-crs, --dst_crs TEXT       Destination CRS
   -s, --sortby TEXT               Name of sort field
   -l, --lowercase                 Write column/properties names as lowercase
   -m, --promote-to-multi          Promote features to multipart
@@ -190,7 +180,6 @@ Options:
   --bounds TEXT                   Bounds: "left bottom right top" or "[left,
                                   bottom, right, top]". Coordinates are BC
                                   Albers (default) or --bounds_crs  [required]
-  --dst-crs TEXT                  CRS of output file
   --bounds-crs TEXT               CRS of provided bounds
   -r, --resolution INTEGER
   -a, --align                     Align provided bounds to provincial standard
@@ -319,29 +308,19 @@ The JSON output can be manipulated with [jq](https://stedolan.github.io/jq/). Fo
       etc...
     }
 
-Dump data to geojson ([`EPSG:4326` only](https://tools.ietf.org/html/rfc7946#section-4)):
+Dump data as supplied by server (BC Albers):
 
     $ bcdata dump bc-airports > bc-airports.geojson
 
-Get a single feature and send it to geojsonio (requires [geojson-cli](https://github.com/mapbox/geojsonio-cli)).  Note the double quotes  required around a CQL FILTER provided to the `--query` option.
+Dump data to geojson that conforms to [RFC7946](https://tools.ietf.org/html/rfc7946#section-4)):
 
-    $ bcdata dump \
-      WHSE_IMAGERY_AND_BASE_MAPS.GSR_AIRPORTS_SVW \
-      --query "AIRPORT_NAME='Terrace (Northwest Regional) Airport'" \
-       | geojsonio
+    $ bcdata dump bc-airports | \
+        ogr2ogr -f GeoJSON -lco RFC7946=YES /vsistdout/ /vsistdin/ > bc-airports-4326.geojson
 
-Save a layer to a geopackage in BC Albers:
+Dump to Parquet on S3:
 
-    $ bcdata cat bc-airports --dst-crs EPSG:3005 \
-      | fio collect \
-      | fio load -f GPKG --dst-crs EPSG:3005 airports.gpkg
-
-Note that this will not work if the source data has mixed geometry types.
-
-Load to parquet on s3:
-
-    $ bcdata dump bc-airports \
-      | ogr2ogr -f Parquet /vsis3/$BUCKET/airports.parquet -s_srs EPSG:4326 -t_srs EPSG:3005 /vsistdin/
+    $ bcdata dump bc-airports | \
+        ogr2ogr -f Parquet /vsis3/$BUCKET/airports.parquet /vsistdin/
 
 Load data to postgres and run a spatial query:
 
@@ -366,19 +345,8 @@ Load data to postgres and run a spatial query:
 
 ## Projections / CRS
 
-**CLI**
-
-`bcdata dump` returns GeoJSON in WGS84 (`EPSG:4326`).
-
-`bcdata cat` provides the `--dst-crs` option, use any CRS the WFS server supports.
-
-`bcdata bc2pg` loads data to PostgreSQL in BC Albers (`EPSG:3005`).
-
-
-**Python module**
-
-`bcdata.get_data()` defaults to `EPSG:4236` but any CRS can be specified (that the server will accept).
-
+All data are as supplied from the server by default: BC Albers / `EPSG:3005`. 
+Use some other tool to reproject the data as required.
 
 ## Development and testing
 
