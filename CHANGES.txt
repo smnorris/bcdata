@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.15.0 (2024-12-20)
+------------------
+- use some other tool for reprojection - always request data in BC Albers and remove options for reprojection (#210)
+
 0.14.0 (2024-12-17)
 ------------------
 - simplify WFS module, standardize cat/dump options

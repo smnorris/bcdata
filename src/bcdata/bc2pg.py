@@ -95,7 +95,7 @@ def bc2pg(  # noqa: C901
 
         # if geometry type is not provided, determine type by making the first request
         if not geometry_type:
-            df = WFS.request_features(url=urls[0], as_gdf=True, crs="epsg:3005", lowercase=True)
+            df = WFS.request_features(url=urls[0], as_gdf=True, lowercase=True)
             geometry_type = df.geom_type.unique()[0]  # keep only the first type
             if numpy.any(df.has_z.unique()[0]):  # geopandas does not include Z in geom_type string
                 geometry_type = geometry_type + "Z"
@@ -107,7 +107,6 @@ def bc2pg(  # noqa: C901
                 df_temp = WFS.request_features(
                     url=urls[-1],
                     as_gdf=True,
-                    crs="epsg:3005",
                     lowercase=True,
                     silent=True,
                 )
@@ -158,7 +157,7 @@ def bc2pg(  # noqa: C901
         for n, url in enumerate(urls):
             # if first url not downloaded above when checking geom type, do now
             if df is None:
-                df = WFS.request_features(url=url, as_gdf=True, crs="epsg:3005", lowercase=True)
+                df = WFS.request_features(url=url, as_gdf=True, lowercase=True)
             # tidy the resulting dataframe
             df = df.rename_geometry("geom")
             # lowercasify

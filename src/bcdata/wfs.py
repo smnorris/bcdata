@@ -358,7 +358,7 @@ class BCWFS(object):
                 "request": "GetFeature",
                 "typeName": table,
                 "outputFormat": "json",
-                "SRSNAME": "EPSG:4326",
+                "SRSNAME": "EPSG:3005",  # just in case (this should always be the default)
             }
             if sortby:
                 request["sortby"] = sortby.upper()
@@ -384,7 +384,6 @@ class BCWFS(object):
         self,
         url,
         as_gdf=False,
-        crs="EPSG:4326",
         lowercase=False,
         promote_to_multi=False,
     ):
@@ -395,9 +394,7 @@ class BCWFS(object):
         # load to gdf for reprojection/minor data cleaning
         if len(featurecollection["features"]) > 0:
             gdf = gpd.GeoDataFrame.from_features(featurecollection)
-            gdf = gdf.set_crs("EPSG:4326")
-            if crs != "EPSG:4326":
-                gdf = gdf.to_crs(crs)
+            gdf = gdf.set_crs("EPSG:3005")
             if gdf.geometry.name != "geometry":
                 gdf = gdf.rename_geometry("geometry")
             if lowercase:
@@ -416,7 +413,6 @@ class BCWFS(object):
 def get_data(
     dataset,
     query=None,
-    crs="epsg:4326",
     bounds=None,
     bounds_crs="epsg:3005",
     count=None,
@@ -440,7 +436,7 @@ def get_data(
     for url in urls:
         results.append(
             WFS.request_features(
-                url, crs=crs, as_gdf=True, lowercase=lowercase, promote_to_multi=promote_to_multi
+                url, as_gdf=True, lowercase=lowercase, promote_to_multi=promote_to_multi
             )
         )
     if len(results) > 1:
