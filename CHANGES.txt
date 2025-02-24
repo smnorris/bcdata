@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.16.0
+------------------
+- change license from MIT to Apache, copyright Province of BC
+
 0.15.0 (2024-12-20)
 ------------------
 - use some other tool for reprojection - always request data in BC Albers and remove options for reprojection (#210)
