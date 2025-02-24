@@ -7,7 +7,7 @@ Python and command line tools for quick access to DataBC geo-data available via 
 
 There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
-but for sources without file-based download urls, the syntax to download WFS data via `ogr2ogr` and/or `curl/ogr2ogr` can be awkward.
+but most sources are available only via WFS - and the syntax to download WFS data via `ogr2ogr` and/or `curl/wget` can be awkward.
 
 This tool attempts to simplify downloads of BC geographic data and smoothly integrate with PostGIS and Python GIS tools like `geopandas`, `fiona` and `rasterio`. The tool only accesses geographic data [avialable via WFS/WCS](https://bcgov.github.io/data-publication/pages/tips_tricks_webservices.html) - for other BC open data, download the files directly with `requests` / `curl` / `ogr2ogr` / etc (or the [bcdata R package](https://github.com/bcgov/bcdata)).
 
