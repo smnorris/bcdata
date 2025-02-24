@@ -7,14 +7,14 @@ Python and command line tools for quick access to DataBC geo-data available via 
 
 There is a [wealth of British Columbia geographic information available as open
 data](https://catalogue.data.gov.bc.ca/dataset?download_audience=Public),
-but direct file download urls are not available and the syntax to accesss WFS via `ogr2ogr` and/or `curl/wget` can be awkward.
+but for sources without file-based download urls, the syntax to download WFS data via `ogr2ogr` and/or `curl/ogr2ogr` can be awkward.
 
-This tool attempts to simplify downloads of BC geographic data and smoothly integrate with PostGIS and Python GIS tools like `geopandas`, `fiona` and `rasterio`. As noted above, the module is an interface only to geographic data [avialable via WFS/WCS](https://bcgov.github.io/data-publication/pages/tips_tricks_webservices.html)  - to work with other BC open data, use the [bcdata R package](https://github.com/bcgov/bcdata).
+This tool attempts to simplify downloads of BC geographic data and smoothly integrate with PostGIS and Python GIS tools like `geopandas`, `fiona` and `rasterio`. The tool only accesses geographic data [avialable via WFS/WCS](https://bcgov.github.io/data-publication/pages/tips_tricks_webservices.html) - for other BC open data, download the files directly with `requests` / `curl` / `ogr2ogr` / etc (or the [bcdata R package](https://github.com/bcgov/bcdata)).
 
-Note that this tool depends on BC Open Geospatial Web Services API at [openmaps.gov.bc.ca](https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities) and the [BC Data Catalogue API](https://catalogue.data.gov.bc.ca/dataset/bc-data-catalogue-api).  If downloads are failing, consult the [BCGov Data Systems and Services uptime monitor](https://uptime.com/statuspage/bcgov-dss).
+If downloads are failing, consult the [BCGov Data Systems and Services uptime monitor](https://uptime.com/statuspage/bcgov-dss) - this tool depends on BC Open Geospatial Web Services API at [openmaps.gov.bc.ca](https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities) and the [BC Data Catalogue API](https://catalogue.data.gov.bc.ca/dataset/bc-data-catalogue-api). 
 
 **Disclaimer**  
-*It is the user's responsibility to check the licensing for any downloads, data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc)*
+*Data are generally licensed as [OGL-BC](http://www2.gov.bc.ca/gov/content/governments/about-the-bc-government/databc/open-data/open-government-license-bc), but it is the user's responsibility to check the licensing for any downloads.*
 
 ## Installation and dependencies
 
