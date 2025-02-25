@@ -22,4 +22,4 @@ else:
     raise Exception(f"Failed to download primary key database at {PRIMARY_KEY_DB_URL}")
     primary_keys = {}
 
-__version__ = "0.15.0"
+__version__ = "0.16.0dev0"

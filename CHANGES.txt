@@ -1,9 +1,9 @@
 Changes
 =======
 
-0.16.0
+0.16.0 ()
 ------------------
-- change license from MIT to Apache, copyright Province of BC
+- change license from MIT to Apache, copyright Province of BC (#213)
 
 0.15.0 (2024-12-20)
 ------------------
