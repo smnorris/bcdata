@@ -100,7 +100,7 @@ class BCWFS:
 
     def __init__(self, refresh=False):
         self.wfs_url = "https://openmaps.gov.bc.ca/geo/pub/wfs"
-        self.ows_url = "http://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities"
+        self.ows_url = "https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&request=Getcapabilities"
 
         # point to cache path
         if "BCDATA_CACHE" in os.environ:
